@@ -24,25 +24,30 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		F187FF462D64C41A0040996A /* nutrition-app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "nutrition-app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		F187FF572D64C41B0040996A /* nutrition-appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "nutrition-appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		F187FF612D64C41B0040996A /* nutrition-appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "nutrition-appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		F187FF462D64C41A0040996A /* nutrition-app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = "nutrition-app.app"; path = "/Users/florianfourcade/Desktop/APP/nutrition-app/build/Debug/nutrition-app.app"; sourceTree = "<absolute>"; };
+		F187FF572D64C41B0040996A /* nutrition-appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = "nutrition-appTests.xctest"; path = "/Users/florianfourcade/Desktop/APP/nutrition-app/build/Debug/nutrition-app.app/Contents/PlugIns/nutrition-appTests.xctest"; sourceTree = "<absolute>"; };
+		F187FF612D64C41B0040996A /* nutrition-appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = "nutrition-appUITests.xctest"; path = "/Users/florianfourcade/Desktop/APP/nutrition-app/build/Debug/nutrition-appUITests-Runner.app/Contents/PlugIns/nutrition-appUITests.xctest"; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		F187FF482D64C41A0040996A /* nutrition-app */ = {
+		F187FF792D64C7A30040996A /* App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "nutrition-app";
+			path = App;
 			sourceTree = "<group>";
 		};
-		F187FF5A2D64C41B0040996A /* nutrition-appTests */ = {
+		F187FF802D64C7C80040996A /* Core */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "nutrition-appTests";
+			path = Core;
 			sourceTree = "<group>";
 		};
-		F187FF642D64C41B0040996A /* nutrition-appUITests */ = {
+		F187FFA52D64C8EF0040996A /* Features */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "nutrition-appUITests";
+			path = Features;
+			sourceTree = "<group>";
+		};
+		F187FFBB2D64C9EA0040996A /* UI */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = UI;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -75,21 +80,11 @@
 		F187FF3D2D64C41A0040996A = {
 			isa = PBXGroup;
 			children = (
-				F187FF482D64C41A0040996A /* nutrition-app */,
-				F187FF5A2D64C41B0040996A /* nutrition-appTests */,
-				F187FF642D64C41B0040996A /* nutrition-appUITests */,
-				F187FF472D64C41A0040996A /* Products */,
+				F187FF792D64C7A30040996A /* App */,
+				F187FF802D64C7C80040996A /* Core */,
+				F187FFA52D64C8EF0040996A /* Features */,
+				F187FFBB2D64C9EA0040996A /* UI */,
 			);
-			sourceTree = "<group>";
-		};
-		F187FF472D64C41A0040996A /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				F187FF462D64C41A0040996A /* nutrition-app.app */,
-				F187FF572D64C41B0040996A /* nutrition-appTests.xctest */,
-				F187FF612D64C41B0040996A /* nutrition-appUITests.xctest */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -108,7 +103,10 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				F187FF482D64C41A0040996A /* nutrition-app */,
+				F187FF792D64C7A30040996A /* App */,
+				F187FF802D64C7C80040996A /* Core */,
+				F187FFA52D64C8EF0040996A /* Features */,
+				F187FFBB2D64C9EA0040996A /* UI */,
 			);
 			name = "nutrition-app";
 			packageProductDependencies = (
@@ -130,9 +128,6 @@
 			dependencies = (
 				F187FF592D64C41B0040996A /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				F187FF5A2D64C41B0040996A /* nutrition-appTests */,
-			);
 			name = "nutrition-appTests";
 			packageProductDependencies = (
 			);
@@ -152,9 +147,6 @@
 			);
 			dependencies = (
 				F187FF632D64C41B0040996A /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				F187FF642D64C41B0040996A /* nutrition-appUITests */,
 			);
 			name = "nutrition-appUITests";
 			packageProductDependencies = (
@@ -196,7 +188,7 @@
 			mainGroup = F187FF3D2D64C41A0040996A;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = F187FF472D64C41A0040996A /* Products */;
+			productRefGroup = F187FF3D2D64C41A0040996A;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
