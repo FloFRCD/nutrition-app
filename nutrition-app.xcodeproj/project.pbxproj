@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		0B2F732A2D6605DF0025DC01 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0B2F73292D6605DF0025DC01 /* Preview Assets.xcassets */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		F187FF582D64C41B0040996A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -24,9 +28,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		F187FF462D64C41A0040996A /* nutrition-app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = "nutrition-app.app"; path = "/Users/florianfourcade/Desktop/APP/nutrition-app/build/Debug/nutrition-app.app"; sourceTree = "<absolute>"; };
-		F187FF572D64C41B0040996A /* nutrition-appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = "nutrition-appTests.xctest"; path = "/Users/florianfourcade/Desktop/APP/nutrition-app/build/Debug/nutrition-app.app/Contents/PlugIns/nutrition-appTests.xctest"; sourceTree = "<absolute>"; };
-		F187FF612D64C41B0040996A /* nutrition-appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = "nutrition-appUITests.xctest"; path = "/Users/florianfourcade/Desktop/APP/nutrition-app/build/Debug/nutrition-appUITests-Runner.app/Contents/PlugIns/nutrition-appUITests.xctest"; sourceTree = "<absolute>"; };
+		0B2F71852D65FB1D0025DC01 /* nutrition-app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "nutrition-app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0B2F71862D65FB1D0025DC01 /* nutrition-appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "nutrition-appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0B2F71872D65FB1D0025DC01 /* nutrition-appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "nutrition-appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0B2F73242D6603D80025DC01 /* nutrition_app.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = nutrition_app.entitlements; sourceTree = "<group>"; };
+		0B2F73292D6605DF0025DC01 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -77,13 +83,26 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0B2F73282D6605AA0025DC01 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				0B2F73292D6605DF0025DC01 /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
 		F187FF3D2D64C41A0040996A = {
 			isa = PBXGroup;
 			children = (
+				0B2F73282D6605AA0025DC01 /* Preview Content */,
 				F187FF792D64C7A30040996A /* App */,
 				F187FF802D64C7C80040996A /* Core */,
 				F187FFA52D64C8EF0040996A /* Features */,
 				F187FFBB2D64C9EA0040996A /* UI */,
+				0B2F71862D65FB1D0025DC01 /* nutrition-appTests.xctest */,
+				0B2F71852D65FB1D0025DC01 /* nutrition-app.app */,
+				0B2F73242D6603D80025DC01 /* nutrition_app.entitlements */,
+				0B2F71872D65FB1D0025DC01 /* nutrition-appUITests.xctest */,
 			);
 			sourceTree = "<group>";
 		};
@@ -112,7 +131,7 @@
 			packageProductDependencies = (
 			);
 			productName = "nutrition-app";
-			productReference = F187FF462D64C41A0040996A /* nutrition-app.app */;
+			productReference = 0B2F71852D65FB1D0025DC01 /* nutrition-app.app */;
 			productType = "com.apple.product-type.application";
 		};
 		F187FF562D64C41B0040996A /* nutrition-appTests */ = {
@@ -132,7 +151,7 @@
 			packageProductDependencies = (
 			);
 			productName = "nutrition-appTests";
-			productReference = F187FF572D64C41B0040996A /* nutrition-appTests.xctest */;
+			productReference = 0B2F71862D65FB1D0025DC01 /* nutrition-appTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		F187FF602D64C41B0040996A /* nutrition-appUITests */ = {
@@ -152,7 +171,7 @@
 			packageProductDependencies = (
 			);
 			productName = "nutrition-appUITests";
-			productReference = F187FF612D64C41B0040996A /* nutrition-appUITests.xctest */;
+			productReference = 0B2F71872D65FB1D0025DC01 /* nutrition-appUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -204,6 +223,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0B2F732A2D6605DF0025DC01 /* Preview Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -380,12 +400,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = "nutrition-app/nutrition_app.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "/Users/flofrcd/Desktop/Applications/nutrition-app/nutrition_app.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"nutrition-app/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"/Users/flofrcd/Desktop/Applications/nutrition-app/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -417,12 +438,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = "nutrition-app/nutrition_app.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "/Users/flofrcd/Desktop/Applications/nutrition-app/nutrition_app.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"nutrition-app/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"/Users/flofrcd/Desktop/Applications/nutrition-app/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
