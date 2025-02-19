@@ -29,10 +29,10 @@
 
 /* Begin PBXFileReference section */
 		0B2F71852D65FB1D0025DC01 /* nutrition-app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "nutrition-app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		0B2F71862D65FB1D0025DC01 /* nutrition-appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = "nutrition-appTests.xctest"; path = "/Users/flofrcd/Desktop/Applications/nutrition-app/build/Debug/nutrition-app.app/Contents/PlugIns/nutrition-appTests.xctest"; sourceTree = "<absolute>"; };
-		0B2F71872D65FB1D0025DC01 /* nutrition-appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = "nutrition-appUITests.xctest"; path = "/Users/flofrcd/Desktop/Applications/nutrition-app/build/Debug/nutrition-appUITests-Runner.app/Contents/PlugIns/nutrition-appUITests.xctest"; sourceTree = "<absolute>"; };
 		0B2F73242D6603D80025DC01 /* nutrition_app.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = nutrition_app.entitlements; sourceTree = "<group>"; };
 		0B2F73292D6605DF0025DC01 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		0BB824502D66254600B3A21D /* nutrition-appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "nutrition-appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0BB824512D66254600B3A21D /* nutrition-appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "nutrition-appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -101,6 +101,8 @@
 				0B2F71852D65FB1D0025DC01 /* nutrition-app.app */,
 				0B2F73242D6603D80025DC01 /* nutrition_app.entitlements */,
 				0B2F73282D6605AA0025DC01 /* Preview Content */,
+				0BB824502D66254600B3A21D /* nutrition-appTests.xctest */,
+				0BB824512D66254600B3A21D /* nutrition-appUITests.xctest */,
 			);
 			sourceTree = "<group>";
 		};
@@ -149,7 +151,7 @@
 			packageProductDependencies = (
 			);
 			productName = "nutrition-appTests";
-			productReference = 0B2F71862D65FB1D0025DC01 /* nutrition-appTests.xctest */;
+			productReference = 0BB824502D66254600B3A21D /* nutrition-appTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		F187FF602D64C41B0040996A /* nutrition-appUITests */ = {
@@ -169,7 +171,7 @@
 			packageProductDependencies = (
 			);
 			productName = "nutrition-appUITests";
-			productReference = 0B2F71872D65FB1D0025DC01 /* nutrition-appUITests.xctest */;
+			productReference = 0BB824512D66254600B3A21D /* nutrition-appUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */

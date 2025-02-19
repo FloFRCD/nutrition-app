@@ -10,11 +10,21 @@ import Foundation
 struct Meal: Identifiable, Codable {
     let id: UUID
     var name: String
-    var type: MealType
-    var foods: [Food]
     var date: Date
-    var image: String?
-    var notes: String?
+    var foods: [Food]
+    var type: MealType
+    
+    var totalCalories: Int {
+        foods.reduce(0) { $0 + $1.calories }
+    }
+    
+    init(id: UUID = UUID(), name: String, date: Date, foods: [Food] = [], type: MealType) {
+        self.id = id
+        self.name = name
+        self.date = date
+        self.foods = foods
+        self.type = type
+    }
 }
 
 enum MealType: String, Codable, CaseIterable {

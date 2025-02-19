@@ -10,25 +10,34 @@ import SwiftUI
 
 
 struct HomeView: View {
+    @ObservedObject private var localDataManager = LocalDataManager.shared
+    
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 20) {
                     // Daily Progress Section
-                    DailyProgressView()
+                    DailyProgressView(userProfile: localDataManager.userProfile)
                     
                     // Next Meal Section
-                    NextMealView()
+                    if let nextMeal = localDataManager.meals.first {
+                        NextMealView(meal: nextMeal)
+                    } else {
+                        EmptyNextMealView()
+                    }
                     
                     // Recent Scans Section
-                    RecentScansView()
+                    if !localDataManager.recentScans.isEmpty {
+                        RecentScansView(scans: localDataManager.recentScans)
+                    } else {
+                        EmptyRecentScansView()
+                    }
                 }
                 .padding()
             }
-            .navigationTitle("Bonjour 👋")
+            .navigationTitle("Bonjour \(localDataManager.userProfile?.name.components(separatedBy: " ").first ?? "")")
         }
     }
 }
-#Preview {
-    HomeView()
-}
+
+

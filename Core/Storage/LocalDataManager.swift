@@ -20,6 +20,7 @@ class LocalDataManager: ObservableObject {
     @Published var userProfile: UserProfile?
     @Published var meals: [Meal] = []
     @Published var weightEntries: [WeightEntry] = []
+    @Published var recentScans: [FoodScan] = []
     
     private let queue = DispatchQueue(label: "com.yourapp.localdatamanager", qos: .userInitiated)
     

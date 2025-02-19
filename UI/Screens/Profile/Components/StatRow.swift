@@ -22,6 +22,3 @@ struct StatRow: View {
         }
     }
 }
-#Preview {
-    StatRow(title: "Calories", value: "1234")  
-}
