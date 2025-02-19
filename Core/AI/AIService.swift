@@ -10,7 +10,7 @@ import Foundation
 
 class AIService {
     static let shared = AIService()
-    private let apiKey = "TEST"
+    private let apiKey = ""
     private let cacheKey = "nutrition_cache"
     
     private func callChatGPT(prompt: String) async throws -> String {
