@@ -11,7 +11,7 @@ import StoreKit
 
 class AIService {
     static let shared = AIService()
-    
+    private let apiKey = "your_secret_api_key"
     private let cacheKey = "nutrition_cache"
     
     private func callChatGPT(prompt: String) async throws -> String {
