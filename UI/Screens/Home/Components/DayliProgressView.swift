@@ -8,86 +8,488 @@
 import Foundation
 import SwiftUI
 
+//
+//  DayliProgressView.swift
+//  nutrition-app
+//
+//  Created by Florian Fourcade on 19/02/2025.
+//
+
+import Foundation
+import SwiftUI
+
 struct DailyProgressView: View {
     let userProfile: UserProfile?
+    @Binding var isExpanded: Bool
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Aujourd'hui")
-                .font(.headline)
+        if let profile = userProfile {
+            let needs = NutritionCalculator.shared.calculateNeeds(for: profile)
             
-            if let profile = userProfile {
-                HStack {
-                    ProgressCard(
+            VStack(spacing: 5) {
+                Text("Aujourd'hui")
+                    .font(.headline)
+                
+                HStack(spacing: 20) {
+                    // Calories
+                    StatBox(
                         title: "Calories",
-                        current: "0",
-                        target: "\(calculateDailyCalories(profile))"
+                        currentValue: "0",
+                        currentUnit: "cal",
+                        targetValue: "\(needs.targetCalories)",
+                        targetUnit: "kcal",
+                        type: .calories
                     )
-                    ProgressCard(
+                    .onTapGesture {
+                        withAnimation(.spring()) {
+                            isExpanded = true
+                        }
+                    }
+                    
+                    // Protéines
+                    StatBox(
                         title: "Protéines",
-                        current: "0",
-                        target: "\(calculateDailyProteins(profile))g"
+                        currentValue: "0",
+                        currentUnit: "g",
+                        targetValue: "\(needs.proteins)",
+                        targetUnit: "g",
+                        type: .proteins
                     )
-                    ProgressCard(
+                    .onTapGesture {
+                        withAnimation(.spring()) {
+                            isExpanded = true
+                        }
+                    }
+                    
+                    // Eau
+                    StatBox(
                         title: "Eau",
-                        current: "0",
-                        target: "2.5L"
+                        currentValue: "0",
+                        currentUnit: "L",
+                        targetValue: "2.5",
+                        targetUnit: "L",
+                        type: .water
                     )
+                    .onTapGesture {
+                        withAnimation(.spring()) {
+                            isExpanded = true
+                        }
+                    }
                 }
-            } else {
-                Text("Chargement...")
             }
         }
-        .padding()
-        .background(Color.blue.opacity(0.1))
-        .cornerRadius(15)
     }
+
+struct StatBox: View {
+    let title: String
+    let currentValue: String
+    let currentUnit: String
+    let targetValue: String
+    let targetUnit: String
+    let type: StatType
     
-    // Fonctions de calcul des objectifs basées sur le profil
-    private func calculateDailyCalories(_ profile: UserProfile) -> Int {
-        // Calcul basique du BMR (Basal Metabolic Rate) avec l'équation de Harris-Benedict
-        let bmr: Double
-        switch profile.gender {
-        case .male:
-            bmr = 88.362 + (13.397 * profile.currentWeight) + (4.799 * profile.height) - (5.677 * Double(profile.age))
-        case .female:
-            bmr = 447.593 + (9.247 * profile.currentWeight) + (3.098 * profile.height) - (4.330 * Double(profile.age))
-        case .other:
-            // Moyenne des deux formules
-            bmr = (88.362 + (13.397 * profile.currentWeight) + (4.799 * profile.height) - (5.677 * Double(profile.age)) +
-                   447.593 + (9.247 * profile.currentWeight) + (3.098 * profile.height) - (4.330 * Double(profile.age))) / 2
-        }
+    enum StatType {
+        case calories
+        case proteins
+        case water
         
-        // Facteur d'activité
-        let activityFactor: Double
-        switch profile.activityLevel {
-        case .sedentary: activityFactor = 1.2
-        case .lightlyActive: activityFactor = 1.375
-        case .moderatelyActive: activityFactor = 1.55
-        case .veryActive: activityFactor = 1.725
-        case .extraActive: activityFactor = 1.9
-        }
-        
-        return Int(bmr * activityFactor)
-    }
-    
-    private func calculateDailyProteins(_ profile: UserProfile) -> Int {
-        // Calcul basique : 1.6g par kg de poids corporel pour la prise de masse
-        // 2g par kg pour la perte de poids
-        // 1.2g par kg pour le maintien
-        let factor: Double
-        if let targetWeight = profile.targetWeight {
-            if targetWeight > profile.currentWeight {
-                factor = 1.6 // Prise de masse
-            } else if targetWeight < profile.currentWeight {
-                factor = 2.0 // Perte de poids
-            } else {
-                factor = 1.2 // Maintien
+        var gradient: LinearGradient {
+            switch self {
+            case .calories:
+                return LinearGradient(
+                    colors: [Color.orange.opacity(0.8), Color.red.opacity(0.3)],
+                    startPoint: .topTrailing,
+                    endPoint: .bottomLeading
+                )
+            case .proteins:
+                return LinearGradient(
+                    colors: [Color.purple.opacity(0.6), Color.purple.opacity(0.3)],
+                    startPoint: .topTrailing,
+                    endPoint: .bottomLeading
+                )
+            case .water:
+                return LinearGradient(
+                    colors: [Color.blue.opacity(0.6), Color.blue.opacity(0.3)],
+                    startPoint: .topTrailing,
+                    endPoint: .bottomLeading
+                )
             }
-        } else {
-            factor = 1.2 // Pas d'objectif défini
         }
-        
-        return Int(profile.currentWeight * factor)
     }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .foregroundColor(.white)
+                .font(.subheadline)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Actuel")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.8))
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text(currentValue)
+                        .font(.title3)
+                        .bold()
+                        .foregroundColor(.white)
+                    Text(currentUnit)
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.8))
+                }
+            }
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Objectif")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.8))
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text(targetValue)
+                        .font(.callout)
+                        .bold()
+                        .foregroundColor(.white)
+                    Text(targetUnit)
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.8))
+                }
+            }
+        }
+        .padding(.vertical, 12)
+                .padding(.horizontal, 16)
+                .frame(maxWidth: .infinity) // Pour remplir l'espace disponible
+                .background(type.gradient)
+                .cornerRadius(15)
+                .padding(.horizontal)
+    }
+}
+
+
+struct ExpandedView: View {
+   let needs: NutritionCalculator.NutritionNeeds
+   @Binding var isExpanded: Bool
+   
+   var body: some View {
+       VStack(spacing: 20) {
+           // Header
+           HStack {
+               Text("Nutrition")
+                   .font(.title2)
+                   .bold()
+               Spacer()
+               Button {
+                   withAnimation(.spring()) {
+                       isExpanded = false
+                   }
+               } label: {
+                   Image(systemName: "xmark.circle.fill")
+                       .font(.title2)
+                       .foregroundColor(.gray)
+               }
+           }
+           
+           // Contenu détaillé
+           VStack(spacing: 15) {
+               DetailedStatBox(
+                   title: "Calories",
+                   current: "0",
+                   currentUnit: "cal",
+                   target: "\(needs.targetCalories)",
+                   targetUnit: "kcal",
+                   maintenance: "\(needs.maintenanceCalories)kcal"
+               )
+               
+               DetailedStatBox(
+                   title: "Protéines",
+                   current: "0",
+                   currentUnit: "g",
+                   target: "\(needs.proteins)",
+                   targetUnit: "g",
+                   maintenance: "\(needs.proteins)g"
+               )
+               
+               DetailedStatBox(
+                   title: "Glucides",
+                   current: "0",
+                   currentUnit: "g",
+                   target: "\(needs.carbs)",
+                   targetUnit: "g",
+                   maintenance: "\(needs.carbs)g"
+               )
+               
+               DetailedStatBox(
+                   title: "Lipides",
+                   current: "0",
+                   currentUnit: "g",
+                   target: "\(needs.fats)",
+                   targetUnit: "g",
+                   maintenance: "\(needs.fats)g"
+               )
+           }
+       }
+       .padding()
+       .background(Color(.systemBackground))
+       .cornerRadius(20)
+   }
+}
+
+struct DetailedStatBox: View {
+   let title: String
+   let current: String
+   let currentUnit: String
+   let target: String
+   let targetUnit: String
+   let maintenance: String
+   
+   var body: some View {
+       VStack(alignment: .leading, spacing: 12) {
+           Text(title)
+               .font(.headline)
+           
+           HStack {
+               VStack(alignment: .leading) {
+                   Text("Actuel")
+                       .font(.caption)
+                       .foregroundColor(.gray)
+                   HStack(alignment: .firstTextBaseline, spacing: 2) {
+                       Text(current)
+                           .font(.title2)
+                           .bold()
+                       Text(currentUnit)
+                           .font(.caption)
+                           .foregroundColor(.gray)
+                   }
+               }
+               
+               Spacer()
+               
+               VStack(alignment: .trailing) {
+                   Text("Objectif")
+                       .font(.caption)
+                       .foregroundColor(.gray)
+                   HStack(alignment: .firstTextBaseline, spacing: 2) {
+                       Text(target)
+                           .font(.title2)
+                           .bold()
+                       Text(targetUnit)
+                           .font(.caption)
+                           .foregroundColor(.gray)
+                   }
+               }
+           }
+           
+           Text("Maintenance: \(maintenance)")
+               .font(.caption)
+               .foregroundColor(.gray)
+       }
+       .padding()
+       .background(Color(.secondarySystemBackground))
+       .cornerRadius(15)
+   }
+}
+
+}
+
+struct StatBox: View {
+    let title: String
+    let currentValue: String
+    let currentUnit: String
+    let targetValue: String
+    let targetUnit: String
+    let type: StatType
+    
+    enum StatType {
+        case calories
+        case proteins
+        case water
+        
+        var gradient: LinearGradient {
+            switch self {
+            case .calories:
+                return LinearGradient(
+                    colors: [Color.orange.opacity(0.8), Color.red.opacity(0.3)],
+                    startPoint: .topTrailing,
+                    endPoint: .bottomLeading
+                )
+            case .proteins:
+                return LinearGradient(
+                    colors: [Color.purple.opacity(0.6), Color.purple.opacity(0.3)],
+                    startPoint: .topTrailing,
+                    endPoint: .bottomLeading
+                )
+            case .water:
+                return LinearGradient(
+                    colors: [Color.blue.opacity(0.6), Color.blue.opacity(0.3)],
+                    startPoint: .topTrailing,
+                    endPoint: .bottomLeading
+                )
+            }
+        }
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .foregroundColor(.white)
+                .font(.subheadline)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Actuel")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.8))
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text(currentValue)
+                        .font(.title3)
+                        .bold()
+                        .foregroundColor(.white)
+                    Text(currentUnit)
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.8))
+                }
+            }
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Objectif")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.8))
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text(targetValue)
+                        .font(.callout)
+                        .bold()
+                        .foregroundColor(.white)
+                    Text(targetUnit)
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.8))
+                }
+            }
+        }
+        .padding(.vertical, 12)
+                .padding(.horizontal, 16)
+                .frame(maxWidth: .infinity) // Pour remplir l'espace disponible
+                .background(type.gradient)
+                .cornerRadius(15)
+                .padding(.horizontal)
+    }
+}
+
+
+struct ExpandedView: View {
+   let needs: NutritionCalculator.NutritionNeeds
+   @Binding var isExpanded: Bool
+   
+   var body: some View {
+       VStack(spacing: 20) {
+           // Header
+           HStack {
+               Text("Nutrition")
+                   .font(.title2)
+                   .bold()
+               Spacer()
+               Button {
+                   withAnimation(.spring()) {
+                       isExpanded = false
+                   }
+               } label: {
+                   Image(systemName: "xmark.circle.fill")
+                       .font(.title2)
+                       .foregroundColor(.gray)
+               }
+           }
+           
+           // Contenu détaillé
+           VStack(spacing: 15) {
+               DetailedStatBox(
+                   title: "Calories",
+                   current: "0",
+                   currentUnit: "cal",
+                   target: "\(needs.targetCalories)",
+                   targetUnit: "kcal",
+                   maintenance: "\(needs.maintenanceCalories)kcal"
+               )
+               
+               DetailedStatBox(
+                   title: "Protéines",
+                   current: "0",
+                   currentUnit: "g",
+                   target: "\(needs.proteins)",
+                   targetUnit: "g",
+                   maintenance: "\(needs.proteins)g"
+               )
+               
+               DetailedStatBox(
+                   title: "Glucides",
+                   current: "0",
+                   currentUnit: "g",
+                   target: "\(needs.carbs)",
+                   targetUnit: "g",
+                   maintenance: "\(needs.carbs)g"
+               )
+               
+               DetailedStatBox(
+                   title: "Lipides",
+                   current: "0",
+                   currentUnit: "g",
+                   target: "\(needs.fats)",
+                   targetUnit: "g",
+                   maintenance: "\(needs.fats)g"
+               )
+           }
+       }
+       .padding()
+       .background(Color(.systemBackground))
+       .cornerRadius(20)
+   }
+}
+
+struct DetailedStatBox: View {
+   let title: String
+   let current: String
+   let currentUnit: String
+   let target: String
+   let targetUnit: String
+   let maintenance: String
+   
+   var body: some View {
+       VStack(alignment: .leading, spacing: 12) {
+           Text(title)
+               .font(.headline)
+           
+           HStack {
+               VStack(alignment: .leading) {
+                   Text("Actuel")
+                       .font(.caption)
+                       .foregroundColor(.gray)
+                   HStack(alignment: .firstTextBaseline, spacing: 2) {
+                       Text(current)
+                           .font(.title2)
+                           .bold()
+                       Text(currentUnit)
+                           .font(.caption)
+                           .foregroundColor(.gray)
+                   }
+               }
+               
+               Spacer()
+               
+               VStack(alignment: .trailing) {
+                   Text("Objectif")
+                       .font(.caption)
+                       .foregroundColor(.gray)
+                   HStack(alignment: .firstTextBaseline, spacing: 2) {
+                       Text(target)
+                           .font(.title2)
+                           .bold()
+                       Text(targetUnit)
+                           .font(.caption)
+                           .foregroundColor(.gray)
+                   }
+               }
+           }
+           
+           Text("Maintenance: \(maintenance)")
+               .font(.caption)
+               .foregroundColor(.gray)
+       }
+       .padding()
+       .background(Color(.secondarySystemBackground))
+       .cornerRadius(15)
+   }
 }

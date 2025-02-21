@@ -6,11 +6,12 @@
 //
 
 import Foundation
+import StoreKit
 
 
 class AIService {
     static let shared = AIService()
-    private let apiKey = ""
+    private let apiKey = "sk-proj-Ypx_yRD1G5YxjJUd5omrLRtT7cvd8AhIBMFju59WeXMgtKeyQrfvnGiLeaoZB7XGH6b-1igZPnT3BlbkFJtX8OQkv0SA3RDU0ExXxkAIMETZ1NglNd5ASh1fqHzDaTfui8FRAdF2otFnapNbKf8e2lB_xAo"
     private let cacheKey = "nutrition_cache"
     
     private func callChatGPT(prompt: String) async throws -> String {
@@ -100,28 +101,51 @@ class AIService {
         }
 }
 
-// Structures pour la réponse OpenAI
-struct OpenAIResponse: Codable {
-    let choices: [OpenAIChoice]
-    let usage: OpenAIUsage
+extension AIService {
+    func generateMealPlan(prompt: String) async throws -> String {
+        let response = try await callChatGPT(prompt: prompt)
+        
+        return response
+    }
 }
 
-struct OpenAIChoice: Codable {
-    let message: OpenAIMessage
+// Structures pour la réponse OpenAI
+struct OpenAIResponse: Codable {
+    let id: String
+    let object: String
+    let created: Int
+    let model: String
+    let choices: [Choice]
+    let usage: Usage
+    let systemFingerprint: String?
+    let serviceTier: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, object, created, model, choices, usage
+        case systemFingerprint = "system_fingerprint"
+        case serviceTier = "service_tier"
+    }
+}
+
+struct Choice: Codable {
+    let index: Int
+    let message: Message
+    let logprobs: String?
     let finishReason: String?
     
     enum CodingKeys: String, CodingKey {
-        case message
+        case index, message, logprobs
         case finishReason = "finish_reason"
     }
 }
 
-struct OpenAIMessage: Codable {
+struct Message: Codable {
     let role: String
     let content: String
+    let refusal: String?
 }
 
-struct OpenAIUsage: Codable {
+struct Usage: Codable {
     let promptTokens: Int
     let completionTokens: Int
     let totalTokens: Int

@@ -11,31 +11,68 @@ import SwiftUI
 
 struct HomeView: View {
     @ObservedObject private var localDataManager = LocalDataManager.shared
+    @State private var isNutritionExpanded = false
     
     var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Daily Progress Section
-                    DailyProgressView(userProfile: localDataManager.userProfile)
-                    
-                    // Next Meal Section
-                    if let nextMeal = localDataManager.meals.first {
-                        NextMealView(meal: nextMeal)
-                    } else {
-                        EmptyNextMealView()
+        ZStack { // Déplacer le ZStack en dehors du NavigationView
+            NavigationView {
+                ZStack {
+                    // Contenu principal
+                    ScrollView {
+                        VStack(spacing: 15) { // Espacement uniforme entre les sections
+                            DailyProgressView(
+                                userProfile: localDataManager.userProfile,
+                                isExpanded: $isNutritionExpanded
+                            )
+                            
+                            // Next Meal Section
+                            if let nextMeal = localDataManager.meals.first {
+                                NextMealView(meal: nextMeal)
+                            } else {
+                                EmptyNextMealView()
+                            }
+                            
+                            // Recent Scans Section
+                            if !localDataManager.recentScans.isEmpty {
+                                RecentScansView(scans: localDataManager.recentScans)
+                            } else {
+                                EmptyRecentScansView()
+                            }
+                        }
+                        .padding(.horizontal) // Padding horizontal uniquement
                     }
-                    
-                    // Recent Scans Section
-                    if !localDataManager.recentScans.isEmpty {
-                        RecentScansView(scans: localDataManager.recentScans)
-                    } else {
-                        EmptyRecentScansView()
-                    }
+                    .blur(radius: isNutritionExpanded ? 3 : 0)
+                    .zIndex(0)
                 }
-                .padding()
+                .navigationTitle("Bonjour \(localDataManager.userProfile?.name.components(separatedBy: " ").first ?? "")")
             }
-            .navigationTitle("Bonjour \(localDataManager.userProfile?.name.components(separatedBy: " ").first ?? "")")
+            .zIndex(0)
+
+            // Overlay sombre et vue expandée au-dessus de tout
+            if isNutritionExpanded {
+                Color.black
+                    .opacity(0.3)
+                    .ignoresSafeArea()
+                    .zIndex(1)
+                    .onTapGesture {
+                        withAnimation(.spring()) {
+                            isNutritionExpanded = false
+                        }
+                    }
+                
+                // Vue expandée
+                if let profile = localDataManager.userProfile {
+                    GeometryReader { geometry in
+                        ExpandedView(
+                            needs: NutritionCalculator.shared.calculateNeeds(for: profile),
+                            isExpanded: $isNutritionExpanded
+                        )
+                        .frame(width: geometry.size.width * 0.9)
+                        .position(x: geometry.size.width / 2, y: geometry.size.height * 0.5)
+                    }
+                    .zIndex(2)
+                }
+            }
         }
     }
 }
