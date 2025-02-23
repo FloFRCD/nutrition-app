@@ -14,34 +14,43 @@ class InitialSetupViewModel: ObservableObject {
     @Published var gender: Gender = .male
     @Published var height: Double = 170
     @Published var currentWeight: Double = 70
-    @Published var targetWeight: Double?
     @Published var activityLevel: ActivityLevel = .moderatelyActive
     @Published var dietaryPreferences: [DietaryPreference] = []
+    @Published private var bodyFatPercentage: Double = 20
+    @Published var fitnessGoal: FitnessGoal = .maintenance
+    
+    // Propriétés calculées pour la validation
+        var isPersonalInfoValid: Bool {
+            !name.isEmpty
+        }
+    
+    var isMeasurementsValid: Bool {
+            let weightValid = currentWeight > 30 && currentWeight < 250
+            let heightValid = height > 100 && height < 250
+            let bodyFatValid = bodyFatPercentage == nil ||
+        (bodyFatPercentage >= 0 && bodyFatPercentage <= 100)
+            return weightValid && heightValid && bodyFatValid
+        }
     
     func canProceedFromCurrentPage(_ page: Int) -> Bool {
-        switch page {
-        case 0: // Page des informations personnelles
-            return !name.isEmpty
-        case 1: // Page des mensurations
-            return currentWeight > 30 && currentWeight < 250 &&
-                   height > 100 && height < 250
-        case 2: // Page du mode de vie
-            return true // Toujours valide car choix par défaut
-        case 3: // Page des objectifs
-            return targetWeight == nil || (targetWeight! > 30 && targetWeight! < 250)
-        default:
-            return false
+            switch page {
+            case 0: return isPersonalInfoValid
+            case 1: return isMeasurementsValid
+            case 2, 3: return true // Ces pages sont toujours valides
+            default: return false
+            }
         }
-    }
     
     func completeSetup() async {
         let userProfile = UserProfile(
+            id: UUID(),
             name: name,
             age: Calendar.current.dateComponents([.year], from: birthDate, to: Date()).year ?? 0,
             gender: gender,
             height: height,
-            currentWeight: currentWeight,
-            targetWeight: targetWeight,
+            currentWeight: currentWeight,  // Vérifier que currentWeight est bien 85kg
+            bodyFatPercentage: bodyFatPercentage,  // Devrait être nil
+            fitnessGoal: fitnessGoal,
             activityLevel: activityLevel,
             dietaryPreferences: dietaryPreferences
         )

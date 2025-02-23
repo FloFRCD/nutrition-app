@@ -10,6 +10,7 @@ import SwiftUI
 
 struct ProfileView: View {
     @ObservedObject private var localDataManager = LocalDataManager.shared
+    @State private var showingEditProfile = false
     
     var body: some View {
         NavigationView {
@@ -36,18 +37,28 @@ struct ProfileView: View {
                             
                             // Mensurations
                             ProfileSection(title: "Mensurations") {
+                                let heightInMeters = profile.height / 100
+                                let bmi = profile.currentWeight / (heightInMeters * heightInMeters)
+
                                 StatRow(title: "Taille", value: "\(Int(profile.height)) cm")
                                 StatRow(title: "Poids actuel", value: "\(Int(profile.currentWeight)) kg")
-                                if let target = profile.targetWeight {
-                                    StatRow(title: "Poids cible", value: "\(Int(target)) kg")
+                                
+                                // Gestion différente selon si bodyFatPercentage est disponible
+                                if let bodyFatPercentage = profile.bodyFatPercentage {
+                                    StatRow(title: "Masse graisseuse", value: "\(Int(bodyFatPercentage))%")
+                                    let leanMass = profile.currentWeight * (1 - bodyFatPercentage / 100)
+                                    StatRow(title: "Masse maigre", value: "\(Int(leanMass)) kg")
+                                } else {
+                                    StatRow(title: "Masse graisseuse", value: "Non renseigné")
+                                    StatRow(title: "Masse maigre", value: "Non renseigné")
                                 }
+                                
+                                StatRow(title: "IMC", value: String(format: "%.1f", bmi))
                             }
                             
                             // Mode de vie
                             ProfileSection(title: "Mode de vie") {
-                                // Dans ProfileView, ajoutez dans la section Mode de vie :
-                                StatRow(title: "Objectif", value: profile.targetWeight != nil ?
-                                    "Atteindre \(Int(profile.targetWeight!)) kg" : "Maintien du poids")
+                                StatRow(title: "Objectif", value: profile.fitnessGoal.rawValue)
                                 StatRow(title: "Niveau d'activité", value: profile.activityLevel.rawValue)
                                 if !profile.dietaryPreferences.isEmpty {
                                     StatRow(title: "Préférences alimentaires",
@@ -72,7 +83,7 @@ struct ProfileView: View {
                         
                         // Bouton de modification
                         Button(action: {
-                            // Action à implémenter
+                            showingEditProfile = true
                         }) {
                             Text("Modifier le profil")
                                 .foregroundColor(.white)
@@ -87,6 +98,11 @@ struct ProfileView: View {
                 }
             }
             .navigationTitle("Profil")
+            .sheet(isPresented: $showingEditProfile) {
+                if let profile = localDataManager.userProfile {
+                    ProfileEditView(userProfile: profile)
+                }
+            }
         }
     }
 }

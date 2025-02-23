@@ -31,9 +31,10 @@ class LocalDataManager: ObservableObject {
     private func loadInitialData() {
         Task {
             do {
-                userProfile = try await load(forKey: "userProfile")
-                meals = try await load(forKey: "meals") ?? []
-                weightEntries = try await load(forKey: "weightEntries") ?? []
+                if let profile: UserProfile = try await load(forKey: "userProfile") {
+                    print("Profile chargé:", profile) // Debug pour vérifier les valeurs
+                    userProfile = profile
+                }
             } catch {
                 print("Error loading initial data: \(error)")
             }

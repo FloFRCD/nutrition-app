@@ -60,6 +60,12 @@ struct MealPreferences: Codable {
                 - Ingrédients bannis: \(bannedIngredients.joined(separator: ", "))
                 - Ingrédients préférés: \(preferredIngredients.joined(separator: ", "))
                 - Nombre de portions: \(defaultServings)
+                - Objectif de poid : 
+                
+                Utilise des recettes basique et donne des calories précise pour chaque plat. 
+                Pour les ingrédient qui nécéssite d'etre cuit, comme les pates ou le riz par exemple, donne toujours la quatité avant cuisson. 
+                
+                
                 
                 IMPORTANT: Réponds UNIQUEMENT avec un JSON au format suivant:
                 {
@@ -70,7 +76,7 @@ struct MealPreferences: Codable {
                                 {
                                     "name": "Nom du repas",
                                     "type": "Type de repas",
-                                    "calories": 500,
+                                    "calories": 529,
                                     "ingredients": [
                                         {
                                             "name": "Nom ingrédient",
@@ -84,8 +90,9 @@ struct MealPreferences: Codable {
                     ]
                 }
                 
+                
                 Tu ne retournes que le format JSON. Aucun autre texte. Même pas de phrase avant ou après la reponse.
-                Les types de repas doivent être exactement : "Déjeuner" ou "Dîner"
+                Les types de repas doivent être exactement : "Déjeuner" ou "Dîner". Et 'name' doit bien etre le nom du plat
                 Les unités doivent être en : "g" (grammes), "ml" (millilitres), càc (cuillere à café), càs (cuillere a soupe), pincée, unité (par exemple, 1 escalope de poulet)
                 """
     }

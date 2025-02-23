@@ -50,44 +50,38 @@ class NutritionCalculator {
         
         // 4. Calories cibles basées sur l'objectif
         let targetCalories: Int
-        if let targetWeight = profile.targetWeight {
-            if targetWeight > profile.currentWeight {
+            switch profile.fitnessGoal {
+            case .weightGain:
                 // Prise de masse : surplus de 10%
                 targetCalories = Int(Double(maintenanceCalories) * 1.1)
-            } else if targetWeight < profile.currentWeight {
+            case .weightLoss:
                 // Perte de poids : déficit de 20%
                 targetCalories = Int(Double(maintenanceCalories) * 0.8)
-            } else {
+            case .maintenance:
                 targetCalories = maintenanceCalories
             }
-        } else {
-            targetCalories = maintenanceCalories
-        }
         
         // 5. Répartition des macronutriments
         let proteins: Int
-        let fats: Int
-        let carbs: Int
-        
-        if let targetWeight = profile.targetWeight {
-            if targetWeight > profile.currentWeight {
+            let fats: Int
+            let carbs: Int
+            
+            switch profile.fitnessGoal {
+            case .weightGain:
                 // Prise de masse
                 proteins = Int(2.2 * profile.currentWeight) // 2.2g/kg
                 fats = Int(0.8 * profile.currentWeight)    // 0.8g/kg
-            } else if targetWeight < profile.currentWeight {
+                
+            case .weightLoss:
                 // Perte de poids
                 proteins = Int(2.4 * profile.currentWeight) // 2.4g/kg pour préserver la masse
                 fats = Int(0.6 * profile.currentWeight)    // 0.6g/kg
-            } else {
+                
+            case .maintenance:
                 // Maintien
                 proteins = Int(1.8 * profile.currentWeight)
                 fats = Int(0.7 * profile.currentWeight)
             }
-        } else {
-            // Pas d'objectif spécifique
-            proteins = Int(1.8 * profile.currentWeight)
-            fats = Int(0.7 * profile.currentWeight)
-        }
         
         // Le reste en glucides
         let proteinCalories = proteins * 4

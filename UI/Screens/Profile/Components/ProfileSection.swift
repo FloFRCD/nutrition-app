@@ -10,20 +10,19 @@ import SwiftUI
 
 struct ProfileSection<Content: View>: View {
     let title: String
-    @ViewBuilder let content: () -> Content // Ajout de @ViewBuilder ici
+    let content: Content
     
-    init(title: String, @ViewBuilder content: @escaping () -> Content) {
+    init(title: String, @ViewBuilder content: () -> Content) {
         self.title = title
-        self.content = content
+        self.content = content()
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             Text(title)
                 .font(.headline)
-            
-            content() // Appel de la closure content ici
+                .padding(.bottom, 5)
+            content
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

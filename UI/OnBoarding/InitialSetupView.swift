@@ -10,6 +10,10 @@ import SwiftUI
 struct InitialSetupView: View {
     @StateObject private var viewModel = InitialSetupViewModel()
     @State private var currentPage = 0
+    @State private var currentWeight: Double = 70
+    @State private var height: Double = 170
+    @State private var bodyFatPercentage: Double? = 20
+    @State private var selectedGoal: FitnessGoal = .maintenance
     
     var body: some View {
         NavigationView {
@@ -24,9 +28,10 @@ struct InitialSetupView: View {
                 
                 // Page 2: Mensurations
                 MeasurementsPage(
-                    currentWeight: $viewModel.currentWeight,
-                    height: $viewModel.height
-                )
+                                currentWeight: $currentWeight,
+                                height: $height,
+                                bodyFatPercentage: $bodyFatPercentage
+                            )
                 .tag(1)
                 
                 // Page 3: Mode de vie
@@ -37,8 +42,8 @@ struct InitialSetupView: View {
                 .tag(2)
                 
                 // Page 4: Objectifs
-                GoalsPage(targetWeight: $viewModel.targetWeight)
-                .tag(3)
+                GoalsPage(selectedGoal: $viewModel.fitnessGoal)
+                    .tag(3)
             }
             .tabViewStyle(.page)
             .indexViewStyle(.page(backgroundDisplayMode: .always))
@@ -49,7 +54,7 @@ struct InitialSetupView: View {
                     canProceed: viewModel.canProceedFromCurrentPage(currentPage),
                     onComplete: {
                         Task {
-                            await viewModel.completeSetup()
+                                try await viewModel.completeSetup()
                         }
                     }
                 )

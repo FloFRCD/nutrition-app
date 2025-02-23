@@ -7,15 +7,48 @@
 import Foundation
 
 
+enum FitnessGoal: String, Codable, CaseIterable {
+    case weightLoss = "Perte de poids"
+    case weightGain = "Prise de masse"
+    case maintenance = "Maintien musculaire"
+}
+
+
 struct UserProfile: Codable {
+    var id: UUID
     var name: String
     var age: Int
     var gender: Gender
     var height: Double
     var currentWeight: Double
-    var targetWeight: Double?
+    var bodyFatPercentage: Double?
+    var fitnessGoal: FitnessGoal
     var activityLevel: ActivityLevel
     var dietaryPreferences: [DietaryPreference]
+    
+    init(
+        id: UUID,
+        name: String,
+        age: Int,
+        gender: Gender,
+        height: Double,
+        currentWeight: Double,
+        bodyFatPercentage: Double,
+        fitnessGoal: FitnessGoal,
+        activityLevel: ActivityLevel,
+        dietaryPreferences: [DietaryPreference]
+    ) {
+        self.id = id
+        self.name = name
+        self.age = age
+        self.gender = gender
+        self.height = height
+        self.currentWeight = currentWeight
+        self.bodyFatPercentage = bodyFatPercentage
+        self.fitnessGoal = fitnessGoal
+        self.activityLevel = activityLevel
+        self.dietaryPreferences = dietaryPreferences
+    }
 }
 
 enum Gender: String, Codable, CaseIterable {

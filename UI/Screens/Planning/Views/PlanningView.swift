@@ -18,11 +18,15 @@ struct PlanningView: View {
         defaultServings: 2,
         dietaryRestrictions: [],
         numberOfDays: 1,
-        mealTypes: [.lunch, .dinner]
+        mealTypes: [.breakfast, .lunch, .dinner]
     )
     
     init() {
         _viewModel = StateObject(wrappedValue: PlanningViewModel())
+    }
+    
+    var groupedMeals: [MealType: [Meal]] {
+        Dictionary(grouping: viewModel.meals) { $0.type }
     }
     
     var body: some View {
@@ -32,8 +36,10 @@ struct PlanningView: View {
                     ProgressView()
                 } else {
                     VStack(spacing: 20) {
-                        ForEach(viewModel.meals) { meal in
-                            MealCard(mealTime: meal.type.rawValue, meal: meal)
+                        ForEach(MealType.allCases, id: \.self) { mealType in
+                            if let meals = groupedMeals[mealType], !meals.isEmpty {
+                                MealTypeCard(mealType: mealType, meals: meals)
+                            }
                         }
                     }
                     .padding()
@@ -53,36 +59,15 @@ struct PlanningView: View {
                 MealConfigurationSheet(
                     preferences: $currentPreferences,
                     onGenerate: { preferences in
-                        // Test des données
-                        print("--- Préférences de génération ---")
-                        print("Nombre de portions: \(preferences.defaultServings)")
-                        print("Nombre de jours: \(preferences.numberOfDays)")
-                        print("Types de repas: \(preferences.mealTypes.map { $0.rawValue })")
-                        print("Restrictions: \(preferences.dietaryRestrictions.map { $0.rawValue })")
-                        print("Ingrédients bannis: \(preferences.bannedIngredients)")
-                        print("Ingrédients préférés: \(preferences.preferredIngredients)")
-                        print("\nPrompt IA format:")
-                        print(preferences.aiPromptFormat)
-                        print("-------------------------------")
-                        
                         Task {
-                                                   await viewModel.generateWeeklyPlan(with: preferences)
-                                               }
+                            await viewModel.generateWeeklyPlan(with: preferences)
+                        }
                     }
                 )
             }
-            .alert("Erreur", isPresented: Binding(
-                get: { viewModel.error != nil },
-                set: { if !$0 { viewModel.error = nil } }
-            )) {
-                Text(viewModel.error?.localizedDescription ?? "")
-            }
         }
         .onAppear {
-                    viewModel.setDependencies(
-                        localDataManager: localDataManager,
-                        aiService: AIService.shared
-                    )
+            viewModel.setDependencies(localDataManager: localDataManager, aiService: AIService.shared)
         }
     }
 }

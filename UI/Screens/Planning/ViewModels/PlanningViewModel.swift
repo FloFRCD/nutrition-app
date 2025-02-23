@@ -92,13 +92,14 @@ class PlanningViewModel: ObservableObject {
                     
                     let foods = aiMeal.ingredients.map { ingredient -> Food in
                         print("Ingrédient:", ingredient.name, ingredient.quantity, ingredient.unit)
+                        print("Calories:", aiMeal.calories)
                         
                         let standardized = standardizeQuantity(amount: ingredient.quantity, unit: ingredient.unit)
                         
                         return Food(
                             id: UUID(),
                             name: ingredient.name,
-                            calories: aiMeal.calories / aiMeal.ingredients.count,
+                            calories: 0,
                             proteins: 0,
                             carbs: 0,
                             fats: 0,
