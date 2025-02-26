@@ -6,63 +6,89 @@
 //
 import Foundation
 
-
-enum FitnessGoal: String, Codable, CaseIterable {
-    case weightLoss = "Perte de poids"
-    case weightGain = "Prise de masse"
-    case maintenance = "Maintien musculaire"
-}
-
-
+// MARK: - User Profile
 struct UserProfile: Codable {
-    var id: UUID
+    let id: UUID
     var name: String
     var age: Int
     var gender: Gender
-    var height: Double
-    var currentWeight: Double
-    var bodyFatPercentage: Double?
+    var height: Double // en cm
+    var weight: Double // en kg
+    var bodyFatPercentage: Double? // en %
     var fitnessGoal: FitnessGoal
     var activityLevel: ActivityLevel
-    var dietaryPreferences: [DietaryPreference]
+    var dietaryRestrictions: [String]
     
     init(
-        id: UUID,
+        id: UUID = UUID(),
         name: String,
         age: Int,
         gender: Gender,
         height: Double,
-        currentWeight: Double,
-        bodyFatPercentage: Double,
+        weight: Double,
+        bodyFatPercentage: Double? = nil,
         fitnessGoal: FitnessGoal,
         activityLevel: ActivityLevel,
-        dietaryPreferences: [DietaryPreference]
+        dietaryRestrictions: [String] = []
     ) {
         self.id = id
         self.name = name
         self.age = age
         self.gender = gender
         self.height = height
-        self.currentWeight = currentWeight
+        self.weight = weight
         self.bodyFatPercentage = bodyFatPercentage
         self.fitnessGoal = fitnessGoal
         self.activityLevel = activityLevel
-        self.dietaryPreferences = dietaryPreferences
+        self.dietaryRestrictions = dietaryRestrictions
+    }
+    
+    // Calcul de l'IMC
+    var bmi: Double {
+        return weight / ((height / 100) * (height / 100))
     }
 }
 
+// MARK: - Gender
 enum Gender: String, Codable, CaseIterable {
     case male = "Homme"
     case female = "Femme"
     case other = "Autre"
 }
 
+// MARK: - Fitness Goal
+enum FitnessGoal: String, Codable, CaseIterable {
+    case loseWeight = "Perte de poids"
+    case maintainWeight = "Maintien du poids"
+    case gainMuscle = "Gain musculaire"
+    case improveHealth = "Améliorer la santé"
+    
+    var description: String {
+        return self.rawValue
+    }
+}
+
+// MARK: - Activity Level
 enum ActivityLevel: String, Codable, CaseIterable {
     case sedentary = "Sédentaire"
     case lightlyActive = "Légèrement actif"
     case moderatelyActive = "Modérément actif"
     case veryActive = "Très actif"
     case extraActive = "Extrêmement actif"
+    
+    var factor: Double {
+        switch self {
+        case .sedentary: return 1.2
+        case .lightlyActive: return 1.375
+        case .moderatelyActive: return 1.55
+        case .veryActive: return 1.725
+        case .extraActive: return 1.9
+        }
+    }
+    
+    var description: String {
+        return self.rawValue
+    }
 }
 
 enum DietaryPreference: String, Codable, CaseIterable {

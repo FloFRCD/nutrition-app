@@ -13,7 +13,7 @@ struct InitialSetupView: View {
     @State private var currentWeight: Double = 70
     @State private var height: Double = 170
     @State private var bodyFatPercentage: Double? = 20
-    @State private var selectedGoal: FitnessGoal = .maintenance
+    @State private var selectedGoal: FitnessGoal = .maintainWeight
     
     var body: some View {
         NavigationView {

@@ -17,7 +17,7 @@ class InitialSetupViewModel: ObservableObject {
     @Published var activityLevel: ActivityLevel = .moderatelyActive
     @Published var dietaryPreferences: [DietaryPreference] = []
     @Published private var bodyFatPercentage: Double = 20
-    @Published var fitnessGoal: FitnessGoal = .maintenance
+    @Published var fitnessGoal: FitnessGoal = .maintainWeight
     
     // Propriétés calculées pour la validation
         var isPersonalInfoValid: Bool {
@@ -48,11 +48,11 @@ class InitialSetupViewModel: ObservableObject {
             age: Calendar.current.dateComponents([.year], from: birthDate, to: Date()).year ?? 0,
             gender: gender,
             height: height,
-            currentWeight: currentWeight,  // Vérifier que currentWeight est bien 85kg
-            bodyFatPercentage: bodyFatPercentage,  // Devrait être nil
+            weight: currentWeight,   // Vérifier que currentWeight est bien 85kg
+            bodyFatPercentage: bodyFatPercentage,   // Devrait être nil
             fitnessGoal: fitnessGoal,
             activityLevel: activityLevel,
-            dietaryPreferences: dietaryPreferences
+            dietaryRestrictions: []  // Ou passez dietaryPreferences si c'est le bon nom de paramètre
         )
         
         do {

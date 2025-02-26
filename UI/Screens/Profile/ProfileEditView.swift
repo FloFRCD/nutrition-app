@@ -14,14 +14,16 @@ struct ProfileEditView: View {
     
     @State private var currentWeight: Double
     @State private var height: Double
+    @State private var weight: Double
     @State private var bodyFatPercentage: Double? = nil
     @State private var selectedGoal: FitnessGoal
     @State private var showAlert = false
     @State private var showBodyFat: Bool
     
     init(userProfile: UserProfile) {
-        _currentWeight = State(initialValue: userProfile.currentWeight)
+        _currentWeight = State(initialValue: userProfile.weight)
         _height = State(initialValue: userProfile.height)
+        _weight = State(initialValue: userProfile.weight)
         _bodyFatPercentage = State(initialValue: userProfile.bodyFatPercentage)
         _selectedGoal = State(initialValue: userProfile.fitnessGoal)
         _showBodyFat = State(initialValue: userProfile.bodyFatPercentage != nil)
@@ -106,7 +108,7 @@ struct ProfileEditView: View {
         
         Task {
             if var profile = localDataManager.userProfile {
-                profile.currentWeight = currentWeight
+                profile.weight = weight
                 profile.height = height
                 profile.bodyFatPercentage = bodyFatPercentage
                 profile.fitnessGoal = selectedGoal

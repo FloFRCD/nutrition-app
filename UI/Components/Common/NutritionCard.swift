@@ -28,13 +28,7 @@ struct NutritionCard: View {
                 MacroRow(name: "Protéines", value: nutritionInfo.proteins)
                 MacroRow(name: "Glucides", value: nutritionInfo.carbs)
                 MacroRow(name: "Lipides", value: nutritionInfo.fats)
-                
-                if let fiber = nutritionInfo.fiber {
-                    MacroRow(name: "Fibres", value: fiber)
-                }
-                if let sugar = nutritionInfo.sugar {
-                    MacroRow(name: "Sucres", value: sugar)
-                }
+                MacroRow(name: "Fibres", value: nutritionInfo.fiber)
             }
         }
         .padding()

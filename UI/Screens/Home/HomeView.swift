@@ -49,32 +49,32 @@ struct HomeView: View {
             .zIndex(0)
 
             // Overlay sombre et vue expandée au-dessus de tout
-            if isNutritionExpanded {
-                Color.black
-                    .opacity(0.3)
-                    .ignoresSafeArea()
-                    .zIndex(1)
-                    .onTapGesture {
-                        withAnimation(.spring()) {
-                            isNutritionExpanded = false
-                        }
-                    }
-                
-                // Vue expandée
-                if let profile = localDataManager.userProfile {
-                    GeometryReader { geometry in
-                        ExpandedView(
-                            needs: NutritionCalculator.shared.calculateNeeds(for: profile),
-                            isExpanded: $isNutritionExpanded
-                        )
-                        .frame(width: geometry.size.width * 0.9)
-                        .position(x: geometry.size.width / 2, y: geometry.size.height * 0.5)
-                    }
-                    .zIndex(2)
-                }
-            }
-        }
-    }
-}
+            // Si la nutrition est étendue, afficher la vue détaillée par-dessus
+                       if isNutritionExpanded, let profile = localDataManager.userProfile {
+                           ZStack {
+                               Color.black.opacity(0.3)
+                                   .ignoresSafeArea()
+                                   .onTapGesture {
+                                       withAnimation {
+                                           isNutritionExpanded = false
+                                       }
+                                   }
+                               
+                               ExpandedView(
+                                   needs: NutritionCalculator.shared.calculateNeeds(for: profile),
+                                   isExpanded: $isNutritionExpanded
+                               )
+                               .padding()
+                               .background(Color(.systemBackground))
+                               .cornerRadius(20)
+                               .shadow(radius: 10)
+                               .padding(.horizontal)
+                           }
+                           .transition(.opacity)
+                           .zIndex(1)
+                       }
+                   }
+               }
+           }
 
 

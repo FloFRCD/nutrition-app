@@ -25,8 +25,7 @@ class MLService: ObservableObject {
                     proteins: 0.3,
                     carbs: 14.0,
                     fats: 0.2,
-                    fiber: 2.4,
-                    sugar: 10.4
+                    fiber: 2.4
                 )
             )
         ]
