@@ -11,10 +11,14 @@ import SwiftUI
 struct MainTabView: View {
     var body: some View {
         TabView {
-            HomeView()
-                .tabItem {
-                    Label("Accueil", systemImage: "house.fill")
-                }
+            if #available(iOS 18.0, *) {
+                HomeView()
+                    .tabItem {
+                        Label("Accueil", systemImage: "house.fill")
+                    }
+            } else {
+                // Fallback on earlier versions
+            }
             
             ScanView()
                 .tabItem {
