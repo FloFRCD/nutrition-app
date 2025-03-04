@@ -48,11 +48,11 @@ struct HomeView: View {
                             }
                             
                             // Recent Scans Section
-                            if !localDataManager.recentScans.isEmpty {
-                                RecentScansView(scans: localDataManager.recentScans)
-                            } else {
-                                EmptyRecentScansView()
-                            }
+//                            if !localDataManager.recentScans.isEmpty {
+//                                RecentScansView(scans: localDataManager.recentScans)
+//                            } else {
+//                                EmptyRecentScansView()
+//                            }
                         }
                         .padding(.horizontal) // Padding horizontal uniquement
                     }

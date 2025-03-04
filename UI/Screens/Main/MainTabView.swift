@@ -41,4 +41,16 @@ struct MainTabView: View {
                 }
         }
     }
+    
+    private func createUserProfile() -> UserProfile {
+        return UserProfile(
+            name: "Florian",
+            age: 30,
+            gender: .male,
+            height: 180,
+            weight: 80,
+            fitnessGoal: .loseWeight, // Utilisez la bonne valeur de votre enum FitnessGoal
+            activityLevel: .moderatelyActive   // Utilisez la bonne valeur de votre enum ActivityLevel
+        )
+    }
 }

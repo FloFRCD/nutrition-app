@@ -178,7 +178,7 @@ struct CarouselStatBox: View {
                 }
             }
         }
-        .frame(width: 170, height: 180)
+        .frame(width: 140, height: 180)
         .scrollTransition(.interactive.threshold(.centered), axis: .horizontal) { content, phase in
                    content
                        .scaleEffect(phase == .identity ? 1.05 : 0.95)
