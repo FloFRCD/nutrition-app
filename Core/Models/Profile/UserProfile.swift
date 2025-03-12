@@ -7,7 +7,7 @@
 import Foundation
 
 // MARK: - User Profile
-struct UserProfile: Codable {
+struct UserProfile: Identifiable, Codable {
     let id: UUID
     var name: String
     var age: Int
@@ -18,6 +18,7 @@ struct UserProfile: Codable {
     var fitnessGoal: FitnessGoal
     var activityLevel: ActivityLevel
     var dietaryRestrictions: [String]
+    var activityDetails: ActivityDetails?
     
     init(
         id: UUID = UUID(),
@@ -29,7 +30,8 @@ struct UserProfile: Codable {
         bodyFatPercentage: Double? = nil,
         fitnessGoal: FitnessGoal,
         activityLevel: ActivityLevel,
-        dietaryRestrictions: [String] = []
+        dietaryRestrictions: [String] = [],
+        activityDetails: ActivityDetails?
     ) {
         self.id = id
         self.name = name
@@ -41,6 +43,7 @@ struct UserProfile: Codable {
         self.fitnessGoal = fitnessGoal
         self.activityLevel = activityLevel
         self.dietaryRestrictions = dietaryRestrictions
+        self.activityDetails = activityDetails
     }
     
     // Calcul de l'IMC
@@ -61,7 +64,6 @@ enum FitnessGoal: String, Codable, CaseIterable {
     case loseWeight = "Perte de poids"
     case maintainWeight = "Maintien du poids"
     case gainMuscle = "Gain musculaire"
-    case improveHealth = "Améliorer la santé"
     
     var description: String {
         return self.rawValue
@@ -89,12 +91,4 @@ enum ActivityLevel: String, Codable, CaseIterable {
     var description: String {
         return self.rawValue
     }
-}
-
-enum DietaryPreference: String, Codable, CaseIterable {
-    case none = "Aucune"
-    case vegetarian = "Végétarien"
-    case vegan = "Végétalien"
-    case glutenFree = "Sans gluten"
-    case dairyFree = "Sans lactose"
 }

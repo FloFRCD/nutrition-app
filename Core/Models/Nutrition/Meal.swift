@@ -21,8 +21,22 @@ struct Meal: Identifiable, Codable {
     var foods: [Food]
     var type: MealType
     
+    // Propriété calculée pour obtenir les calories totales
     var totalCalories: Int {
         foods.reduce(0) { $0 + $1.calories }
+    }
+    
+    // Autres propriétés calculées si nécessaire
+    var totalProteins: Double {
+        foods.reduce(0) { $0 + $1.proteins }
+    }
+    
+    var totalCarbs: Double {
+        foods.reduce(0) { $0 + $1.carbs }
+    }
+    
+    var totalFats: Double {
+        foods.reduce(0) { $0 + $1.fats }
     }
     
     init(id: UUID = UUID(), name: String, date: Date, foods: [Food] = [], type: MealType) {
@@ -40,7 +54,6 @@ enum DietaryRestriction: String, Codable, CaseIterable {
     case vegan = "Végétalien"
     case glutenFree = "Sans gluten"
     case lactoseFree = "Sans lactose"
-    case none = "Aucune"
 }
 
 struct MealPreferences: Codable {
@@ -50,54 +63,215 @@ struct MealPreferences: Codable {
     var dietaryRestrictions: [DietaryRestriction]
     var numberOfDays: Int
     var mealTypes: [MealType]
+    var userProfile: UserProfile
     
     var aiPromptFormat: String {
-                """
-                Génère un plan de repas avec ces contraintes:
-                - Nombre de jours: \(numberOfDays)
-                - Types de repas: \(mealTypes.map { $0.rawValue }.joined(separator: ", "))
-                - Restrictions: \(dietaryRestrictions.map { $0.rawValue }.joined(separator: ", "))
-                - Ingrédients bannis: \(bannedIngredients.joined(separator: ", "))
-                - Ingrédients préférés: \(preferredIngredients.joined(separator: ", "))
-                - Nombre de portions: \(defaultServings)
-                - Objectif de poid : 
-                
-                Utilise des recettes basique et donne des calories précise pour chaque plat. 
-                Pour les ingrédient qui nécéssite d'etre cuit, comme les pates ou le riz par exemple, donne toujours la quatité avant cuisson. 
-                
-                
-                
-                IMPORTANT: Réponds UNIQUEMENT avec un JSON au format suivant:
+        
+        let nutritionalInfo = calculateNutritionalNeeds(userProfile: userProfile)
+        let heightInMeters = userProfile.height / 100
+        let numberOfDays = numberOfDays
+
+        return """
+        Tu es un chef cuisinier renommé spécialisé en nutrition. Ta mission est de créer un plan de repas personnalisé avec des recettes variées, créatives et savoureuses.
+        
+        PROFIL UTILISATEUR:
+        - Age: \(userProfile.age) ans
+        - Sexe: \(userProfile.gender.rawValue)
+        - Poids actuel: \(userProfile.weight) kg
+        - Taille: \(userProfile.height) cm
+        - Objectif: \(userProfile.fitnessGoal.rawValue)
+        - Niveau d'activité: \(userProfile.activityLevel.rawValue)
+        \(userProfile.bodyFatPercentage != nil ? "- Pourcentage de masse graisseuse: \(userProfile.bodyFatPercentage!)%" : "")
+
+        \(nutritionalInfo)
+
+        CONTRAINTES DU PLAN DE REPAS:
+        "IMPORTANT: Génère EXACTEMENT \(numberOfDays) jour(s) (pas plus, pas moins) avec TOUS les types de repas demandés."
+        - Types de repas: \(mealTypes.map { $0.rawValue }.joined(separator: ", "))
+        - Restrictions alimentaires: \(dietaryRestrictions.map { $0.rawValue }.joined(separator: ", "))
+        - Ingrédients à éviter: \(bannedIngredients.joined(separator: ", "))
+        - Ingrédients préférés: \(preferredIngredients.joined(separator: ", "))
+        - Nombre de portions: \(defaultServings)
+        
+        CONSIGNES POUR LES REPAS:
+        1. Propose des recettes VARIÉES, CRÉATIVES et RECHERCHÉES qui surprendront positivement l'utilisateur.
+        2. Pour les aliments qui nécessitent d'être cuits (pâtes, riz, etc.), indique TOUJOURS le poids avant cuisson.
+        3. Chaque repas doit avoir une quantité précise pour CHAQUE ingrédient.
+        4. Assure une bonne variété dans les ingrédients et les styles de cuisine.
+        5. Évite de répéter les mêmes repas ou les mêmes groupes d'aliments trop souvent.
+        
+        IMPORTANT: Réponds UNIQUEMENT avec un JSON au format suivant:
+        {
+            "days": [
                 {
-                    "days": [
+                    "date": "YYYY-MM-DD",
+                    "meals": [
                         {
-                            "date": "2024-02-21",
-                            "meals": [
+                            "name": "Nom du repas",
+                            "type": "Type de repas",
+                            "ingredients": [
                                 {
-                                    "name": "Nom du repas",
-                                    "type": "Type de repas",
-                                    "calories": 529,
-                                    "ingredients": [
-                                        {
-                                            "name": "Nom ingrédient",
-                                            "quantity": 100,
-                                            "unit": "g"
-                                        }
-                                    ]
+                                    "name": "Nom ingrédient",
+                                    "quantity": 100,
+                                    "unit": "g",
+                                    "calories": 150,
+                                    "proteines": 8,
+                                    "glucides": 15,
+                                    "lipides": 5
                                 }
                             ]
                         }
                     ]
                 }
-                
-                
-                Tu ne retournes que le format JSON. Aucun autre texte. Même pas de phrase avant ou après la reponse.
-                Les types de repas doivent être exactement : "Déjeuner" ou "Dîner". Et 'name' doit bien etre le nom du plat
-                Les unités doivent être en : "g" (grammes), "ml" (millilitres), càc (cuillere à café), càs (cuillere a soupe), pincée, unité (par exemple, 1 escalope de poulet)
-                """
+            ]
+        }
+        
+        Tu ne retournes que le format JSON. Aucun autre texte. Pour les pâtes et le riz, donne la quantité avant cuisson.
+        Les types de repas: "Petit-déjeuner", "Déjeuner", "Dîner", "Collation"
+        Unités: "g", "ml", "càc", "càs", "pincée", "unité"
+        """    }
+    
+    init(bannedIngredients: [String] = [],
+         preferredIngredients: [String] = [],
+         defaultServings: Int = 1,
+         dietaryRestrictions: [DietaryRestriction] = [],
+         numberOfDays: Int = 7,
+         mealTypes: [MealType] = [],
+         userProfile: UserProfile) {
+        
+        self.bannedIngredients = bannedIngredients
+        self.preferredIngredients = preferredIngredients
+        self.defaultServings = defaultServings
+        self.dietaryRestrictions = dietaryRestrictions
+        self.numberOfDays = numberOfDays
+        self.mealTypes = mealTypes
+        self.userProfile = userProfile
+        
+        if !userProfile.dietaryRestrictions.isEmpty {
+            var updatedRestrictions = self.dietaryRestrictions
+            
+            for restriction in userProfile.dietaryRestrictions {
+                if let dietaryrestrictions = DietaryRestriction(rawValue: restriction) {
+                    if !updatedRestrictions.contains(dietaryrestrictions) {
+                        updatedRestrictions.append(dietaryrestrictions)
+                    }
+                } else {
+                    if !self.bannedIngredients.contains(restriction) {
+                        self.bannedIngredients.append(restriction)
+                    }
+                }
+            }
+            
+            self.dietaryRestrictions = updatedRestrictions
+            
+        }
+    }
+    
+}
+extension MealPreferences {
+    func printDebugPrompt() {
+        print("------- DEBUT DU PROMPT ---------")
+        print(aiPromptFormat)
+        print("------- FIN DU PROMPT ---------")
+    }
+
+    func validateMeal(_ meal: Meal) -> Bool {
+        // Vérifier que les ingrédients bannis ne sont pas présents
+        for food in meal.foods {
+            for banned in bannedIngredients {
+                if food.name.lowercased().contains(banned.lowercased()) {
+                    print("⚠️ Ingrédient banni trouvé: \(food.name) contient \(banned)")
+                    return false
+                }
+            }
+        }
+        return true
+    }
+
+    // Fonction qui calcule les besoins nutritionnels en fonction du profil utilisateur
+    func calculateNutritionalNeeds(userProfile: UserProfile) -> String {
+        // Calcul du métabolisme basal (BMR) avec la formule de Mifflin-St Jeor
+        let isMale = userProfile.gender == .male
+        let bmr = 10 * userProfile.weight + 6.25 * userProfile.height - 5 * Double(userProfile.age) + (isMale ? 5 : -161)
+        
+        // Facteur d'activité
+        var activityFactor = 1.2 // Sédentaire par défaut
+        switch userProfile.activityLevel {
+        case .sedentary:
+            activityFactor = 1.2
+        case .lightlyActive:
+            activityFactor = 1.375
+        case .moderatelyActive:
+            activityFactor = 1.55
+        case .veryActive:
+            activityFactor = 1.725
+        case .extraActive:
+            activityFactor = 1.9
+        }
+        
+        // Besoins caloriques totaux (TDEE)
+        let tdee = bmr * activityFactor
+        
+        // Ajustement selon l'objectif
+        var targetCalories = tdee
+        var proteinPerKg = 1.6
+        var fatPerKg = 1.0
+        
+        switch userProfile.fitnessGoal {
+        case .loseWeight:
+            targetCalories = tdee * 0.8 // Déficit de 20%
+            proteinPerKg = 2.2 // Protéines plus élevées pour préserver la masse musculaire
+            fatPerKg = 0.8
+        case .maintainWeight:
+            targetCalories = tdee
+            proteinPerKg = 1.6
+            fatPerKg = 1.0
+        case .gainMuscle:
+            targetCalories = tdee * 1.15 // Surplus de 15%
+            proteinPerKg = 2.0
+            fatPerKg = 1.0
+        }
+        
+        // Calcul des macronutriments quotidiens
+        let dailyProtein = userProfile.weight * proteinPerKg
+        let dailyFat = userProfile.weight * fatPerKg
+        // Protéines et graisses en calories
+        let proteinCalories = dailyProtein * 4
+        let fatCalories = dailyFat * 9
+        // Calcul des glucides pour compléter les calories
+        let carbCalories = targetCalories - proteinCalories - fatCalories
+        let dailyCarbs = carbCalories / 4
+        
+        // Répartition par repas
+        let breakfastCalories = targetCalories * 0.25
+        let lunchCalories = targetCalories * 0.35
+        let dinnerCalories = targetCalories * 0.3
+        let snackCalories = targetCalories * 0.1
+        
+        // Construction de la chaîne de caractères pour le prompt
+        return """
+        Informations nutritionnelles personnalisées:
+        - Métabolisme basal: \(Int(bmr)) calories/jour
+        - Besoins caloriques totaux: \(Int(tdee)) calories/jour
+        - Objectif calorique quotidien: \(Int(targetCalories)) calories/jour selon l'objectif de \(userProfile.fitnessGoal.rawValue)
+        
+        Besoins quotidiens en macronutriments:
+        - Protéines: \(Int(dailyProtein))g (\(Int(proteinPerKg * userProfile.weight))g au total)
+        - Lipides: \(Int(dailyFat))g (\(Int(fatPerKg * userProfile.weight))g au total)
+        - Glucides: \(Int(dailyCarbs))g
+        
+        ALERTE CRITIQUE SUR LES CALORIES : Je constate que tu ignores systématiquement les besoins caloriques indiqués. Les valeurs suivantes sont ABSOLUMENT OBLIGATOIRES ! J
+        - Petit-déjeuner: EXCATEMENT \(Int(breakfastCalories)) calories
+        - Déjeuner: EXCATEMENT \(Int(lunchCalories)) calories
+        - Dîner: EXCATEMENT \(Int(dinnerCalories)) calories
+        - Collation: EXCATEMENT \(Int(snackCalories)) calories
+        
+        Les calories indiquées pour les repas ci-dessus NE SONT PAS des suggestions mais des OBLIGATIONS.
+        La somme des calories des ingrédients de chaque repas DOIT correspondre à ces valeurs à 5% près.       
+        Les repas doivent être nutritionnellement complets et sastisfaisants. Les portions doivent être adaptées au profil detaillé plus haut.
+        """
     }
 }
-
 struct MealPlan: Codable, Identifiable {
     let id: UUID
     var weekNumber: Int

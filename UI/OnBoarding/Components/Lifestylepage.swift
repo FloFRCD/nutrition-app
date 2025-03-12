@@ -10,7 +10,7 @@ import SwiftUI
 
 struct LifestylePage: View {
     @Binding var activityLevel: ActivityLevel
-    @Binding var dietaryPreferences: [DietaryPreference]
+    @Binding var dietaryRestriction: [DietaryRestriction]
     
     var body: some View {
         VStack(spacing: 24) {
@@ -32,14 +32,14 @@ struct LifestylePage: View {
                 Text("Préférences alimentaires")
                     .font(.headline)
                 
-                ForEach(DietaryPreference.allCases, id: \.self) { preference in
+                ForEach(DietaryRestriction.allCases, id: \.self) { preference in
                     Toggle(preference.rawValue, isOn: Binding(
-                        get: { dietaryPreferences.contains(preference) },
+                        get: { dietaryRestriction.contains(preference) },
                         set: { isOn in
                             if isOn {
-                                dietaryPreferences.append(preference)
+                                dietaryRestriction.append(preference)
                             } else {
-                                dietaryPreferences.removeAll { $0 == preference }
+                                dietaryRestriction.removeAll { $0 == preference }
                             }
                         }
                     ))

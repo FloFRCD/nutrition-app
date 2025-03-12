@@ -14,10 +14,19 @@ struct MealConfigurationSheet: View {
     @Binding var preferences: MealPreferences
     @State private var newBannedIngredient = ""
     @State private var newPreferredIngredient = ""
-    @State private var numberOfDays = 1
-    @State private var selectedMealTypes: Set<MealType> = [.lunch, .dinner]
+    @State private var numberOfDays: Int
+    @State private var selectedMealTypes: Set<MealType>
     
     let onGenerate: (MealPreferences) -> Void
+    
+    
+    init(preferences: Binding<MealPreferences>, onGenerate: @escaping (MealPreferences) -> Void) {
+        self._preferences = preferences
+        self.onGenerate = onGenerate
+        self._numberOfDays = State(initialValue: preferences.wrappedValue.numberOfDays)
+        self._selectedMealTypes = State(initialValue: Set(preferences.wrappedValue.mealTypes))
+    }
+    
     
     var body: some View {
         NavigationView {
@@ -27,7 +36,7 @@ struct MealConfigurationSheet: View {
                            value: $preferences.defaultServings, in: 1...10)
                     
                     Stepper("Nombre de jours : \(numberOfDays)",
-                           value: $numberOfDays, in: 1...7)
+                           value: $numberOfDays, in: 1...4)
                 }
                 
                 Section("Repas à générer") {

@@ -44,13 +44,11 @@ class NutritionCalculator {
         
         switch userProfile.fitnessGoal {
         case .loseWeight:
-            targetCalories = maintenanceCalories * 0.8 // Déficit de 20%
+            targetCalories = maintenanceCalories * 0.75 // Déficit de 25%
         case .maintainWeight:
-            targetCalories = maintenanceCalories
+            targetCalories = maintenanceCalories * 0.9 // Déficit de 10%
         case .gainMuscle:
             targetCalories = maintenanceCalories * 1.1 // Surplus de 10%
-        case .improveHealth:
-            targetCalories = maintenanceCalories
         }
         
         // Calculer la répartition des macronutriments selon l'objectif
@@ -67,10 +65,6 @@ class NutritionCalculator {
             proteinPercentage = 0.35
             fatPercentage = 0.25
             carbPercentage = 0.4
-        case .improveHealth:
-            proteinPercentage = 0.25
-            fatPercentage = 0.3
-            carbPercentage = 0.45
         case .maintainWeight:
             proteinPercentage = 0.25
             fatPercentage = 0.3

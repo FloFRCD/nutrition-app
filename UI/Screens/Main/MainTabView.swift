@@ -50,7 +50,14 @@ struct MainTabView: View {
             height: 180,
             weight: 80,
             fitnessGoal: .loseWeight, // Utilisez la bonne valeur de votre enum FitnessGoal
-            activityLevel: .moderatelyActive   // Utilisez la bonne valeur de votre enum ActivityLevel
+            activityLevel: .moderatelyActive,
+            activityDetails: ActivityDetails(
+                        exerciseDaysPerWeek: 3,
+                        exerciseDuration: 45,
+                        exerciseIntensity: .moderate,
+                        jobActivity: .seated,
+                        dailyActivity: .moderate
+                    )  // Utilisez la bonne valeur de votre enum ActivityLevel
         )
     }
 }

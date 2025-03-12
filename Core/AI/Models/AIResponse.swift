@@ -20,7 +20,6 @@ struct AIDay: Codable {
 struct AIMeal: Codable {
     let name: String
     let type: String
-    let calories: Int
     let ingredients: [AIIngredient]
 }
 
@@ -28,4 +27,10 @@ struct AIIngredient: Codable {
     let name: String
     let quantity: Double
     let unit: String
+    let calories: Int
+    let proteines: Double
+    let glucides: Double
+    let lipides: Double
 }
+
+

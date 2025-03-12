@@ -12,14 +12,8 @@ struct PlanningView: View {
     @EnvironmentObject private var localDataManager: LocalDataManager
     @StateObject private var viewModel: PlanningViewModel
     @State private var showingConfigSheet = false
-    @State private var currentPreferences = MealPreferences(
-        bannedIngredients: [],
-        preferredIngredients: [],
-        defaultServings: 2,
-        dietaryRestrictions: [],
-        numberOfDays: 1,
-        mealTypes: [.breakfast, .lunch, .dinner]
-    )
+    @State private var currentPreferences: MealPreferences?
+    @State private var selectedMealTypes: Set<MealType> = [.breakfast, .lunch, .dinner, .snack]
     
     init() {
         _viewModel = StateObject(wrappedValue: PlanningViewModel())
@@ -49,6 +43,10 @@ struct PlanningView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
+                        // Initialiser les préférences avec les données utilisateur si nécessaire
+                        if currentPreferences == nil {
+                            currentPreferences = createDefaultPreferences()
+                        }
                         showingConfigSheet = true
                     } label: {
                         Label("Générer", systemImage: "plus.circle.fill")
@@ -56,18 +54,76 @@ struct PlanningView: View {
                 }
             }
             .sheet(isPresented: $showingConfigSheet) {
-                MealConfigurationSheet(
-                    preferences: $currentPreferences,
-                    onGenerate: { preferences in
-                        Task {
-                            await viewModel.generateWeeklyPlan(with: preferences)
+                if let unwrappedPreferences = currentPreferences {
+                    MealConfigurationSheet(
+                        preferences: Binding(
+                            get: { unwrappedPreferences },
+                            set: { self.currentPreferences = $0 }
+                        ),
+                        onGenerate: { preferences in
+                            Task {
+                                await viewModel.generateWeeklyPlan(with: preferences)
+                            }
                         }
-                    }
-                )
+                    )
+                } else {
+                    // Créer des préférences par défaut si elles n'existent pas
+                    let defaultPrefs = createDefaultPreferences()
+                    MealConfigurationSheet(
+                        preferences: Binding(
+                            get: { defaultPrefs },
+                            set: { self.currentPreferences = $0 }
+                        ),
+                        onGenerate: { preferences in
+                            Task {
+                                await viewModel.generateWeeklyPlan(with: preferences)
+                            }
+                        }
+                    )
+                }
             }
         }
         .onAppear {
             viewModel.setDependencies(localDataManager: localDataManager, aiService: AIService.shared)
         }
     }
+
+private func createDefaultPreferences() -> MealPreferences {
+    // Récupérer le profil utilisateur depuis localDataManager
+    let userProfile = UserProfile.default
+    
+    return MealPreferences(
+           bannedIngredients: [],
+           preferredIngredients: [],
+           defaultServings: 1,
+           dietaryRestrictions: [],
+           numberOfDays: 7,
+           mealTypes: Array(selectedMealTypes),
+           userProfile: userProfile
+       )
+}
+}
+
+// Extension pour créer un profil utilisateur par défaut
+extension UserProfile {
+static var `default`: UserProfile {
+    UserProfile(
+        name: "Utilisateur",
+        age: 30,
+        gender: .male,
+        height: 170,
+        weight: 70,
+        bodyFatPercentage: nil,
+        fitnessGoal: .maintainWeight,
+        activityLevel: .moderatelyActive,
+        dietaryRestrictions: [],
+        activityDetails: ActivityDetails(
+                    exerciseDaysPerWeek: 3,
+                    exerciseDuration: 45,
+                    exerciseIntensity: .moderate,
+                    jobActivity: .seated,
+                    dailyActivity: .moderate
+                )
+    )
+}
 }

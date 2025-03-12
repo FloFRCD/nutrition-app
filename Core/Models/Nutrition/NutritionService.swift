@@ -44,11 +44,6 @@ class NutritionService {
         case .gainMuscle:
             // Pour le gain musculaire, vérifier que les protéines sont élevées
             return nutrition.proteins > userNeeds.proteins / 3
-            
-        case .improveHealth:
-            // Pour la santé, vérifier que les fibres sont suffisantes et les graisses modérées
-            return nutrition.fiber > 5 &&
-                   nutrition.fats < userNeeds.fats / 3
         }
     }
     

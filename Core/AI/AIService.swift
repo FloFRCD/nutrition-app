@@ -11,7 +11,7 @@ import StoreKit
 
 class AIService {
     static let shared = AIService()
-    private let apiKey = "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"
+    private let apiKey = "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"
     private let cacheKey = "nutrition_cache"
     
     private func callChatGPT(prompt: String) async throws -> String {
@@ -102,10 +102,90 @@ class AIService {
 }
 
 extension AIService {
-    func generateMealPlan(prompt: String) async throws -> String {
-        let response = try await callChatGPT(prompt: prompt)
+    func generateMealPlan(prompt: String, systemPrompt: String = "") async throws -> String {
+        // Si un message système est fourni, utilisez-le
+        if !systemPrompt.isEmpty {
+            // Implémentez la logique pour inclure le message système
+            // Soit en modifiant callChatGPT, soit en adaptant le prompt ici
+            let fullPrompt = systemPrompt + "\n\n" + prompt
+            return try await callChatGPT(prompt: fullPrompt)
+        } else {
+            // Comportement original
+            return try await callChatGPT(prompt: prompt)
+        }
+    }
+    
+    func adjustMealPortions(meal: Meal, targetCalories: Double) -> Meal {
+        // 1. Calculer les calories actuelles du repas
+        let currentCalories = Double(meal.totalCalories)
         
-        return response
+        // Si le repas n'a pas de calories, on ne peut pas ajuster
+        guard currentCalories > 0 else { return meal }
+        
+        // 2. Calculer le facteur d'ajustement
+        let adjustmentFactor = targetCalories / currentCalories
+        
+        // 3. Créer une copie du repas avec les quantités ajustées
+        var adjustedMeal = meal
+        var adjustedFoods: [Food] = []
+
+        for food in meal.foods {
+            // Créer une nouvelle instance de Food avec les valeurs ajustées
+            let adjustedFood = Food(
+                id: food.id,
+                name: food.name,
+                calories: Int(Double(food.calories) * adjustmentFactor),
+                proteins: food.proteins * adjustmentFactor,
+                carbs: food.carbs * adjustmentFactor,
+                fats: food.fats * adjustmentFactor,
+                servingSize: food.servingSize * adjustmentFactor,
+                servingUnit: food.servingUnit,
+                image: food.image
+            )
+            
+            adjustedFoods.append(adjustedFood)
+        }
+
+        adjustedMeal.foods = adjustedFoods
+        return adjustedMeal
+    }
+
+    // Fonction pour ajuster un plan de repas complet
+    func adjustMealPlan(mealPlan: MealPlan, userProfile: UserProfile) -> MealPlan {
+        let nutritionNeeds = NutritionCalculator.shared.calculateNeeds(for: userProfile)
+        
+        // Calculer les calories cibles par type de repas
+        let breakfastCalories = Double(nutritionNeeds.targetCalories) * 0.20
+        let lunchCalories = Double(nutritionNeeds.targetCalories) * 0.27
+        let dinnerCalories = Double(nutritionNeeds.targetCalories) * 0.25
+        let snackCalories = Double(nutritionNeeds.targetCalories) * 0.10
+        
+        var adjustedMealPlan = mealPlan
+        var adjustedPlannedMeals: [PlannedMeal] = []
+        
+        for plannedMeal in mealPlan.plannedMeals {
+            var adjustedPlannedMeal = plannedMeal
+            
+            // Sélectionner les calories cibles en fonction du type de repas
+            let targetCalories: Double
+            switch plannedMeal.meal.type {
+            case .breakfast:
+                targetCalories = breakfastCalories
+            case .lunch:
+                targetCalories = lunchCalories
+            case .dinner:
+                targetCalories = dinnerCalories
+            case .snack:
+                targetCalories = snackCalories
+            }
+            
+            // Ajuster les portions
+            adjustedPlannedMeal.meal = adjustMealPortions(meal: plannedMeal.meal, targetCalories: targetCalories)
+            adjustedPlannedMeals.append(adjustedPlannedMeal)
+        }
+        
+        adjustedMealPlan.plannedMeals = adjustedPlannedMeals
+        return adjustedMealPlan
     }
 }
 

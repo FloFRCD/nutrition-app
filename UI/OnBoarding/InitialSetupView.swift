@@ -28,18 +28,21 @@ struct InitialSetupView: View {
                 
                 // Page 2: Mensurations
                 MeasurementsPage(
-                                currentWeight: $currentWeight,
-                                height: $height,
-                                bodyFatPercentage: $bodyFatPercentage
-                            )
+                    currentWeight: $viewModel.currentWeight,
+                    height: $viewModel.height,
+                    bodyFatPercentage: $viewModel.bodyFatPercentage
+                )
                 .tag(1)
                 
                 // Page 3: Mode de vie
-                LifestylePage(
-                    activityLevel: $viewModel.activityLevel,
-                    dietaryPreferences: $viewModel.dietaryPreferences
-                )
-                .tag(2)
+                DetailedActivityPage(
+                                    exerciseDaysPerWeek: $viewModel.exerciseDaysPerWeek,
+                                    exerciseDuration: $viewModel.exerciseDuration,
+                                    exerciseIntensity: $viewModel.exerciseIntensity,
+                                    jobActivity: $viewModel.jobActivity,
+                                    dailyActivity: $viewModel.dailyActivity
+                                )
+                                .tag(2)
                 
                 // Page 4: Objectifs
                 GoalsPage(selectedGoal: $viewModel.fitnessGoal)
