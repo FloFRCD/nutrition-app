@@ -72,7 +72,7 @@ struct MealPreferences: Codable {
         let numberOfDays = numberOfDays
 
         return """
-        Tu es un chef cuisinier renommé spécialisé en nutrition. Ta mission est de créer un plan de repas personnalisé avec des recettes variées, créatives et savoureuses.
+        Tu es un chef cuisinier renommé spécialisé en nutrition. Ta mission est de proposer des titres de repas personnalisés, créatifs et savoureux.
         
         PROFIL UTILISATEUR:
         - Age: \(userProfile.age) ans
@@ -83,53 +83,34 @@ struct MealPreferences: Codable {
         - Niveau d'activité: \(userProfile.activityLevel.rawValue)
         \(userProfile.bodyFatPercentage != nil ? "- Pourcentage de masse graisseuse: \(userProfile.bodyFatPercentage!)%" : "")
 
-        \(nutritionalInfo)
-
         CONTRAINTES DU PLAN DE REPAS:
-        "IMPORTANT: Génère EXACTEMENT \(numberOfDays) jour(s) (pas plus, pas moins) avec TOUS les types de repas demandés."
         - Types de repas: \(mealTypes.map { $0.rawValue }.joined(separator: ", "))
         - Restrictions alimentaires: \(dietaryRestrictions.map { $0.rawValue }.joined(separator: ", "))
         - Ingrédients à éviter: \(bannedIngredients.joined(separator: ", "))
         - Ingrédients préférés: \(preferredIngredients.joined(separator: ", "))
-        - Nombre de portions: \(defaultServings)
         
-        CONSIGNES POUR LES REPAS:
-        1. Propose des recettes VARIÉES, CRÉATIVES et RECHERCHÉES qui surprendront positivement l'utilisateur.
-        2. Pour les aliments qui nécessitent d'être cuits (pâtes, riz, etc.), indique TOUJOURS le poids avant cuisson.
-        3. Chaque repas doit avoir une quantité précise pour CHAQUE ingrédient.
-        4. Assure une bonne variété dans les ingrédients et les styles de cuisine.
-        5. Évite de répéter les mêmes repas ou les mêmes groupes d'aliments trop souvent.
+        CONSIGNES:
+        Propose 10 idées de repas variées et créatives qui correspondent au profil nutritionnel et aux préférences de l'utilisateur.
+        Chaque proposition doit contenir uniquement:
+        1. Le nom du repas (max 10 mots)
+        2. Une brève description (max 15 mots)
+        3. Le type de repas
         
         IMPORTANT: Réponds UNIQUEMENT avec un JSON au format suivant:
         {
-            "days": [
+            "meal_suggestions": [
                 {
-                    "date": "YYYY-MM-DD",
-                    "meals": [
-                        {
-                            "name": "Nom du repas",
-                            "type": "Type de repas",
-                            "ingredients": [
-                                {
-                                    "name": "Nom ingrédient",
-                                    "quantity": 100,
-                                    "unit": "g",
-                                    "calories": 150,
-                                    "proteines": 8,
-                                    "glucides": 15,
-                                    "lipides": 5
-                                }
-                            ]
-                        }
-                    ]
+                    "name": "Nom du repas",
+                    "description": "Brève description",
+                    "type": "Type de repas"
                 }
             ]
         }
         
-        Tu ne retournes que le format JSON. Aucun autre texte. Pour les pâtes et le riz, donne la quantité avant cuisson.
+        Tu ne retournes que le format JSON. Aucun autre texte.
         Les types de repas: "Petit-déjeuner", "Déjeuner", "Dîner", "Collation"
-        Unités: "g", "ml", "càc", "càs", "pincée", "unité"
-        """    }
+        """
+    }
     
     init(bannedIngredients: [String] = [],
          preferredIngredients: [String] = [],

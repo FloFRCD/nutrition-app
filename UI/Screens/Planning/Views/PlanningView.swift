@@ -14,13 +14,15 @@ struct PlanningView: View {
     @State private var showingConfigSheet = false
     @State private var currentPreferences: MealPreferences?
     @State private var selectedMealTypes: Set<MealType> = [.breakfast, .lunch, .dinner, .snack]
+    @State private var selectedMealSuggestions: Set<AIMeal> = []
+    @State private var showingDetailedRecipes = false
     
     init() {
         _viewModel = StateObject(wrappedValue: PlanningViewModel())
     }
     
-    var groupedMeals: [MealType: [Meal]] {
-        Dictionary(grouping: viewModel.meals) { $0.type }
+    var groupedSuggestions: [String: [AIMeal]] {
+        Dictionary(grouping: viewModel.mealSuggestions) { $0.type }
     }
     
     var body: some View {
@@ -28,18 +30,47 @@ struct PlanningView: View {
             ScrollView {
                 if viewModel.isLoading {
                     ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if viewModel.mealSuggestions.isEmpty {
+                    ContentUnavailableView(
+                        "Aucune suggestion de repas",
+                        systemImage: "fork.knife",
+                        description: Text("Appuyez sur + pour générer des suggestions de repas")
+                    )
                 } else {
                     VStack(spacing: 20) {
-                        ForEach(MealType.allCases, id: \.self) { mealType in
-                            if let meals = groupedMeals[mealType], !meals.isEmpty {
-                                MealTypeCard(mealType: mealType, meals: meals)
+                        // Afficher les suggestions de repas par type
+                        ForEach(Array(groupedSuggestions.keys.sorted()), id: \.self) { mealType in
+                            if let suggestions = groupedSuggestions[mealType], !suggestions.isEmpty {
+                                MealSuggestionSection(
+                                    mealType: mealType,
+                                    suggestions: suggestions,
+                                    selectedSuggestions: $selectedMealSuggestions
+                                )
                             }
+                        }
+                        
+                        // Afficher le bouton pour obtenir les détails (pour utilisateurs premium)
+                        if !selectedMealSuggestions.isEmpty {
+                            Button(action: {
+                                showingDetailedRecipes = true
+                            }) {
+                                Text("Obtenir les détails (\(selectedMealSuggestions.count)/3)")
+                                    .bold()
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(selectedMealSuggestions.count <= 3 ? Color.blue : Color.gray)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(10)
+                            }
+                            .disabled(selectedMealSuggestions.count > 3)
+                            .padding(.horizontal)
                         }
                     }
                     .padding()
                 }
             }
-            .navigationTitle("Planning")
+            .navigationTitle("Suggestions de repas")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -61,8 +92,11 @@ struct PlanningView: View {
                             set: { self.currentPreferences = $0 }
                         ),
                         onGenerate: { preferences in
+                            // Reset selected suggestions
+                            selectedMealSuggestions = []
+                            
                             Task {
-                                await viewModel.generateWeeklyPlan(with: preferences)
+                                await viewModel.generateMealSuggestions(with: preferences)
                             }
                         }
                     )
@@ -75,12 +109,30 @@ struct PlanningView: View {
                             set: { self.currentPreferences = $0 }
                         ),
                         onGenerate: { preferences in
+                            // Reset selected suggestions
+                            selectedMealSuggestions = []
+                            
                             Task {
-                                await viewModel.generateWeeklyPlan(with: preferences)
+                                await viewModel.generateMealSuggestions(with: preferences)
                             }
                         }
                     )
                 }
+            }
+            .alert("Fonctionnalité Premium", isPresented: $showingDetailedRecipes) {
+                Button("Obtenir les détails", action: {
+                    if let preferences = currentPreferences {
+                        Task {
+                            await viewModel.getDetailedRecipes(
+                                selectedSuggestions: Array(selectedMealSuggestions),
+                                preferences: preferences
+                            )
+                        }
+                    }
+                })
+                Button("Annuler", role: .cancel) { }
+            } message: {
+                Text("Obtenez les détails complets de ces recettes avec un abonnement premium.")
             }
         }
         .onAppear {
@@ -88,42 +140,115 @@ struct PlanningView: View {
         }
     }
 
-private func createDefaultPreferences() -> MealPreferences {
-    // Récupérer le profil utilisateur depuis localDataManager
-    let userProfile = UserProfile.default
-    
-    return MealPreferences(
-           bannedIngredients: [],
-           preferredIngredients: [],
-           defaultServings: 1,
-           dietaryRestrictions: [],
-           numberOfDays: 7,
-           mealTypes: Array(selectedMealTypes),
-           userProfile: userProfile
-       )
+    private func createDefaultPreferences() -> MealPreferences {
+        // Récupérer le profil utilisateur depuis localDataManager
+        let userProfile = UserProfile.default
+        
+        return MealPreferences(
+            bannedIngredients: [],
+            preferredIngredients: [],
+            defaultServings: 1,
+            dietaryRestrictions: [],
+            numberOfDays: 7,
+            mealTypes: Array(selectedMealTypes),
+            userProfile: userProfile
+        )
+    }
 }
+
+// Vue pour afficher les suggestions par type de repas
+struct MealSuggestionSection: View {
+    let mealType: String
+    let suggestions: [AIMeal]
+    @Binding var selectedSuggestions: Set<AIMeal>
+    
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text(mealType)
+                .font(.headline)
+                .padding(.horizontal)
+            
+            ForEach(suggestions) { suggestion in
+                MealSuggestionCard(
+                    suggestion: suggestion,
+                    isSelected: selectedSuggestions.contains(suggestion),
+                    onToggle: { selected in
+                        if selected {
+                            selectedSuggestions.insert(suggestion)
+                        } else {
+                            selectedSuggestions.remove(suggestion)
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+
+// Carte pour une suggestion de repas individuelle
+struct MealSuggestionCard: View {
+    let suggestion: AIMeal
+    let isSelected: Bool
+    let onToggle: (Bool) -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading) {
+            HStack {
+                VStack(alignment: .leading) {
+                    Text(suggestion.name)
+                        .font(.title3)
+                        .bold()
+                    
+                    Text(suggestion.description)
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                // Checkbox pour sélectionner cette recette
+                Button(action: {
+                    onToggle(!isSelected)
+                }) {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .foregroundColor(isSelected ? .blue : .gray)
+                        .font(.title2)
+                }
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(.secondarySystemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 2)
+        )
+        .padding(.horizontal)
+    }
 }
 
 // Extension pour créer un profil utilisateur par défaut
 extension UserProfile {
-static var `default`: UserProfile {
-    UserProfile(
-        name: "Utilisateur",
-        age: 30,
-        gender: .male,
-        height: 170,
-        weight: 70,
-        bodyFatPercentage: nil,
-        fitnessGoal: .maintainWeight,
-        activityLevel: .moderatelyActive,
-        dietaryRestrictions: [],
-        activityDetails: ActivityDetails(
-                    exerciseDaysPerWeek: 3,
-                    exerciseDuration: 45,
-                    exerciseIntensity: .moderate,
-                    jobActivity: .seated,
-                    dailyActivity: .moderate
-                )
-    )
-}
+    static var `default`: UserProfile {
+        UserProfile(
+            name: "Utilisateur",
+            age: 30,
+            gender: .male,
+            height: 170,
+            weight: 70,
+            bodyFatPercentage: nil,
+            fitnessGoal: .maintainWeight,
+            activityLevel: .moderatelyActive,
+            dietaryRestrictions: [],
+            activityDetails: ActivityDetails(
+                exerciseDaysPerWeek: 3,
+                exerciseDuration: 45,
+                exerciseIntensity: .moderate,
+                jobActivity: .seated,
+                dailyActivity: .moderate
+            )
+        )
+    }
 }

@@ -9,28 +9,32 @@ import Foundation
 
 // Structures pour le parsing de la réponse JSON
 struct AIMealPlanResponse: Codable {
-    let days: [AIDay]
+    let meal_suggestions: [AIMeal]
 }
 
-struct AIDay: Codable {
-    let date: String
-    let meals: [AIMeal]
-}
-
-struct AIMeal: Codable {
+struct AIMeal: Codable, Identifiable, Hashable {
+    // Déclaré avec `var` et valeur par défaut, donc ne sera pas requis dans le JSON
+    var id = UUID()
+    
     let name: String
+    let description: String
     let type: String
-    let ingredients: [AIIngredient]
-}
-
-struct AIIngredient: Codable {
-    let name: String
-    let quantity: Double
-    let unit: String
-    let calories: Int
-    let proteines: Double
-    let glucides: Double
-    let lipides: Double
+    
+    // CodingKeys pour indiquer quels champs appartiennent au JSON
+    enum CodingKeys: String, CodingKey {
+        case name, description, type
+        // Pas d'id ici car il n'est pas dans le JSON
+    }
+    
+    // Implémentation de Hashable
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    // Implémentation de Equatable
+    static func == (lhs: AIMeal, rhs: AIMeal) -> Bool {
+        return lhs.id == rhs.id
+    }
 }
 
 
