@@ -14,7 +14,7 @@ class AIService {
     private let apiKey = "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"
     private let cacheKey = "nutrition_cache"
     
-    private func callChatGPT(prompt: String) async throws -> String {
+    private func callChatGPT(prompt: String, model: String = "gpt-3.5-turbo") async throws -> String {
         let url = URL(string: "https://api.openai.com/v1/chat/completions")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -22,7 +22,7 @@ class AIService {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         let body: [String: Any] = [
-            "model": "gpt-3.5-turbo",
+            "model": model, // Utiliser le modèle passé en paramètre
             "messages": [
                 ["role": "user", "content": prompt]
             ],
@@ -102,90 +102,62 @@ class AIService {
 }
 
 extension AIService {
-    func generateMealPlan(prompt: String, systemPrompt: String = "") async throws -> String {
+    func generateMealPlan(prompt: String, model: String = "gpt-3.5-turbo", systemPrompt: String = "") async throws -> String {
+        
+        print("PROMPT RÉELLEMENT ENVOYÉ À L'API:")
+        print(prompt)
+        print("MODÈLE UTILISÉ: \(model)")
+        
         // Si un message système est fourni, utilisez-le
         if !systemPrompt.isEmpty {
-            // Implémentez la logique pour inclure le message système
-            // Soit en modifiant callChatGPT, soit en adaptant le prompt ici
             let fullPrompt = systemPrompt + "\n\n" + prompt
-            return try await callChatGPT(prompt: fullPrompt)
+            return try await callChatGPT(prompt: fullPrompt, model: model)
         } else {
             // Comportement original
-            return try await callChatGPT(prompt: prompt)
+            return try await callChatGPT(prompt: prompt, model: model)
         }
     }
-    
-    func adjustMealPortions(meal: Meal, targetCalories: Double) -> Meal {
-        // 1. Calculer les calories actuelles du repas
-        let currentCalories = Double(meal.totalCalories)
+    func generateRecipeDetails(recipes: [String]) async throws -> String {
+        let recipeNames = recipes.joined(separator: ", ")
+        let prompt = """
+        Donne-moi les détails complets pour ces recettes: \(recipeNames).
         
-        // Si le repas n'a pas de calories, on ne peut pas ajuster
-        guard currentCalories > 0 else { return meal }
+        Pour chaque recette, je veux:
+        1. La liste précise des ingrédients avec quantités (utilise des nombres décimaux, pas de fractions)
+        2. Les valeurs nutritionnelles (calories, protéines, glucides, lipides, fibres)
+        3. Les instructions de préparation étape par étape
         
-        // 2. Calculer le facteur d'ajustement
-        let adjustmentFactor = targetCalories / currentCalories
-        
-        // 3. Créer une copie du repas avec les quantités ajustées
-        var adjustedMeal = meal
-        var adjustedFoods: [Food] = []
-
-        for food in meal.foods {
-            // Créer une nouvelle instance de Food avec les valeurs ajustées
-            let adjustedFood = Food(
-                id: food.id,
-                name: food.name,
-                calories: Int(Double(food.calories) * adjustmentFactor),
-                proteins: food.proteins * adjustmentFactor,
-                carbs: food.carbs * adjustmentFactor,
-                fats: food.fats * adjustmentFactor,
-                servingSize: food.servingSize * adjustmentFactor,
-                servingUnit: food.servingUnit,
-                image: food.image
-            )
-            
-            adjustedFoods.append(adjustedFood)
+        Réponds au format JSON suivant:
+        {
+            "detailed_recipes": [
+                {
+                    "name": "Nom de la recette",
+                    "description": "Description brève",
+                    "type": "Type de repas",
+                    "ingredients": [
+                        {"name": "Nom ingrédient", "quantity": 100, "unit": "g"}
+                    ],
+                    "nutritionFacts": {
+                        "calories": 350,
+                        "proteins": 20,
+                        "carbs": 40,
+                        "fats": 10,
+                        "fiber": 5
+                    },
+                    "instructions": ["Étape 1", "Étape 2"]
+                }
+            ]
         }
-
-        adjustedMeal.foods = adjustedFoods
-        return adjustedMeal
-    }
-
-    // Fonction pour ajuster un plan de repas complet
-    func adjustMealPlan(mealPlan: MealPlan, userProfile: UserProfile) -> MealPlan {
-        let nutritionNeeds = NutritionCalculator.shared.calculateNeeds(for: userProfile)
+        """
         
-        // Calculer les calories cibles par type de repas
-        let breakfastCalories = Double(nutritionNeeds.targetCalories) * 0.20
-        let lunchCalories = Double(nutritionNeeds.targetCalories) * 0.27
-        let dinnerCalories = Double(nutritionNeeds.targetCalories) * 0.25
-        let snackCalories = Double(nutritionNeeds.targetCalories) * 0.10
+        let systemPrompt = "Tu es un nutritionniste expert qui fournit des informations précises sur les recettes et leurs valeurs nutritionnelles."
         
-        var adjustedMealPlan = mealPlan
-        var adjustedPlannedMeals: [PlannedMeal] = []
-        
-        for plannedMeal in mealPlan.plannedMeals {
-            var adjustedPlannedMeal = plannedMeal
-            
-            // Sélectionner les calories cibles en fonction du type de repas
-            let targetCalories: Double
-            switch plannedMeal.meal.type {
-            case .breakfast:
-                targetCalories = breakfastCalories
-            case .lunch:
-                targetCalories = lunchCalories
-            case .dinner:
-                targetCalories = dinnerCalories
-            case .snack:
-                targetCalories = snackCalories
-            }
-            
-            // Ajuster les portions
-            adjustedPlannedMeal.meal = adjustMealPortions(meal: plannedMeal.meal, targetCalories: targetCalories)
-            adjustedPlannedMeals.append(adjustedPlannedMeal)
-        }
-        
-        adjustedMealPlan.plannedMeals = adjustedPlannedMeals
-        return adjustedMealPlan
+        // Utiliser explicitement GPT-4o pour les détails
+        return try await generateMealPlan(
+            prompt: prompt,
+            model: "gpt-4o",
+            systemPrompt: systemPrompt
+        )
     }
 }
 

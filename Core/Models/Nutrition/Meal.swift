@@ -61,71 +61,25 @@ struct MealPreferences: Codable {
     var preferredIngredients: [String]
     var defaultServings: Int
     var dietaryRestrictions: [DietaryRestriction]
-    var numberOfDays: Int
     var mealTypes: [MealType]
+    var recipesPerType: Int
     var userProfile: UserProfile
     
-    var aiPromptFormat: String {
-        
-        let nutritionalInfo = calculateNutritionalNeeds(userProfile: userProfile)
-        let heightInMeters = userProfile.height / 100
-        let numberOfDays = numberOfDays
-
-        return """
-        Tu es un chef cuisinier renommé spécialisé en nutrition. Ta mission est de proposer des titres de repas personnalisés, créatifs et savoureux.
-        
-        PROFIL UTILISATEUR:
-        - Age: \(userProfile.age) ans
-        - Sexe: \(userProfile.gender.rawValue)
-        - Poids actuel: \(userProfile.weight) kg
-        - Taille: \(userProfile.height) cm
-        - Objectif: \(userProfile.fitnessGoal.rawValue)
-        - Niveau d'activité: \(userProfile.activityLevel.rawValue)
-        \(userProfile.bodyFatPercentage != nil ? "- Pourcentage de masse graisseuse: \(userProfile.bodyFatPercentage!)%" : "")
-
-        CONTRAINTES DU PLAN DE REPAS:
-        - Types de repas: \(mealTypes.map { $0.rawValue }.joined(separator: ", "))
-        - Restrictions alimentaires: \(dietaryRestrictions.map { $0.rawValue }.joined(separator: ", "))
-        - Ingrédients à éviter: \(bannedIngredients.joined(separator: ", "))
-        - Ingrédients préférés: \(preferredIngredients.joined(separator: ", "))
-        
-        CONSIGNES:
-        Propose 10 idées de repas variées et créatives qui correspondent au profil nutritionnel et aux préférences de l'utilisateur.
-        Chaque proposition doit contenir uniquement:
-        1. Le nom du repas (max 10 mots)
-        2. Une brève description (max 15 mots)
-        3. Le type de repas
-        
-        IMPORTANT: Réponds UNIQUEMENT avec un JSON au format suivant:
-        {
-            "meal_suggestions": [
-                {
-                    "name": "Nom du repas",
-                    "description": "Brève description",
-                    "type": "Type de repas"
-                }
-            ]
-        }
-        
-        Tu ne retournes que le format JSON. Aucun autre texte.
-        Les types de repas: "Petit-déjeuner", "Déjeuner", "Dîner", "Collation"
-        """
-    }
     
     init(bannedIngredients: [String] = [],
          preferredIngredients: [String] = [],
          defaultServings: Int = 1,
          dietaryRestrictions: [DietaryRestriction] = [],
-         numberOfDays: Int = 7,
          mealTypes: [MealType] = [],
+         recipesPerType: Int = 2,
          userProfile: UserProfile) {
         
         self.bannedIngredients = bannedIngredients
         self.preferredIngredients = preferredIngredients
         self.defaultServings = defaultServings
         self.dietaryRestrictions = dietaryRestrictions
-        self.numberOfDays = numberOfDays
         self.mealTypes = mealTypes
+        self.recipesPerType = recipesPerType
         self.userProfile = userProfile
         
         if !userProfile.dietaryRestrictions.isEmpty {
@@ -148,14 +102,68 @@ struct MealPreferences: Codable {
         }
     }
     
+    var aiPromptFormat: String {
+        let recipesPerType = self.recipesPerType
+        var bulletPoints = ""
+            for mealType in mealTypes {
+                bulletPoints += "- \(recipesPerType) plats de \(mealType.rawValue)\n"
+            }
+        
+            let promptText = """
+            Tu es un chef cuisinier renommé spécialisé en nutrition.
+            
+            Génère-moi exactement:
+        \(bulletPoints)
+        
+        Verifie qu'il y a bien 12 plats au total.
+        
+        
+        PROFIL UTILISATEUR:
+        - Age: \(userProfile.age) ans
+        - Sexe: \(userProfile.gender.rawValue)
+        - Poids actuel: \(userProfile.weight) kg
+        - Taille: \(userProfile.height) cm
+        - Objectif: \(userProfile.fitnessGoal.rawValue)
+        - Niveau d'activité: \(userProfile.activityLevel.rawValue)
+        
+        CONTRAINTES SUPPLÉMENTAIRES:
+        - Restrictions alimentaires: \(dietaryRestrictions.map { $0.rawValue }.joined(separator: ", "))
+        - Ingrédients à éviter: \(bannedIngredients.joined(separator: ", "))
+        - Ingrédients préférés: \(preferredIngredients.joined(separator: ", "))
+        
+        Format requis pour chaque suggestion:
+        1. Nom du repas (max 10 mots)
+        2. Description brève (max 15 mots)
+        3. Type de repas (un des types mentionnés ci-dessus)
+        
+        RÉPONDS UNIQUEMENT AU FORMAT JSON SUIVANT (pas de texte avant ou après):
+        {
+            "meal_suggestions": [
+                {
+                    "name": "Nom du repas",
+                    "description": "Brève description",
+                    "type": "Type de repas" 
+                },
+            ]
+        }
+        """
+        
+        print("===== DÉBUT DU PROMPT ENVOYÉ À L'API =====")
+        print(promptText)
+        print("===== FIN DU PROMPT ENVOYÉ À L'API =====")
+        
+        return promptText
+    }
+    
 }
+
 extension MealPreferences {
     func printDebugPrompt() {
         print("------- DEBUT DU PROMPT ---------")
         print(aiPromptFormat)
         print("------- FIN DU PROMPT ---------")
     }
-
+    
     func validateMeal(_ meal: Meal) -> Bool {
         // Vérifier que les ingrédients bannis ne sont pas présents
         for food in meal.foods {
@@ -168,7 +176,7 @@ extension MealPreferences {
         }
         return true
     }
-
+    
     // Fonction qui calcule les besoins nutritionnels en fonction du profil utilisateur
     func calculateNutritionalNeeds(userProfile: UserProfile) -> String {
         // Calcul du métabolisme basal (BMR) avec la formule de Mifflin-St Jeor

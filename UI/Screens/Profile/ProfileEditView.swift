@@ -12,20 +12,20 @@ struct ProfileEditView: View {
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject private var localDataManager: LocalDataManager
     
-    @State private var currentWeight: Double
-    @State private var height: Double
     @State private var weight: Double
+    @State private var height: Double
     @State private var bodyFatPercentage: Double? = nil
     @State private var selectedGoal: FitnessGoal
+    @State private var selectedActivityLevel: ActivityLevel // Ajout du niveau d'activité
     @State private var showAlert = false
     @State private var showBodyFat: Bool
     
     init(userProfile: UserProfile) {
-        _currentWeight = State(initialValue: userProfile.weight)
-        _height = State(initialValue: userProfile.height)
         _weight = State(initialValue: userProfile.weight)
+        _height = State(initialValue: userProfile.height)
         _bodyFatPercentage = State(initialValue: userProfile.bodyFatPercentage)
         _selectedGoal = State(initialValue: userProfile.fitnessGoal)
+        _selectedActivityLevel = State(initialValue: userProfile.activityLevel) // Initialisation
         _showBodyFat = State(initialValue: userProfile.bodyFatPercentage != nil)
     }
     
@@ -33,42 +33,16 @@ struct ProfileEditView: View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 32) {
-                    // Section des objectifs
-                    VStack(spacing: 24) {
-                        Text("Votre objectif")
-                            .font(.title2)
-                            .bold()
-                        
-                        VStack(spacing: 16) {
-                            ForEach(FitnessGoal.allCases, id: \.self) { goal in
-                                Button(action: {
-                                    selectedGoal = goal
-                                }) {
-                                    HStack {
-                                        VStack(alignment: .leading) {
-                                            Text(goal.rawValue)
-                                                .font(.headline)
-                                        }
-                                        Spacer()
-                                        if selectedGoal == goal {
-                                            Image(systemName: "checkmark.circle.fill")
-                                                .foregroundColor(.blue)
-                                        }
-                                    }
-                                    .padding()
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .fill(selectedGoal == goal ? Color.blue.opacity(0.1) : Color.gray.opacity(0.1))
-                                    )
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                            }
-                        }
-                        .padding()
-                    }
-                    
                     // Section des mensurations
                     measurementsSection
+                    
+                    // Section des objectifs
+                    objectivesSection
+                    
+                    // Section du niveau d'activité (nouveau)
+                    activityLevelSection
+                    
+                    
                 }
                 .padding()
             }
@@ -94,13 +68,49 @@ struct ProfileEditView: View {
         }
     }
     
+    // Nouvelle section pour le niveau d'activité
+    private var activityLevelSection: some View {
+        VStack(spacing: 24) {
+            Text("Niveau d'activité")
+                .font(.title2)
+                .bold()
+            
+            VStack(spacing: 16) {
+                ForEach(ActivityLevel.allCases, id: \.self) { level in
+                    Button(action: {
+                        selectedActivityLevel = level
+                    }) {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(level.rawValue)
+                                    .font(.headline)
+                            }
+                            Spacer()
+                            if selectedActivityLevel == level {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.blue)
+                            }
+                        }
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(selectedActivityLevel == level ? Color.blue.opacity(0.1) : Color.gray.opacity(0.1))
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+            .padding()
+        }
+    }
+    
     private func saveProfile() {
         print("=== SAUVEGARDE DU PROFIL ===")
             print("Nouvelles valeurs:")
-            print("Poids:", currentWeight)
+            print("Poids:", weight)
             print("Masse graisseuse:", bodyFatPercentage ?? "non renseignée")
         
-        guard currentWeight > 0 && height > 0 &&
+        guard weight > 0 && height > 0 &&
                 (bodyFatPercentage ?? 0) >= 0 && (bodyFatPercentage ?? 0) <= 100 else {
             showAlert = true
             return
@@ -110,8 +120,9 @@ struct ProfileEditView: View {
             if var profile = localDataManager.userProfile {
                 profile.weight = weight
                 profile.height = height
-                profile.bodyFatPercentage = bodyFatPercentage
+                profile.bodyFatPercentage = showBodyFat ? bodyFatPercentage : nil
                 profile.fitnessGoal = selectedGoal
+                profile.activityLevel = selectedActivityLevel // Mise à jour du niveau d'activité
                 
                 try? await localDataManager.save(profile, forKey: "userProfile")
                 print("Profil sauvegardé avec succès")
@@ -120,10 +131,43 @@ struct ProfileEditView: View {
                     dismiss()
                 }
             }
-            
         }
     }
     
+    private var objectivesSection: some View {
+        VStack(spacing: 24) {
+            Text("Votre objectif")
+                .font(.title2)
+                .bold()
+            
+            VStack(spacing: 16) {
+                ForEach(FitnessGoal.allCases, id: \.self) { goal in
+                    Button(action: {
+                        selectedGoal = goal
+                    }) {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(goal.rawValue)
+                                    .font(.headline)
+                            }
+                            Spacer()
+                            if selectedGoal == goal {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.blue)
+                            }
+                        }
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(selectedGoal == goal ? Color.blue.opacity(0.1) : Color.gray.opacity(0.1))
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+            .padding()
+        }
+    }
     
     private var measurementsSection: some View {
             VStack(spacing: 24) {
@@ -147,29 +191,29 @@ struct ProfileEditView: View {
             }
         }
         
-        private var weightHeightFields: some View {
-            VStack(spacing: 16) {
-                HStack {
-                    Text("Poids actuel")
-                    Spacer()
-                    TextField("kg", value: $currentWeight, format: .number)
-                        .textFieldStyle(.roundedBorder)
-                        .keyboardType(.decimalPad)
-                        .frame(width: 100)
-                    Text("kg")
-                }
-                
-                HStack {
-                    Text("Taille")
-                    Spacer()
-                    TextField("cm", value: $height, format: .number)
-                        .textFieldStyle(.roundedBorder)
-                        .keyboardType(.decimalPad)
-                        .frame(width: 100)
-                    Text("cm")
-                }
-            }
-        }
+    private var weightHeightFields: some View {
+           VStack(spacing: 16) {
+               HStack {
+                   Text("Poids actuel")
+                   Spacer()
+                   TextField("kg", value: $weight, format: .number)
+                       .textFieldStyle(.roundedBorder)
+                       .keyboardType(.decimalPad)
+                       .frame(width: 100)
+                   Text("kg")
+               }
+               
+               HStack {
+                   Text("Taille")
+                   Spacer()
+                   TextField("cm", value: $height, format: .number)
+                       .textFieldStyle(.roundedBorder)
+                       .keyboardType(.decimalPad)
+                       .frame(width: 100)
+                   Text("cm")
+               }
+           }
+       }
         
         private var bodyFatFields: some View {
             VStack(spacing: 16) {
@@ -206,13 +250,13 @@ struct ProfileEditView: View {
         private var calculatedInfos: some View {
             VStack(alignment: .leading, spacing: 8) {
                 let heightInMeters = height / 100
-                let bmi = currentWeight / (heightInMeters * heightInMeters)
+                let bmi = weight / (heightInMeters * heightInMeters)
                 
                 Text("IMC: \(bmi, specifier: "%.1f")")
                     .font(.subheadline)
                 
                 if let bodyFat = bodyFatPercentage {
-                    let leanMass = currentWeight * (1 - bodyFat / 100)
+                    let leanMass = weight * (1 - bodyFat / 100)
                     Text("Masse maigre estimée: \(leanMass, specifier: "%.1f") kg")
                         .font(.subheadline)
                 }

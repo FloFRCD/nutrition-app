@@ -14,18 +14,27 @@ struct ProfileView: View {
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                if let profile = localDataManager.userProfile {
-                    profileContent(profile: profile)
+            ZStack {
+                AppTheme.background.ignoresSafeArea()
+                
+                ScrollView {
+                    if let profile = localDataManager.userProfile {
+                        profileContent(profile: profile)
+                    }
                 }
+                .navigationTitle("Profil")
             }
-            .navigationTitle("Profil")
             .sheet(isPresented: $showingEditProfile) {
                 if let profile = localDataManager.userProfile {
                     ProfileEditView(userProfile: profile)
+                        .preferredColorScheme(.dark)
+                        .accentColor(AppTheme.accent)
                 }
             }
+            .foregroundColor(AppTheme.primaryText)
         }
+        .accentColor(AppTheme.accent)
+        .preferredColorScheme(.dark)
     }
     
     // Extraction du contenu dans une fonction pour réduire la complexité
@@ -33,12 +42,12 @@ struct ProfileView: View {
         VStack(spacing: 20) {
             // Photo de profil
             Circle()
-                .fill(Color.gray.opacity(0.2))
+                .fill(AppTheme.secondaryBackground)
                 .frame(width: 100, height: 100)
                 .overlay(
                     Image(systemName: "person.fill")
                         .font(.system(size: 40))
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppTheme.secondaryText)
                 )
             
             // Informations personnelles
@@ -52,7 +61,7 @@ struct ProfileView: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.blue)
+                    .background(AppTheme.secondaryAccent)
                     .cornerRadius(10)
             }
             .padding(.horizontal)
@@ -76,7 +85,7 @@ struct ProfileView: View {
             nutritionalNeedsSection(profile: profile)
         }
         .padding()
-        .background(Color.blue.opacity(0.1))
+        .background(AppTheme.cardBackground)
         .cornerRadius(15)
     }
     
@@ -84,9 +93,13 @@ struct ProfileView: View {
     private func personalInfoSection(profile: UserProfile) -> some View {
         ProfileSection(title: "Informations personnelles") {
             StatRow(title: "Nom", value: profile.name)
+                .foregroundColor(AppTheme.primaryText)
             StatRow(title: "Âge", value: "\(profile.age) ans")
+                .foregroundColor(AppTheme.primaryText)
             StatRow(title: "Genre", value: profile.gender.rawValue)
+                .foregroundColor(AppTheme.primaryText)
         }
+        .foregroundColor(AppTheme.primaryText)
     }
     
     // Section des mensurations
@@ -96,33 +109,45 @@ struct ProfileView: View {
         
         return ProfileSection(title: "Mensurations") {
             StatRow(title: "Taille", value: "\(Int(profile.height)) cm")
+                .foregroundColor(AppTheme.primaryText)
             StatRow(title: "Poids actuel", value: "\(Int(profile.weight)) kg")
+                .foregroundColor(AppTheme.primaryText)
             
             // Gestion différente selon si bodyFatPercentage est disponible
             if let bodyFatPercentage = profile.bodyFatPercentage {
                 StatRow(title: "Masse graisseuse", value: "\(Int(bodyFatPercentage))%")
+                    .foregroundColor(AppTheme.primaryText)
                 let leanMass = profile.weight * (1 - bodyFatPercentage / 100)
                 StatRow(title: "Masse maigre", value: "\(Int(leanMass)) kg")
+                    .foregroundColor(AppTheme.primaryText)
             } else {
                 StatRow(title: "Masse graisseuse", value: "Non renseigné")
+                    .foregroundColor(AppTheme.primaryText)
                 StatRow(title: "Masse maigre", value: "Non renseigné")
+                    .foregroundColor(AppTheme.primaryText)
             }
             
             StatRow(title: "IMC", value: String(format: "%.1f", bmi))
+                .foregroundColor(AppTheme.primaryText)
         }
+        .foregroundColor(AppTheme.primaryText)
     }
     
     // Section mode de vie
     private func lifestyleSection(profile: UserProfile) -> some View {
         ProfileSection(title: "Mode de vie") {
             StatRow(title: "Objectif", value: profile.fitnessGoal.rawValue)
+                .foregroundColor(AppTheme.primaryText)
             StatRow(title: "Niveau d'activité", value: profile.activityLevel.rawValue)
+                .foregroundColor(AppTheme.primaryText)
             if !profile.dietaryRestrictions.isEmpty {
                 StatRow(title: "Préférences alimentaires",
                        value: profile.dietaryRestrictions
                         .joined(separator: ", "))
+                .foregroundColor(AppTheme.primaryText)
             }
         }
+        .foregroundColor(AppTheme.primaryText)
     }
     
     // Section besoins nutritionnels
@@ -131,10 +156,16 @@ struct ProfileView: View {
         
         return ProfileSection(title: "Besoins nutritionnels") {
             StatRow(title: "Calories de maintenance", value: "\(Int(needs.maintenanceCalories)) kcal")
+                .foregroundColor(AppTheme.primaryText)
             StatRow(title: "Calories recommandées", value: "\(Int(needs.targetCalories)) kcal")
+                .foregroundColor(AppTheme.primaryText)
             StatRow(title: "Protéines", value: "\(Int(needs.proteins))g")
+                .foregroundColor(AppTheme.primaryText)
             StatRow(title: "Glucides", value: "\(Int(needs.carbs))g")
+                .foregroundColor(AppTheme.primaryText)
             StatRow(title: "Lipides", value: "\(Int(needs.fats))g")
+                .foregroundColor(AppTheme.primaryText)
         }
+        .foregroundColor(AppTheme.primaryText)
     }
 }

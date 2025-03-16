@@ -27,7 +27,7 @@ class NutritionCalculator {
     
     // Calculer les besoins nutritionnels quotidiens en fonction du profil utilisateur
     func calculateNeeds(for userProfile: UserProfile) -> NutritionNeeds {
-        // Calcul des besoins caloriques de base (BMR) avec la formule de Mifflin-St Jeor
+        // Calcul du BMR avec Mifflin-St Jeor (inchangé, cette formule est correcte)
         let bmr: Double
         
         if userProfile.gender == .male {
@@ -36,49 +36,66 @@ class NutritionCalculator {
             bmr = 10 * userProfile.weight + 6.25 * userProfile.height - 5 * Double(userProfile.age) - 161
         }
         
-        // Ajuster selon le niveau d'activité
-        let maintenanceCalories = bmr * userProfile.activityLevel.factor
+        // Facteurs d'activité plus précis
+        var activityFactor: Double
+        switch userProfile.activityLevel {
+        case .sedentary:
+            activityFactor = 1.2
+        case .lightlyActive:
+            activityFactor = 1.375
+        case .moderatelyActive:
+            activityFactor = 1.55
+        case .veryActive:
+            activityFactor = 1.725
+        case .extraActive:
+            activityFactor = 1.9
+        }
         
-        // Ajuster les calories selon l'objectif
+        // Calcul plus précis des calories de maintenance
+        let maintenanceCalories = bmr * activityFactor
+        
+        // Ajustement des calories selon l'objectif
         let targetCalories: Double
-        
         switch userProfile.fitnessGoal {
         case .loseWeight:
-            targetCalories = maintenanceCalories * 0.75 // Déficit de 25%
+            targetCalories = maintenanceCalories * 0.85 // Déficit de 15% (moins agressif)
         case .maintainWeight:
-            targetCalories = maintenanceCalories * 0.9 // Déficit de 10%
+            targetCalories = maintenanceCalories // Pas de déficit pour maintien
         case .gainMuscle:
             targetCalories = maintenanceCalories * 1.1 // Surplus de 10%
         }
         
-        // Calculer la répartition des macronutriments selon l'objectif
-        var proteinPercentage: Double = 0.25
-        var fatPercentage: Double = 0.3
-        var carbPercentage: Double = 0.45
+        // Ajustement des macronutriments selon l'objectif
+        // Protéines: 1.6-2.2g/kg de poids corporel selon l'objectif
+        let proteinPerKg: Double
+        var fatPercentage: Double
         
         switch userProfile.fitnessGoal {
         case .loseWeight:
-            proteinPercentage = 0.3
-            fatPercentage = 0.3
-            carbPercentage = 0.4
-        case .gainMuscle:
-            proteinPercentage = 0.35
+            proteinPerKg = 2.0 // Protéines plus élevées pour préserver la masse musculaire
             fatPercentage = 0.25
-            carbPercentage = 0.4
         case .maintainWeight:
-            proteinPercentage = 0.25
-            fatPercentage = 0.3
-            carbPercentage = 0.45
+            proteinPerKg = 1.6
+            fatPercentage = 0.30
+        case .gainMuscle:
+            proteinPerKg = 1.8
+            fatPercentage = 0.25
         }
         
-        // Calculer les grammes de chaque macronutriment
-        // 1g de protéine = 4 calories, 1g de glucides = 4 calories, 1g de lipides = 9 calories
-        let proteins = (targetCalories * proteinPercentage) / 4
-        let carbs = (targetCalories * carbPercentage) / 4
+        // Calcul des protéines en g basé sur le poids corporel
+        let proteins = userProfile.weight * proteinPerKg
+        
+        // Calcul des lipides basé sur un pourcentage des calories totales
         let fats = (targetCalories * fatPercentage) / 9
         
-        // Calculer les besoins en fibres (généralement 14g par 1000 calories)
-        let fiber = targetCalories / 1000 * 14
+        // Calcul des glucides pour compléter les calories
+        let proteinCalories = proteins * 4
+        let fatCalories = fats * 9
+        let remainingCalories = targetCalories - proteinCalories - fatCalories
+        let carbs = remainingCalories / 4
+        
+        // Calcul des fibres (25-30g par jour est la recommandation standard)
+        let fiber = min(targetCalories / 1000 * 12, 30)
         
         return NutritionNeeds(
             calories: targetCalories,

@@ -20,26 +20,62 @@ class PlanningViewModel: ObservableObject {
     func setDependencies(localDataManager: LocalDataManager, aiService: AIService) {
         self.localDataManager = localDataManager
         self.aiService = aiService
+        
+        // Charger les suggestions sauvegardées immédiatement après l'initialisation des dépendances
+        Task {
+            await loadSavedSuggestions()
+        }
+    }
+    
+    // Nouvelle méthode pour charger les suggestions sauvegardées
+    private func loadSavedSuggestions() async {
+        guard let localDataManager = localDataManager else { return }
+        
+        do {
+            if let savedSuggestions: [AIMeal] = try await localDataManager.load(forKey: "meal_suggestions_\(getCurrentWeekKey())") {
+                await MainActor.run {
+                    self.mealSuggestions = savedSuggestions
+                    print("✅ Chargement réussi de \(savedSuggestions.count) suggestions sauvegardées")
+                }
+            }
+        } catch {
+            print("⚠️ Erreur lors du chargement des suggestions sauvegardées: \(error)")
+            // Ne pas assigner d'erreur à self.error car ce n'est pas critique pour l'utilisateur
+        }
     }
     
     func generateMealSuggestions(with preferences: MealPreferences) async {
-           guard let aiService = aiService else { return }
-           
-           await MainActor.run {
-               isLoading = true
-           }
-           
-           defer {
-               Task { @MainActor in
-                   isLoading = false
-               }
-           }
-           
-           do {
-               // Appel à l'API
-               let jsonString = try await aiService.generateMealPlan(
-                   prompt: preferences.aiPromptFormat
-               )
+        print("recipesPerType reçu dans ViewModel:", preferences.recipesPerType)
+        guard let aiService = aiService else { return }
+        
+        await MainActor.run {
+            isLoading = true
+        }
+        
+        defer {
+            Task { @MainActor in
+                isLoading = false
+            }
+        }
+        
+        do {
+            // IMPORTANT: Recalculer et forcer le nombre de recettes par type
+            var modifiedPreferences = preferences
+            let totalSuggestions = 12
+            
+            // S'assurer que le nombre de types est correct
+            if !modifiedPreferences.mealTypes.isEmpty {
+                // Forcer le calcul du bon nombre de recettes par type
+                let correctRecipesPerType = totalSuggestions / modifiedPreferences.mealTypes.count
+                modifiedPreferences.recipesPerType = correctRecipesPerType
+                
+                print("Correction: Types de repas = \(modifiedPreferences.mealTypes.count), recettes par type = \(correctRecipesPerType)")
+            }
+            
+            // Appel à l'API avec les préférences modifiées
+            let jsonString = try await aiService.generateMealPlan(
+                prompt: modifiedPreferences.aiPromptFormat
+            )
                
                print("\n=== DÉBUT DU DEBUG ===")
                print("JSON reçu:", jsonString)
@@ -58,11 +94,11 @@ class PlanningViewModel: ObservableObject {
                    print("Suggestions reçues: \(response.meal_suggestions.count)")
                    
                    // Valider les suggestions
-                   validateSuggestions(response.meal_suggestions, preferences: preferences)
+                   let correctedSuggestions = validateAndFixSuggestions(response.meal_suggestions, preferences: preferences)
                    
                    // Stockez ces suggestions sur le thread principal
                    await MainActor.run {
-                       self.mealSuggestions = response.meal_suggestions
+                       self.mealSuggestions = correctedSuggestions
                    }
                    
                } catch {
@@ -213,5 +249,35 @@ class PlanningViewModel: ObservableObject {
             print("❌ Erreur lors de la récupération des détails:", error)
             self.error = error
         }
+    }
+    
+    private func validateAndFixSuggestions(_ suggestions: [AIMeal], preferences: MealPreferences) -> [AIMeal] {
+        // Regrouper par type
+        let groupedByType = Dictionary(grouping: suggestions) { $0.type }
+        
+        // Créer une nouvelle liste de suggestions équilibrée
+        var balancedSuggestions: [AIMeal] = []
+        
+        // Pour chaque type demandé
+        for mealType in preferences.mealTypes.map({ $0.rawValue }) {
+            // Obtenir les suggestions pour ce type
+            let typeSuggestions = groupedByType[mealType] ?? []
+            
+            // Si nous avons plus de suggestions que nécessaire, prendre seulement le nombre requis
+            if typeSuggestions.count > preferences.recipesPerType {
+                balancedSuggestions.append(contentsOf: Array(typeSuggestions.prefix(preferences.recipesPerType)))
+            }
+            // Si nous avons le bon nombre, les ajouter toutes
+            else if typeSuggestions.count == preferences.recipesPerType {
+                balancedSuggestions.append(contentsOf: typeSuggestions)
+            }
+            // Si nous n'avons pas assez, utiliser ce que nous avons et signaler un avertissement
+            else {
+                balancedSuggestions.append(contentsOf: typeSuggestions)
+                print("⚠️ Pas assez de suggestions pour \(mealType): \(typeSuggestions.count)/\(preferences.recipesPerType)")
+            }
+        }
+        
+        return balancedSuggestions
     }
 }

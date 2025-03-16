@@ -55,15 +55,15 @@ struct PlanningView: View {
                             Button(action: {
                                 showingDetailedRecipes = true
                             }) {
-                                Text("Obtenir les détails (\(selectedMealSuggestions.count)/3)")
+                                Text("Obtenir les détails (\(selectedMealSuggestions.count)/4)")
                                     .bold()
                                     .frame(maxWidth: .infinity)
                                     .padding()
-                                    .background(selectedMealSuggestions.count <= 3 ? Color.blue : Color.gray)
+                                    .background(selectedMealSuggestions.count <= 4 ? Color.blue : Color.gray)
                                     .foregroundColor(.white)
                                     .cornerRadius(10)
                             }
-                            .disabled(selectedMealSuggestions.count > 3)
+                            .disabled(selectedMealSuggestions.count > 4)
                             .padding(.horizontal)
                         }
                     }
@@ -95,6 +95,14 @@ struct PlanningView: View {
                             // Reset selected suggestions
                             selectedMealSuggestions = []
                             
+                            // Déboguer les préférences
+                            
+                            print("=== PRÉFÉRENCES AVANT GÉNÉRATION (CAS 1 PLANNING VIEW) ===")
+                            print("Types de repas:", preferences.mealTypes.map { $0.rawValue })
+                            print("Recettes par type:", preferences.recipesPerType)
+                            print("Total attendu:", preferences.mealTypes.count * preferences.recipesPerType)
+                            print("===================================")
+                            
                             Task {
                                 await viewModel.generateMealSuggestions(with: preferences)
                             }
@@ -112,6 +120,13 @@ struct PlanningView: View {
                             // Reset selected suggestions
                             selectedMealSuggestions = []
                             
+                            // Déboguer les préférences
+                            print("=== PRÉFÉRENCES AVANT GÉNÉRATION (CAS 2 PLANNING VIEW) ===")
+                            print("Types de repas:", preferences.mealTypes.map { $0.rawValue })
+                            print("Recettes par type:", preferences.recipesPerType)
+                            print("Total attendu:", preferences.mealTypes.count * preferences.recipesPerType)
+                            print("===================================")
+                            
                             Task {
                                 await viewModel.generateMealSuggestions(with: preferences)
                             }
@@ -119,40 +134,34 @@ struct PlanningView: View {
                     )
                 }
             }
-            .alert("Fonctionnalité Premium", isPresented: $showingDetailedRecipes) {
-                Button("Obtenir les détails", action: {
-                    if let preferences = currentPreferences {
-                        Task {
-                            await viewModel.getDetailedRecipes(
-                                selectedSuggestions: Array(selectedMealSuggestions),
-                                preferences: preferences
-                            )
-                        }
-                    }
-                })
-                Button("Annuler", role: .cancel) { }
-            } message: {
-                Text("Obtenez les détails complets de ces recettes avec un abonnement premium.")
+            
+            .sheet(isPresented: $showingDetailedRecipes) {
+                if !selectedMealSuggestions.isEmpty {
+                    DetailedRecipesView(
+                        recipes: Array(selectedMealSuggestions),
+                        onDismiss: { showingDetailedRecipes = false }
+                    )
+                }
             }
         }
         .onAppear {
             viewModel.setDependencies(localDataManager: localDataManager, aiService: AIService.shared)
         }
     }
-
+    
     private func createDefaultPreferences() -> MealPreferences {
-        // Récupérer le profil utilisateur depuis localDataManager
-        let userProfile = UserProfile.default
-        
-        return MealPreferences(
+        let userProfile = localDataManager.userProfile ?? UserProfile.default
+        let prefs = MealPreferences(
             bannedIngredients: [],
             preferredIngredients: [],
             defaultServings: 1,
             dietaryRestrictions: [],
-            numberOfDays: 7,
             mealTypes: Array(selectedMealTypes),
+            recipesPerType: 12 / max(selectedMealTypes.count, 1), // Calcul dynamique
             userProfile: userProfile
         )
+        print("recipesPerType dans createDefaultPreferences:", prefs.recipesPerType)
+        return prefs
     }
 }
 

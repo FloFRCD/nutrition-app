@@ -67,6 +67,42 @@ struct DailyProgressView: View {
                         isExpanded: $isExpanded,
                         selectedIndex: $userSelectedStatIndex
                     )
+                    
+                    CarouselStatBox(
+                        title: "Glucides",
+                        currentValue: "0",
+                        currentUnit: "g",
+                        targetValue: "\(Int(needs.carbohydrates.rounded()))",
+                        targetUnit: "g",
+                        type: .carbohydrates,
+                        index: 3,
+                        isExpanded: $isExpanded,
+                        selectedIndex: $userSelectedStatIndex
+                        )
+                    
+                    CarouselStatBox(
+                        title: "Lipides",
+                        currentValue: "0",
+                        currentUnit: "g",
+                        targetValue: "\(Int(needs.fats.rounded()))",
+                        targetUnit: "g",
+                        type: .fats,
+                        index: 4,
+                        isExpanded: $isExpanded,
+                        selectedIndex: $userSelectedStatIndex
+                    )
+                    CarouselStatBox(
+                        title: "Fibres",
+                        currentValue: "0",
+                        currentUnit: "g",
+                        targetValue: "\(Int(needs.fiber.rounded()))",
+                        targetUnit: "g",
+                        type: .fiber,
+                        index: 5,
+                        isExpanded: $isExpanded,
+                        selectedIndex: $userSelectedStatIndex
+                    )
+                    
                 }
                 .scrollIndicators(.hidden)
                 .scrollPosition($scrollPosition)
@@ -101,10 +137,10 @@ struct DailyProgressView: View {
                         userSelectedStatIndex = activeIndex
                     }
                 }
-                .visualEffect { content, proxy in
-                    content
-                        .offset(y: !initialAnimation ? -(proxy.size.height + 100) : 0)
-                }
+//                .visualEffect { content, proxy in
+//                    content
+//                        .offset(y: !initialAnimation ? -(proxy.size.height + 100) : 0)
+//                }
                 // Nous remplaçons le gesture par la logique dans onScrollPhaseChange
             }
             .padding(.vertical, 10)
@@ -193,6 +229,9 @@ enum StatType {
     case calories
     case proteins
     case water
+    case carbohydrates
+    case fats
+    case fiber
     
     var gradient: LinearGradient {
         switch self {
@@ -211,6 +250,25 @@ enum StatType {
         case .water:
             return LinearGradient(
                 colors: [Color.blue.opacity(0.6), Color.blue.opacity(0.3)],
+                startPoint: .topTrailing,
+                endPoint: .bottomLeading
+            )
+            
+        case .carbohydrates:
+            return LinearGradient(
+                colors: [Color.yellow.opacity(0.6), Color.yellow.opacity(0.3)],
+                startPoint: .topTrailing,
+                endPoint: .bottomLeading
+            )
+        case .fats:
+            return LinearGradient(
+                colors: [Color.red.opacity(0.6), Color.red.opacity(0.3)],
+                startPoint: .topTrailing,
+                endPoint: .bottomLeading
+            )
+        case .fiber:
+            return LinearGradient(
+                colors: [Color.green.opacity(0.6), Color.green.opacity(0.3)],
                 startPoint: .topTrailing,
                 endPoint: .bottomLeading
             )
@@ -384,46 +442,73 @@ struct ExpandedView: View {
             }
             
             // Contenu détaillé
-            VStack(spacing: 15) {
-                DetailedStatBox(
-                    title: "Calories",
-                    current: "0",
-                    currentUnit: "cal",
-                    // Utiliser l'arrondi pour éviter les décimales
-                    target: "\(Int(needs.targetCalories.rounded()))",
-                    targetUnit: "kcal",
-                    maintenance: "\(Int(needs.maintenanceCalories.rounded()))kcal"
-                )
-                
-                DetailedStatBox(
-                    title: "Protéines",
-                    current: "0",
-                    currentUnit: "g",
-                    target: "\(Int(needs.proteins.rounded()))",
-                    targetUnit: "g",
-                    maintenance: "\(Int(needs.proteins.rounded()))g"
-                )
-                
-                DetailedStatBox(
-                    title: "Glucides",
-                    current: "0",
-                    currentUnit: "g",
-                    target: "\(Int(needs.carbs.rounded()))",
-                    targetUnit: "g",
-                    maintenance: "\(Int(needs.carbs.rounded()))g"
-                )
-                
-                DetailedStatBox(
-                    title: "Lipides",
-                    current: "0",
-                    currentUnit: "g",
-                    target: "\(Int(needs.fats.rounded()))",
-                    targetUnit: "g",
-                    maintenance: "\(Int(needs.fats.rounded()))g"
-                )
+            ScrollView {
+                VStack(spacing: 15) {
+                    DetailedStatBox(
+                        title: "Calories",
+                        current: "0",
+                        currentUnit: "cal",
+                        // Utiliser l'arrondi pour éviter les décimales
+                        target: "\(Int(needs.targetCalories.rounded()))",
+                        targetUnit: "kcal",
+                        maintenance: "\(Int(needs.maintenanceCalories.rounded()))kcal",
+                        color: .orange
+                    )
+                    
+                    DetailedStatBox(
+                        title: "Protéines",
+                        current: "0",
+                        currentUnit: "g",
+                        target: "\(Int(needs.proteins.rounded()))",
+                        targetUnit: "g",
+                        maintenance: "\(Int(needs.proteins.rounded()))g",
+                        color: .purple
+                    )
+                    
+                    DetailedStatBox(
+                        title: "Eau",
+                        current: "0",
+                        currentUnit: "L",
+                        target: "2.5",
+                        targetUnit: "L",
+                        maintenance: "/",
+                        color: .blue
+                    )
+                    
+                    DetailedStatBox(
+                        title: "Glucides",
+                        current: "0",
+                        currentUnit: "g",
+                        target: "\(Int(needs.carbs.rounded()))",
+                        targetUnit: "g",
+                        maintenance: "\(Int(needs.carbs.rounded()))g",
+                        color: .yellow
+                    )
+                    
+                    DetailedStatBox(
+                        title: "Lipides",
+                        current: "0",
+                        currentUnit: "g",
+                        target: "\(Int(needs.fats.rounded()))",
+                        targetUnit: "g",
+                        maintenance: "\(Int(needs.fats.rounded()))g",
+                        color: .red
+                    )
+                    
+                    DetailedStatBox(
+                        title: "Fibres",
+                        current: "0",
+                        currentUnit: "g",
+                        target: "\(Int(needs.fiber.rounded()))",
+                        targetUnit: "g",
+                        maintenance: "\(Int(needs.fiber.rounded()))g",
+                        color: .green
+                    )
+                }
             }
         }
         .padding()
+        .scrollIndicators(.hidden)
         .background(Color(.systemBackground))
         .cornerRadius(20)
     }
@@ -436,11 +521,24 @@ struct DetailedStatBox: View {
     let target: String
     let targetUnit: String
     let maintenance: String
+    let color: Color // Nouvelle propriété pour la couleur
+    
+    // Initialisation avec valeur par défaut pour color
+    init(title: String, current: String, currentUnit: String, target: String, targetUnit: String, maintenance: String, color: Color = .blue) {
+        self.title = title
+        self.current = current
+        self.currentUnit = currentUnit
+        self.target = target
+        self.targetUnit = targetUnit
+        self.maintenance = maintenance
+        self.color = color
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
                 .font(.headline)
+                .foregroundColor(color)
             
             HStack {
                 VStack(alignment: .leading) {
@@ -479,7 +577,13 @@ struct DetailedStatBox: View {
                 .foregroundColor(.gray)
         }
         .padding()
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(15)
+                .background(
+                    RoundedRectangle(cornerRadius: 15)
+                        .fill(Color(.secondarySystemBackground))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 15)
+                                .stroke(color.opacity(0.3), lineWidth: 2) // Bordure colorée
+                        )
+                )
     }
 }

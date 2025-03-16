@@ -14,7 +14,7 @@ struct HomeView: View {
     @ObservedObject private var localDataManager = LocalDataManager.shared
     @State private var isNutritionExpanded = false
     
-    // Ajout des états pour le défilement automatique
+    // États pour le défilement automatique
     @State private var scrollPosition: SwiftUI.ScrollPosition = .init()
     @State private var currentScrollOffset: CGFloat = 0
     @State private var timer = Timer.publish(every: 0.01, on: .current, in: .default).autoconnect()
@@ -22,14 +22,19 @@ struct HomeView: View {
     @State private var isUserInteracting: Bool = false
     @State private var scrollPhase: ScrollPhase = .idle
     @State private var userSelectedStatIndex: Int? = nil
+    @State private var upcomingMeals: [PlannedMeal] = []
     
     var body: some View {
-        ZStack { // Déplacer le ZStack en dehors du NavigationView
+        ZStack {
+            // Fond principal
+            AppTheme.background.ignoresSafeArea()
+            
             NavigationView {
                 ZStack {
                     // Contenu principal
                     ScrollView {
-                        VStack(spacing: 15) { // Espacement uniforme entre les sections
+                        VStack(spacing: 15) {
+                            // Ne pas modifier DailyProgressView, mais adapter son environnement
                             DailyProgressView(
                                 userProfile: localDataManager.userProfile,
                                 isExpanded: $isNutritionExpanded,
@@ -39,35 +44,34 @@ struct HomeView: View {
                                 userSelectedStatIndex: $userSelectedStatIndex,
                                 currentScrollOffset: $currentScrollOffset
                             )
+                            .colorScheme(.dark)
                             
                             // Next Meal Section
                             if let nextMeal = localDataManager.meals.first {
                                 NextMealView(meal: nextMeal)
+                                    .background(AppTheme.cardBackground)
+                                    .cornerRadius(AppTheme.cardBorderRadius)
                             } else {
                                 EmptyNextMealView()
+                                    .background(AppTheme.cardBackground)
+                                    .cornerRadius(AppTheme.cardBorderRadius)
                             }
-                            
-                            // Recent Scans Section
-//                            if !localDataManager.recentScans.isEmpty {
-//                                RecentScansView(scans: localDataManager.recentScans)
-//                            } else {
-//                                EmptyRecentScansView()
-//                            }
                         }
-                        .padding(.horizontal) // Padding horizontal uniquement
+                        .padding(.horizontal)
                     }
                     .blur(radius: isNutritionExpanded ? 3 : 0)
                     .zIndex(0)
                 }
                 .navigationTitle("Bonjour \(localDataManager.userProfile?.name.components(separatedBy: " ").first ?? "")")
+                .foregroundColor(AppTheme.primaryText)
             }
+            .accentColor(AppTheme.accent)
             .zIndex(0)
             
-            // Overlay sombre et vue expandée au-dessus de tout
-            // Si la nutrition est étendue, afficher la vue détaillée par-dessus
+            // Overlay sombre et vue expandée
             if isNutritionExpanded, let profile = localDataManager.userProfile {
                 ZStack {
-                    Color.black.opacity(0.3)
+                    Color.black.opacity(0.7)
                         .ignoresSafeArea()
                         .onTapGesture {
                             withAnimation {
@@ -80,28 +84,28 @@ struct HomeView: View {
                         isExpanded: $isNutritionExpanded
                     )
                     .padding()
-                    .background(Color(.systemBackground))
+                    .background(AppTheme.cardBackground)
                     .cornerRadius(20)
-                    .shadow(radius: 10)
+                    .shadow(color: Color.black.opacity(0.3), radius: 10)
                     .padding(.horizontal)
+                    .foregroundColor(AppTheme.primaryText)
                 }
                 .transition(.opacity)
                 .zIndex(1)
             }
         }
-        // À la fin de votre ZStack principal, avant les dernières accolades
         .onReceive(timer) { _ in
             currentScrollOffset += 0.15
             scrollPosition.scrollTo(x: currentScrollOffset)
         }
         .task {
-            // Animation d'entrée après un court délai
             try? await Task.sleep(for: .seconds(0.35))
             
             withAnimation(.smooth(duration: 0.75, extraBounce: 0)) {
                 initialAnimation = true
             }
         }
+        .preferredColorScheme(.dark)
     }
 }
 
