@@ -14,8 +14,9 @@ struct PlanningView: View {
     @State private var showingConfigSheet = false
     @State private var currentPreferences: MealPreferences?
     @State private var selectedMealTypes: Set<MealType> = [.breakfast, .lunch, .dinner, .snack]
-    @State private var selectedMealSuggestions: Set<AIMeal> = []
+    @State private var selectedMealIDs: Set<UUID> = [] // Stocke les IDs au lieu des objets
     @State private var showingDetailedRecipes = false
+    @State private var forceRefresh = UUID()
     
     init() {
         _viewModel = StateObject(wrappedValue: PlanningViewModel())
@@ -23,6 +24,11 @@ struct PlanningView: View {
     
     var groupedSuggestions: [String: [AIMeal]] {
         Dictionary(grouping: viewModel.mealSuggestions) { $0.type }
+    }
+    
+    // Calcule les repas sélectionnés à partir des IDs
+    var selectedMealSuggestions: [AIMeal] {
+        return viewModel.mealSuggestions.filter { selectedMealIDs.contains($0.id) }
     }
     
     var body: some View {
@@ -45,12 +51,13 @@ struct PlanningView: View {
                                 MealSuggestionSection(
                                     mealType: mealType,
                                     suggestions: suggestions,
-                                    selectedSuggestions: $selectedMealSuggestions
+                                    selectedIDs: $selectedMealIDs // Passer les IDs au lieu des objets
                                 )
+                                .id("\(mealType)_\(forceRefresh.uuidString)") // Forcer le rafraîchissement
                             }
                         }
                         
-                        // Afficher le bouton pour obtenir les détails (pour utilisateurs premium)
+                        // Afficher le bouton pour obtenir les détails
                         if !selectedMealSuggestions.isEmpty {
                             Button(action: {
                                 showingDetailedRecipes = true
@@ -93,10 +100,9 @@ struct PlanningView: View {
                         ),
                         onGenerate: { preferences in
                             // Reset selected suggestions
-                            selectedMealSuggestions = []
+                            selectedMealIDs = []
                             
                             // Déboguer les préférences
-                            
                             print("=== PRÉFÉRENCES AVANT GÉNÉRATION (CAS 1 PLANNING VIEW) ===")
                             print("Types de repas:", preferences.mealTypes.map { $0.rawValue })
                             print("Recettes par type:", preferences.recipesPerType)
@@ -118,7 +124,7 @@ struct PlanningView: View {
                         ),
                         onGenerate: { preferences in
                             // Reset selected suggestions
-                            selectedMealSuggestions = []
+                            selectedMealIDs = []
                             
                             // Déboguer les préférences
                             print("=== PRÉFÉRENCES AVANT GÉNÉRATION (CAS 2 PLANNING VIEW) ===")
@@ -138,7 +144,7 @@ struct PlanningView: View {
             .sheet(isPresented: $showingDetailedRecipes) {
                 if !selectedMealSuggestions.isEmpty {
                     DetailedRecipesView(
-                        recipes: Array(selectedMealSuggestions),
+                        recipes: selectedMealSuggestions,
                         onDismiss: { showingDetailedRecipes = false }
                     )
                 }
@@ -146,6 +152,8 @@ struct PlanningView: View {
         }
         .onAppear {
             viewModel.setDependencies(localDataManager: localDataManager, aiService: AIService.shared)
+            // Forcer le rafraîchissement à chaque apparition
+            forceRefresh = UUID()
         }
     }
     
@@ -169,7 +177,7 @@ struct PlanningView: View {
 struct MealSuggestionSection: View {
     let mealType: String
     let suggestions: [AIMeal]
-    @Binding var selectedSuggestions: Set<AIMeal>
+    @Binding var selectedIDs: Set<UUID> // Modifier pour utiliser des IDs
     
     var body: some View {
         VStack(alignment: .leading) {
@@ -180,12 +188,12 @@ struct MealSuggestionSection: View {
             ForEach(suggestions) { suggestion in
                 MealSuggestionCard(
                     suggestion: suggestion,
-                    isSelected: selectedSuggestions.contains(suggestion),
+                    isSelected: selectedIDs.contains(suggestion.id), // Vérifier avec l'ID
                     onToggle: { selected in
                         if selected {
-                            selectedSuggestions.insert(suggestion)
+                            selectedIDs.insert(suggestion.id) // Insérer l'ID
                         } else {
-                            selectedSuggestions.remove(suggestion)
+                            selectedIDs.remove(suggestion.id) // Supprimer l'ID
                         }
                     }
                 )
@@ -199,6 +207,9 @@ struct MealSuggestionCard: View {
     let suggestion: AIMeal
     let isSelected: Bool
     let onToggle: (Bool) -> Void
+    
+    // État local pour gérer l'affichage
+    @State private var localIsSelected: Bool = false
     
     var body: some View {
         VStack(alignment: .leading) {
@@ -217,10 +228,11 @@ struct MealSuggestionCard: View {
                 
                 // Checkbox pour sélectionner cette recette
                 Button(action: {
-                    onToggle(!isSelected)
+                    localIsSelected.toggle() // Changer l'état local immédiatement
+                    onToggle(!isSelected)    // Propager le changement
                 }) {
-                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                        .foregroundColor(isSelected ? .blue : .gray)
+                    Image(systemName: localIsSelected ? "checkmark.circle.fill" : "circle")
+                        .foregroundColor(localIsSelected ? .blue : .gray)
                         .font(.title2)
                 }
             }
@@ -232,9 +244,17 @@ struct MealSuggestionCard: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 10)
-                .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 2)
+                .stroke(localIsSelected ? Color.blue : Color.clear, lineWidth: 2)
         )
         .padding(.horizontal)
+        .onAppear {
+            // Synchroniser l'état local avec l'état reçu lors de l'apparition
+            localIsSelected = isSelected
+        }
+        .onChange(of: isSelected) { newValue in
+            // Mettre à jour l'état local quand l'état externe change
+            localIsSelected = newValue
+        }
     }
 }
 
