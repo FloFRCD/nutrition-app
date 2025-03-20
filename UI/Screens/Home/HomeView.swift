@@ -47,15 +47,10 @@ struct HomeView: View {
                             .colorScheme(.dark)
                             
                             // Next Meal Section
-                            if let nextMeal = localDataManager.meals.first {
-                                NextMealView(meal: nextMeal)
-                                    .background(AppTheme.cardBackground)
-                                    .cornerRadius(AppTheme.cardBorderRadius)
-                            } else {
-                                EmptyNextMealView()
-                                    .background(AppTheme.cardBackground)
-                                    .cornerRadius(AppTheme.cardBorderRadius)
-                            }
+                            NextMealView()
+                                .environmentObject(localDataManager)
+                                .background(AppTheme.cardBackground)
+                                .cornerRadius(AppTheme.cardBorderRadius)
                         }
                         .padding(.horizontal)
                     }

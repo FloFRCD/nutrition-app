@@ -17,6 +17,8 @@ class DetailedRecipesViewModel: ObservableObject {
     
     @MainActor
     func fetchRecipeDetails(for recipes: [AIMeal], userProfile: UserProfile) async {
+        isLoading = true
+            defer { isLoading = false }
         
         // Vérifier d'abord si les détails sont déjà en cache
         if let cachedDetails = try? await loadCachedDetails(for: recipes) {
