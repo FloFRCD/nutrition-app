@@ -40,7 +40,7 @@ struct PlanningView: View {
                 // Sélecteur d'onglets
                 ConsistentTabView(
                     selection: $selectedTab,
-                    titles: ["Suggestions de repas", "Recettes sélectionnées"]
+                    titles: ["Suggestions", "Recettes", "Sélection"]
                 )
                 
                 // TabView qui permet le swipe
@@ -62,10 +62,15 @@ struct PlanningView: View {
                     }
                     .tag(0)
                     
-                    // Onglet 2: Recettes sélectionnées
+                    // Onglet 2: Recettes
                     SavedRecipesView()
                         .environmentObject(localDataManager)
                         .tag(1)
+                    
+                    // Onglet 3: Sélection
+                    SelectedRecipesView()
+                        .environmentObject(localDataManager)
+                        .tag(2)
                 }
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             }
@@ -224,11 +229,11 @@ struct PlanningView: View {
                 await generateRecipeDetails(userProfile: UserProfile.default)
             }
             
-            // 2. Désactiver l'indicateur de chargement et basculer vers l'onglet "Recettes sélectionnées"
+            // 2. Désactiver l'indicateur de chargement et basculer vers l'onglet "Recettes"
             await MainActor.run {
                 isGeneratingDetails = false
                 
-                // Basculer vers l'onglet "Recettes sélectionnées"
+                // Basculer vers l'onglet "Recettes"
                 withAnimation {
                     selectedTab = 1
                 }

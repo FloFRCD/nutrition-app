@@ -17,6 +17,7 @@ struct SavedRecipesView: View {
     @State private var recipeToDelete: DetailedRecipe?
     @State private var showingDeleteConfirmation = false
     @State private var lastUpdated = Date() // Suivi de la dernière mise à jour
+ 
     
     var body: some View {
         ZStack {
@@ -101,7 +102,7 @@ struct SavedRecipesView: View {
                 }
             }
         } message: {
-            Text("Cette recette sera définitivement supprimée de vos recettes sélectionnées.")
+            Text("Cette recette sera définitivement supprimée de vos recettes.")
         }
         // IMPORTANT: Écouter les notifications de suppression de recettes
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("RecipeDeleted"))) { notification in
@@ -289,6 +290,11 @@ struct SavedRecipesView: View {
 
 struct SavedRecipeCard: View {
     let recipe: DetailedRecipe
+    @EnvironmentObject private var localDataManager: LocalDataManager
+    @State private var isSelected = false
+    @State private var showDeleteConfirmation = false
+  
+    
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -297,7 +303,7 @@ struct SavedRecipeCard: View {
                     Text(recipe.name)
                         .font(.system(size: 17, weight: .semibold))
                         .lineLimit(1)
-                        .foregroundColor(.primary) // Assurer la lisibilité dans NavigationLink
+                        .foregroundColor(.primary)
                     
                     Text(recipe.description)
                         .font(.subheadline)
@@ -307,7 +313,15 @@ struct SavedRecipeCard: View {
                 
                 Spacer()
                 
-                // Badge pour le type de repas - arrondi et avec couleur selon le type
+                // Indicateur de sélection
+                if isSelected {
+                    Image(systemName: "heart.fill")
+                        .foregroundColor(.red)
+                        .font(.subheadline)
+                        .padding(.leading, 4)
+                }
+                
+                // Badge pour le type de repas
                 Text(getShortMealTypeDisplayName(type: recipe.type))
                     .font(.caption)
                     .padding(.horizontal, 8)
@@ -332,6 +346,42 @@ struct SavedRecipeCard: View {
                 .fill(Color(.secondarySystemBackground))
         )
         .padding(.horizontal)
+        .contextMenu {
+            Button(action: {
+                toggleSelection()
+            }) {
+                Label(
+                    isSelected ? "Retirer des sélections" : "Ajouter aux sélections",
+                    systemImage: isSelected ? "heart.slash" : "heart"
+                )
+            }
+            
+            Button(role: .destructive) {
+                showDeleteConfirmation = true
+            } label: {
+                Label("Supprimer", systemImage: "trash")
+            }
+        }
+        .onAppear {
+            // Vérifier si la recette est sélectionnée au chargement
+            Task {
+                isSelected = await localDataManager.isRecipeSelected(recipe)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("RecipeSelectionChanged"))) { _ in
+            // Mettre à jour l'état de sélection quand une notification est reçue
+            Task {
+                isSelected = await localDataManager.isRecipeSelected(recipe)
+            }
+        }
+        .alert("Supprimer cette recette ?", isPresented: $showDeleteConfirmation) {
+                    Button("Annuler", role: .cancel) { }
+                    Button("Supprimer", role: .destructive) {
+                        deleteRecipe()
+                    }
+                } message: {
+                    Text("Cette recette sera définitivement supprimée de vos recettes enregistrées.")
+                }
     }
     
     // Fonction pour obtenir un nom très court d'affichage du type de repas
@@ -349,6 +399,50 @@ struct SavedRecipeCard: View {
         return type
     }
     
+    // Fonction pour supprimer la recette (en utilisant la même logique que SingleRecipeDetailView)
+        private func deleteRecipe() {
+            Task {
+                do {
+                    // Vérifier si le fichier de stockage existe et le lire
+                    var savedRecipes: [DetailedRecipe] = []
+                    if let loadedRecipes: [DetailedRecipe] = try? await localDataManager.load(forKey: "saved_detailed_recipes") {
+                        savedRecipes = loadedRecipes
+                    }
+                    
+                    // Le nombre de recettes avant suppression
+                    let initialCount = savedRecipes.count
+                    print("📝 Avant suppression: \(initialCount) recettes")
+                    
+                    // Supprimer la recette actuelle par son nom (comme dans SingleRecipeDetailView)
+                    savedRecipes.removeAll { $0.name == recipe.name }
+                    
+                    // Vérifier si la suppression a fonctionné
+                    let finalCount = savedRecipes.count
+                    print("📝 Après suppression: \(finalCount) recettes (supprimé: \(initialCount - finalCount))")
+                    
+                    // Sauvegarder la liste mise à jour
+                    try await localDataManager.save(savedRecipes, forKey: "saved_detailed_recipes")
+                    print("✅ Recette supprimée avec succès et stockage mis à jour")
+                    
+                    // Si la recette était dans les sélections, la retirer aussi
+                    await localDataManager.removeFromSelection(recipe)
+                    
+                    // Ajouter un délai pour montrer le feedback de suppression
+                    try await Task.sleep(nanoseconds: 800_000_000) // 0.8 seconde
+                    
+                    // Poster une notification pour informer les autres vues
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("RecipeDeleted"),
+                        object: recipe.id
+                    )
+                    print("📣 Notification de suppression envoyée")
+                    
+                } catch {
+                    print("❌ Erreur lors de la suppression de la recette: \(error)")
+                }
+            }
+        }
+    
     // Fonction pour obtenir la couleur en fonction du type de repas
     private func getMealTypeColor(type: String) -> Color {
         let lowerType = type.lowercased()
@@ -362,6 +456,17 @@ struct SavedRecipeCard: View {
             return Color.purple
         }
         return Color.gray
+    }
+    
+    // Basculer la sélection
+    private func toggleSelection() {
+        Task {
+            await localDataManager.toggleRecipeSelection(recipe)
+            isSelected = await localDataManager.isRecipeSelected(recipe)
+            
+            // Notifier le changement
+            NotificationCenter.default.post(name: NSNotification.Name("RecipeSelectionChanged"), object: nil)
+        }
     }
 }
 

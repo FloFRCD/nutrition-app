@@ -119,7 +119,7 @@ enum IngredientUnit: String, Codable, CaseIterable {
         case .liter: return "litres"
         case .tablespoon: return "cuillères à soupe"
         case .teaspoon: return "cuillères à café"
-        case .piece: return "pièces"
+        case .piece: return ""
         case .cup: return "tasses"
         }
     }

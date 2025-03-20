@@ -69,8 +69,10 @@ class DetailedRecipesViewModel: ObservableObject {
             1. La liste précise des ingrédients avec quantités (utilise des nombres décimaux, pas de fractions)
             2. Les valeurs nutritionnelles (calories, protéines, glucides, lipides, fibres)
             3. Les instructions de préparation étape par étape
-            4. Utilise des unités de mesure logiques, par exemple pour un citron donne "1 Citron" ou "0.5 Citron" plutôt qu'un poids en grammes
+            4. Pour les ingrédients qui ne necessites pas de poid utilise n'utilise pas piece ou unité. 
+            Par exemple, "name": "Banane", "quantity": 1, "unit": ""
             5. Pour l'huile et les ingrédients similaires, utilise "càs" (cuillère à soupe) ou "càc" (cuillère à café) plutôt que des millilitres
+            6. Pour le type de repas je veux que tu utilise seulement ces 4 termes : Petit-déjeuner, Déjeuner, Collation, Dîner
             
             Réponds au format JSON suivant, sans ajouter de balises markdown ou de formatage supplémentaire:
             {

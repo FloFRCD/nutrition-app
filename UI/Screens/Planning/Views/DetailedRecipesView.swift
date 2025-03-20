@@ -216,13 +216,28 @@ struct SingleRecipeDetailView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var showingDeleteConfirmation = false
     @State private var isDeleting = false
+    @State private var isSelected = false
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text(recipe.name)
-                    .font(.title)
-                    .bold()
+                // En-tête avec titre et bouton de sélection
+                HStack {
+                    Text(recipe.name)
+                        .font(.title)
+                        .bold()
+                    
+                    Spacer()
+                    
+                    // Bouton de sélection (cœur)
+                    Button(action: {
+                        toggleSelection()
+                    }) {
+                        Image(systemName: isSelected ? "heart.fill" : "heart")
+                            .font(.title2)
+                            .foregroundColor(isSelected ? .red : .gray)
+                    }
+                }
                 
                 Text(recipe.description)
                     .font(.subheadline)
@@ -284,7 +299,7 @@ struct SingleRecipeDetailView: View {
                     }
                 }
                 
-                // Bouton de suppression (plus visible)
+                // Bouton de suppression
                 Button(action: {
                     showingDeleteConfirmation = true
                 }) {
@@ -295,10 +310,8 @@ struct SingleRecipeDetailView: View {
                                 .padding(.trailing, 5)
                         } else {
                             Image(systemName: "trash")
-                                .font(.headline)
                         }
                         Text(isDeleting ? "Suppression en cours..." : "Supprimer cette recette")
-                            .font(.headline)
                     }
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
@@ -320,52 +333,76 @@ struct SingleRecipeDetailView: View {
         } message: {
             Text("Cette recette sera définitivement supprimée de vos recettes sélectionnées.")
         }
+        .onAppear {
+            // Vérifier si la recette est déjà sélectionnée
+            Task {
+                isSelected = await localDataManager.isRecipeSelected(recipe)
+            }
+        }
     }
     
     func formatQuantity(_ value: Double) -> String {
         return value.truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", value) : String(format: "%.1f", value)
     }
     
-    // Fonction améliorée pour supprimer la recette
+    // Basculer la sélection de cette recette
+    private func toggleSelection() {
+        Task {
+            await localDataManager.toggleRecipeSelection(recipe)
+            isSelected = await localDataManager.isRecipeSelected(recipe)
+            
+            // Notifier le changement pour mettre à jour d'autres vues
+            NotificationCenter.default.post(name: NSNotification.Name("RecipeSelectionChanged"), object: nil)
+        }
+    }
+    
+    // Fonction pour supprimer la recette
     private func deleteRecipeAndNotify() {
+        // Activer l'indicateur de suppression
         isDeleting = true
         
         Task {
             do {
-                // Approche plus directe: récupérer les recettes, filtrer par nom
-                let recipes: [DetailedRecipe]? = try? await localDataManager.load(forKey: "saved_detailed_recipes")
-                var updatedRecipes = recipes ?? []
-                
-                // Afficher les noms des recettes avant suppression pour le débogage
-                print("Recettes avant suppression:")
-                for (index, r) in updatedRecipes.enumerated() {
-                    print("[\(index)] \(r.name) - ID: \(r.id)")
+                // Vérifier si le fichier de stockage existe et le lire
+                var savedRecipes: [DetailedRecipe] = []
+                if let loadedRecipes: [DetailedRecipe] = try? await localDataManager.load(forKey: "saved_detailed_recipes") {
+                    savedRecipes = loadedRecipes
                 }
                 
-                // Compter combien de recettes nous avions
-                let countBefore = updatedRecipes.count
+                // Le nombre de recettes avant suppression
+                let initialCount = savedRecipes.count
+                print("📝 Avant suppression: \(initialCount) recettes")
                 
-                // Méthode alternative: filtrer par nom au lieu de l'ID
-                updatedRecipes = updatedRecipes.filter { $0.name != recipe.name }
+                // Supprimer la recette actuelle
+                savedRecipes.removeAll { $0.name == recipe.name }
                 
-                // Compter combien nous en avons maintenant
-                let countAfter = updatedRecipes.count
-                print("Recettes supprimées: \(countBefore - countAfter)")
+                // Vérifier si la suppression a fonctionné
+                let finalCount = savedRecipes.count
+                print("📝 Après suppression: \(finalCount) recettes (supprimé: \(initialCount - finalCount))")
                 
                 // Sauvegarder la liste mise à jour
-                try await localDataManager.save(updatedRecipes, forKey: "saved_detailed_recipes")
+                try await localDataManager.save(savedRecipes, forKey: "saved_detailed_recipes")
+                print("✅ Recette supprimée avec succès et stockage mis à jour")
                 
-                // Attendre un peu plus longtemps
-                try await Task.sleep(nanoseconds: 1_000_000_000) // 1 seconde
+                // Si la recette était dans les sélections, la retirer aussi
+                await localDataManager.removeFromSelection(recipe)
                 
-                // Notifier et retourner
-                NotificationCenter.default.post(name: NSNotification.Name("RecipeDeleted"), object: nil)
+                // Ajouter un délai pour montrer le feedback de suppression
+                try await Task.sleep(nanoseconds: 800_000_000) // 0.8 seconde
                 
+                // Poster une notification pour informer les autres vues
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("RecipeDeleted"),
+                    object: recipe.id
+                )
+                print("📣 Notification de suppression envoyée")
+                
+                // Revenir à l'écran précédent
                 await MainActor.run {
                     presentationMode.wrappedValue.dismiss()
                 }
             } catch {
-                print("Erreur lors de la suppression: \(error)")
+                print("❌ Erreur lors de la suppression de la recette: \(error)")
                 await MainActor.run {
                     isDeleting = false
                 }

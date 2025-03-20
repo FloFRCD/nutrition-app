@@ -139,3 +139,63 @@ extension LocalDataManager {
         return weightEntries.max(by: { $0.date < $1.date })
     }
 }
+
+extension LocalDataManager {
+    // Charger les recettes sélectionnées
+    func loadSelectedRecipes() async throws -> [DetailedRecipe] {
+        return try await load(forKey: "selected_recipes") ?? []
+    }
+    
+    // Sauvegarder les recettes sélectionnées
+    func saveSelectedRecipes(_ recipes: [DetailedRecipe]) async throws {
+        try await save(recipes, forKey: "selected_recipes")
+    }
+    
+    // Ajouter une recette aux sélections
+    func addToSelection(_ recipe: DetailedRecipe) async {
+        do {
+            var selectedRecipes = try await loadSelectedRecipes()
+            
+            // Vérifier si la recette n'est pas déjà dans les sélections
+            if !selectedRecipes.contains(where: { $0.name == recipe.name }) {
+                selectedRecipes.append(recipe)
+                try await saveSelectedRecipes(selectedRecipes)
+                print("✅ Recette ajoutée aux sélections: \(recipe.name)")
+            }
+        } catch {
+            print("❌ Erreur lors de l'ajout aux sélections: \(error)")
+        }
+    }
+    
+    // Retirer une recette des sélections
+    func removeFromSelection(_ recipe: DetailedRecipe) async {
+        do {
+            var selectedRecipes = try await loadSelectedRecipes()
+            selectedRecipes.removeAll { $0.name == recipe.name }
+            try await saveSelectedRecipes(selectedRecipes)
+            print("✅ Recette retirée des sélections: \(recipe.name)")
+        } catch {
+            print("❌ Erreur lors du retrait des sélections: \(error)")
+        }
+    }
+    
+    // Vérifier si une recette est sélectionnée
+    func isRecipeSelected(_ recipe: DetailedRecipe) async -> Bool {
+        do {
+            let selectedRecipes = try await loadSelectedRecipes()
+            return selectedRecipes.contains(where: { $0.name == recipe.name })
+        } catch {
+            print("❌ Erreur lors de la vérification des sélections: \(error)")
+            return false
+        }
+    }
+    
+    // Basculer l'état de sélection d'une recette
+    func toggleRecipeSelection(_ recipe: DetailedRecipe) async {
+        if await isRecipeSelected(recipe) {
+            await removeFromSelection(recipe)
+        } else {
+            await addToSelection(recipe)
+        }
+    }
+}

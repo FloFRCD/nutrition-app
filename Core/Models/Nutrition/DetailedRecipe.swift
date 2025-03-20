@@ -61,3 +61,47 @@ struct DetailedRecipe: Codable, Identifiable, Equatable {
 struct DetailedRecipesResponse: Codable {
     let detailed_recipes: [DetailedRecipe]
 }
+
+enum IngredientCategory: String, CaseIterable {
+    case fruitsAndVegetables = "Fruits & Légumes"
+    case proteins = "Protéines"
+    case starches = "Féculents"
+    case condimentsAndSpices = "Condiments & Épices"
+    case grocery = "Épicerie"
+}
+
+
+extension String {
+    var ingredientCategory: IngredientCategory {
+        let lowerName = self.lowercased()
+        
+        // Fruits et légumes
+        if ["pomme", "banane", "orange", "citron", "fraise", "framboise", "poire", "pêche", "abricot", "raisin",
+            "tomate", "carotte", "poivron", "oignon", "ail", "échalote", "salade", "épinard", "courgette", "aubergine",
+            "concombre", "brocoli", "chou", "champignon", "pomme de terre", "patate", "légume", "fruit"].contains(where: lowerName.contains) {
+            return .fruitsAndVegetables
+        }
+        
+        // Protéines
+        if ["viande", "poulet", "dinde", "boeuf", "porc", "agneau", "veau", "jambon", "bacon", "saucisse",
+            "poisson", "saumon", "thon", "crevette", "oeuf", "œuf", "lait", "yaourt", "fromage", "tofu",
+            "légumineuse", "haricot", "lentille", "pois chiche"].contains(where: lowerName.contains) {
+            return .proteins
+        }
+        
+        // Féculents
+        if ["riz", "pâte", "spaghetti", "nouille", "pomme de terre", "patate", "pain", "farine", "céréale",
+            "couscous", "quinoa", "boulgour"].contains(where: lowerName.contains) {
+            return .starches
+        }
+        
+        // Condiments et épices
+        if ["sel", "poivre", "huile", "vinaigre", "sauce", "moutarde", "mayonnaise", "ketchup", "épice",
+            "herbe", "basilic", "thym", "romarin", "origan"].contains(where: lowerName.contains) {
+            return .condimentsAndSpices
+        }
+        
+        // Par défaut, mettre en épicerie
+        return .grocery
+    }
+}

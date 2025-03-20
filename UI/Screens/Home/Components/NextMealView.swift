@@ -11,195 +11,206 @@ import SwiftUI
 struct NextMealView: View {
     @EnvironmentObject private var localDataManager: LocalDataManager
     @State private var savedRecipes: [DetailedRecipe] = []
+    @State private var filteredRecipes: [DetailedRecipe] = []
     @State private var isLoading = false
     @State private var isExpanded = false
-    @State private var nextMealRecipe: DetailedRecipe?
+    @State private var currentIndex = 0
+    @State private var showingRecipeDetail = false
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Prochain repas")
-                .font(.headline)
-            
+        ZStack {
             if isLoading {
                 ProgressView()
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding()
-            } else if nextMealRecipe != nil {
-                // Vue avec recette
-                filledView
-                    .onTapGesture {
-                        withAnimation {
-                            isExpanded.toggle()
-                        }
-                    }
-            } else if !savedRecipes.isEmpty {
-                // Des recettes existent mais aucune n'est appropriée pour ce moment de la journée
-                alternativeFilledView
-                    .onTapGesture {
-                        withAnimation {
-                            isExpanded.toggle()
-                        }
-                    }
-            } else {
-                // Aucune recette sauvegardée
+            } else if filteredRecipes.isEmpty {
                 emptyView
+            } else {
+                // Carousel de recettes
+                VStack(spacing: 8) {
+                    // Carousel principal
+                    TabView(selection: $currentIndex) {
+                        ForEach(Array(filteredRecipes.enumerated()), id: \.element.id) { index, recipe in
+                            recipeCard(for: recipe, index: index)
+                                .tag(index)
+                        }
+                    }
+                    .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                    .frame(height: isExpanded ? 180 : 100)
+                    
+                    // Indicateur de pagination
+                    if filteredRecipes.count > 1 {
+                        HStack(spacing: 6) {
+                            ForEach(0..<filteredRecipes.count, id: \.self) { index in
+                                Circle()
+                                    .fill(currentIndex == index ? Color.white : Color.gray.opacity(0.5))
+                                    .frame(width: 6, height: 6)
+                            }
+                        }
+                        .padding(.bottom, 4)
+                    }
+                }
+                .animation(.spring(), value: isExpanded)
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(15)
         .onAppear {
+            print("NextMealView apparaît - chargement des recettes...")
             Task {
                 await loadSavedRecipes()
             }
         }
-    }
-    
-    // Vue quand une recette est disponible pour le prochain repas
-    private var filledView: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if let recipe = nextMealRecipe {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text(getMealTypeDisplayName(type: recipe.type))
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                            
-                            Text("•")
-                                .foregroundColor(.secondary)
-                            
-                            Text(getCurrentTimeFormatted())
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                        }
-                        
-                        Text(recipe.name)
-                            .font(.system(size: 17, weight: .semibold))
-                            .lineLimit(isExpanded ? nil : 1)
-                        
-                        if isExpanded {
-                            Text(recipe.description)
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                                .padding(.top, 2)
-                            
-                            // Valeurs nutritionnelles en format compact
-                            HStack(spacing: 10) {
-                                Label("\(Int(recipe.nutritionFacts.calories)) kcal", systemImage: "flame.fill")
-                                    .font(.footnote)
-                                    .foregroundColor(.orange)
-                                
-                                Label("\(Int(recipe.nutritionFacts.proteins))g", systemImage: "fork.knife")
-                                    .font(.footnote)
-                                    .foregroundColor(.purple)
+        .sheet(isPresented: $showingRecipeDetail) {
+            if !filteredRecipes.isEmpty && currentIndex < filteredRecipes.count {
+                NavigationView {
+                    SingleRecipeDetailView(recipe: filteredRecipes[currentIndex])
+                        .navigationTitle("Détails de la recette")
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                Button("Fermer") {
+                                    showingRecipeDetail = false
+                                }
                             }
-                            .padding(.top, 4)
                         }
-                    }
-                    
-                    Spacer()
-                    
-                    // Badge calorique
-                    Text("\(Int(recipe.nutritionFacts.calories)) kcal")
-                        .font(.footnote)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.green.opacity(0.2))
-                        .cornerRadius(10)
-                    
-                    // Flèche d'expansion
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .padding(.leading, 4)
                 }
             }
         }
     }
     
-    // Vue alternative quand des recettes sont disponibles mais pas pour ce moment
-    private var alternativeFilledView: some View {
-        VStack(alignment: .leading, spacing: 8) {
+    // Carte pour une recette individuelle
+    private func recipeCard(for recipe: DetailedRecipe, index: Int) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            // En-tête avec type de repas et heure
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Recettes disponibles")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    
-                    Text(getRecommendedMealType())
-                        .font(.system(size: 17, weight: .semibold))
-                }
+                Text(getMealTypeDisplayName(type: recipe.type))
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+//                
+//                Text("•")
+//                    .foregroundColor(.gray)
+//                
+//                Text(getCurrentTimeFormatted())
+//                    .font(.subheadline)
+//                    .foregroundColor(.gray)
                 
                 Spacer()
                 
-                // Flèche d'expansion
+                // Badge de calories
+                Text("\(Int(recipe.nutritionFacts.calories)) kcal")
+                    .font(.subheadline)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(Color.green.opacity(0.2))
+                    .cornerRadius(20)
+                
+                // Indicateur d'expansion
                 Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.gray)
+                    .font(.footnote)
+                    .padding(.leading, 4)
             }
             
-            if isExpanded && !savedRecipes.isEmpty {
-                // Afficher quelques recettes du type recommandé
-                let recommendedType = getRecommendedMealType()
-                let filteredRecipes = savedRecipes.filter { standardizeMealType($0.type) == recommendedType }
+            // Nom de la recette
+            Text(recipe.name)
+                .font(.title3)
+                .fontWeight(.semibold)
+                .lineLimit(1)
+            Text(recipe.description)
+                .font(.subheadline)
+                .foregroundColor(.gray)
+                .lineLimit(2)
+                .padding(.top, 4)
+            
+            // Section développée si isExpanded = true
+            if isExpanded {
+
                 
-                if !filteredRecipes.isEmpty {
-                    ForEach(filteredRecipes.prefix(2), id: \.id) { recipe in
-                        NavigationLink(destination: SingleRecipeDetailView(recipe: recipe)) {
-                            HStack {
-                                Text("•")
-                                Text(recipe.name)
-                                    .font(.subheadline)
-                                    .foregroundColor(.primary)
-                                Spacer()
-                                Text("\(Int(recipe.nutritionFacts.calories)) kcal")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding(.vertical, 4)
-                        }
+                // Toutes les valeurs nutritionnelles
+                HStack(spacing: 16) {
+                    Label {
+                        Text("\(Int(recipe.nutritionFacts.proteins))g")
+                            .foregroundColor(.purple)
+                            .font(.subheadline)
+                    } icon: {
+                        Image(systemName: "p.circle")
+                            .foregroundColor(.purple)
                     }
-                    
-                    if filteredRecipes.count > 2 {
-                        Text("+ \(filteredRecipes.count - 2) autres...")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .padding(.top, 4)
+                    Label {
+                        Text("\(Int(recipe.nutritionFacts.fats))g")
+                            .foregroundColor(.yellow)
+                            .font(.subheadline)
+                    } icon: {
+                        Image(systemName: "g.circle")
+                            .foregroundColor(.yellow)
                     }
-                } else {
-                    Text("Aucune recette de \(recommendedType.lowercased()) disponible")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .padding(.top, 4)
+                    Label {
+                        Text("\(Int(recipe.nutritionFacts.carbs))g")
+                            .foregroundColor(.red)
+                            .font(.subheadline)
+                    } icon: {
+                        Image(systemName: "l.circle")
+                            .foregroundColor(.red)
+                    }
+                    Label {
+                        Text("\(Int(recipe.nutritionFacts.fiber))g")
+                            .foregroundColor(.green)
+                            .font(.subheadline)
+                    } icon: {
+                        Image(systemName: "f.circle")
+                            .foregroundColor(.green)
+                    }
                 }
+                .padding(.top, 4)
+                
+                // Bouton pour voir les détails
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        showingRecipeDetail = true
+                    }) {
+                        Text("Recette")
+                            .font(.footnote)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color.clear)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                            .overlay( /// apply a rounded border
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(.gray)
+                            )
+                            
+                    }
+                }
+                .padding(.top, 4)
+            }
+        }
+        .padding()
+        .onTapGesture {
+            withAnimation {
+                isExpanded.toggle()
             }
         }
     }
     
     // Vue vide quand aucune recette n'est sauvegardée
     private var emptyView: some View {
-        VStack(alignment: .center, spacing: 12) {
-            Image(systemName: "plus.circle")
-                .font(.system(size: 32))
-                .foregroundColor(.blue)
-            
-            Text("Planifiez votre premier repas")
-                .font(.subheadline)
-                .foregroundColor(.gray)
-            
-            NavigationLink(destination: PlanningView()) {
-                Text("Créer un planning")
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
+        NavigationLink(destination: PlanningView()) {
+            HStack {
+                Spacer()
+                VStack(spacing: 8) {
+                    Image(systemName: "plus.circle")
+                        .font(.system(size: 24))
+                        .foregroundColor(.blue)
+                    
+                    Text("Planifiez votre premier repas")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                }
+                Spacer()
             }
+            .padding()
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
+        .buttonStyle(PlainButtonStyle())
     }
     
     // Charger les recettes sauvegardées
@@ -211,33 +222,39 @@ struct NextMealView: View {
             if let recipes: [DetailedRecipe] = try await localDataManager.load(forKey: "saved_detailed_recipes") {
                 await MainActor.run {
                     savedRecipes = recipes
-                    nextMealRecipe = findNextMealRecipe()
+                    // Filtrer les recettes par type approprié pour le moment de la journée
+                    filterRecipesForCurrentTime()
                 }
             } else {
                 await MainActor.run {
                     savedRecipes = []
-                    nextMealRecipe = nil
+                    filteredRecipes = []
                 }
             }
         } catch {
             print("❌ Erreur lors du chargement des recettes: \(error)")
             await MainActor.run {
                 savedRecipes = []
-                nextMealRecipe = nil
+                filteredRecipes = []
             }
         }
     }
     
-    // Trouver la recette la plus appropriée pour le prochain repas
-    private func findNextMealRecipe() -> DetailedRecipe? {
-        // Obtenir le type de repas recommandé
+    // Filtrer les recettes selon l'heure actuelle
+    private func filterRecipesForCurrentTime() {
         let recommendedType = getRecommendedMealType()
         
-        // Filtrer les recettes par type
-        let filteredRecipes = savedRecipes.filter { standardizeMealType($0.type) == recommendedType }
+        // D'abord, essayer de trouver des recettes du type recommandé
+        var filtered = savedRecipes.filter { standardizeMealType($0.type) == recommendedType }
         
-        // Si des recettes sont disponibles, renvoyer la première
-        return filteredRecipes.first
+        // Si aucune recette du type recommandé n'est trouvée, prendre toutes les recettes
+        if filtered.isEmpty {
+            filtered = savedRecipes
+        }
+        
+        // Mettre à jour les recettes filtrées et réinitialiser l'index
+        filteredRecipes = filtered
+        currentIndex = 0
     }
     
     // Déterminer le type de repas recommandé en fonction de l'heure actuelle
@@ -286,5 +303,4 @@ struct NextMealView: View {
         return formatter.string(from: Date())
     }
 }
-
 
