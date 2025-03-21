@@ -48,7 +48,7 @@ class DetailedRecipesViewModel: ObservableObject {
             - Niveau d'activité: \(userProfile.activityLevel.rawValue)
             
             BESOINS NUTRITIONNELS QUOTIDIENS:
-            - Calories totales: \(Int(nutritionNeeds.targetCalories)) kcal
+            - Calories totales: \(Int(nutritionNeeds.totalCalories)) kcal
             - Protéines: \(Int(nutritionNeeds.proteins)) g
             - Glucides: \(Int(nutritionNeeds.carbs)) g
             - Lipides: \(Int(nutritionNeeds.fats)) g

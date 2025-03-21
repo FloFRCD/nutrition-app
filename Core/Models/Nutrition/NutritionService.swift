@@ -8,9 +8,6 @@
 import Foundation
 import Combine
 
-import Foundation
-import Combine
-
 class NutritionService {
     static let shared = NutritionService()
     private let openFoodFactsService = OpenFoodFactsService()
@@ -23,23 +20,20 @@ class NutritionService {
             return false
         }
         
-        // Calculer les besoins nutritionnels de l'utilisateur
-        let calculator = NutritionCalculator()
-        // Utiliser calculateNeeds au lieu de calculateDailyNeeds
-        let userNeeds = calculator.calculateNeeds(for: userProfile)
+        let userNeeds = NutritionCalculator.shared.calculateNeeds(for: userProfile)
         
         // Vérifier si la recette correspond aux besoins (approximativement)
         switch userProfile.fitnessGoal {
         case .loseWeight:
             // Pour la perte de poids, vérifier que les calories sont modérées
             // et les protéines suffisantes
-            return nutrition.calories < userNeeds.calories / 3 &&
+            return nutrition.calories < userNeeds.totalCalories / 3 &&
                    nutrition.proteins > userNeeds.proteins / 4
             
         case .maintainWeight:
             // Pour le maintien, vérifier un équilibre général
-            return nutrition.calories < userNeeds.calories / 3 &&
-                   nutrition.calories > userNeeds.calories / 5
+            return nutrition.calories < userNeeds.maintenanceCalories / 3 &&
+            nutrition.calories > userNeeds.maintenanceCalories / 5
             
         case .gainMuscle:
             // Pour le gain musculaire, vérifier que les protéines sont élevées

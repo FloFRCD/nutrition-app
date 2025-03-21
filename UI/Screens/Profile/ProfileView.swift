@@ -157,7 +157,7 @@ struct ProfileView: View {
         return ProfileSection(title: "Besoins nutritionnels") {
             StatRow(title: "Calories de maintenance", value: "\(Int(needs.maintenanceCalories)) kcal")
                 .foregroundColor(AppTheme.primaryText)
-            StatRow(title: "Calories recommandées", value: "\(Int(needs.targetCalories)) kcal")
+            StatRow(title: "Calories recommandées", value: "\(Int(needs.totalCalories)) kcal")
                 .foregroundColor(AppTheme.primaryText)
             StatRow(title: "Protéines", value: "\(Int(needs.proteins))g")
                 .foregroundColor(AppTheme.primaryText)

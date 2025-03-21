@@ -37,9 +37,9 @@ struct DailyProgressView: View {
                         .foregroundColor(.gray)
                     
                 }
-//                Text("Salut \(localDataManager.userProfile?.name.components(separatedBy: " ").first ?? "")")
-//                    .font(.headline)
-//                    .blurOpacityEffect(initialAnimation)
+                //                Text("Salut \(localDataManager.userProfile?.name.components(separatedBy: " ").first ?? "")")
+                //                    .font(.headline)
+                //                    .blurOpacityEffect(initialAnimation)
                 
                 // Utilisation de votre InfiniteScrollView existante
                 InfiniteScrollView {
@@ -48,7 +48,7 @@ struct DailyProgressView: View {
                         title: "Calories",
                         currentValue: "0",
                         currentUnit: "cal",
-                        targetValue: "\(Int(needs.targetCalories.rounded()))",
+                        targetValue: "\(Int(needs.totalCalories.rounded()))",
                         targetUnit: "kcal",
                         type: .calories,
                         index: 0,
@@ -86,13 +86,13 @@ struct DailyProgressView: View {
                         title: "Glucides",
                         currentValue: "0",
                         currentUnit: "g",
-                        targetValue: "\(Int(needs.carbohydrates.rounded()))",
+                        targetValue: "\(Int(needs.carbs.rounded()))",
                         targetUnit: "g",
                         type: .carbohydrates,
                         index: 3,
                         isExpanded: $isExpanded,
                         selectedIndex: $userSelectedStatIndex
-                        )
+                    )
                     
                     CarouselStatBox(
                         title: "Lipides",
@@ -151,10 +151,10 @@ struct DailyProgressView: View {
                         userSelectedStatIndex = activeIndex
                     }
                 }
-//                .visualEffect { content, proxy in
-//                    content
-//                        .offset(y: !initialAnimation ? -(proxy.size.height + 100) : 0)
-//                }
+                //                .visualEffect { content, proxy in
+                //                    content
+                //                        .offset(y: !initialAnimation ? -(proxy.size.height + 100) : 0)
+                //                }
                 // Nous remplaçons le gesture par la logique dans onScrollPhaseChange
             }
             .padding(.vertical, 10)
@@ -236,13 +236,13 @@ struct CarouselStatBox: View {
         }
         .frame(width: 140, height: 180)
         .scrollTransition(.interactive.threshold(.centered), axis: .horizontal) { content, phase in
-                   content
-                       .scaleEffect(phase == .identity ? 1.05 : 0.95)
-                       .opacity(phase == .identity ? 1 : 0.5)
-                       .offset(y: phase == .identity ? -5 : 0)
-               }
-           }
-       }
+            content
+                .scaleEffect(phase == .identity ? 1.05 : 0.95)
+                .opacity(phase == .identity ? 1 : 0.5)
+                .offset(y: phase == .identity ? -5 : 0)
+        }
+    }
+}
 
 // Types de statistiques
 enum StatType {
@@ -439,7 +439,7 @@ struct ScrollPhaseObserver: UIViewRepresentable {
 
 
 struct ExpandedView: View {
-    let needs: NutritionCalculator.NutritionNeeds
+    let needs: NutritionalNeeds
     @Binding var isExpanded: Bool
     
     var body: some View {
@@ -469,7 +469,7 @@ struct ExpandedView: View {
                         current: "0",
                         currentUnit: "cal",
                         // Utiliser l'arrondi pour éviter les décimales
-                        target: "\(Int(needs.targetCalories.rounded()))",
+                        target: "\(Int(needs.totalCalories.rounded()))",
                         targetUnit: "kcal",
                         maintenance: "\(Int(needs.maintenanceCalories.rounded()))kcal",
                         color: .orange
@@ -597,13 +597,13 @@ struct DetailedStatBox: View {
                 .foregroundColor(.gray)
         }
         .padding()
-                .background(
+        .background(
+            RoundedRectangle(cornerRadius: 15)
+                .fill(Color(.secondarySystemBackground))
+                .overlay(
                     RoundedRectangle(cornerRadius: 15)
-                        .fill(Color(.secondarySystemBackground))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 15)
-                                .stroke(color.opacity(0.3), lineWidth: 2) // Bordure colorée
-                        )
+                        .stroke(color.opacity(0.3), lineWidth: 2) // Bordure colorée
                 )
+        )
     }
 }

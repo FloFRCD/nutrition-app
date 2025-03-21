@@ -146,10 +146,28 @@ extension LocalDataManager {
         return try await load(forKey: "selected_recipes") ?? []
     }
     
+    func loadSavedRecipes() -> [DetailedRecipe] {
+        // Récupérer les recettes depuis UserDefaults ou une autre source de données
+        
+        // Par exemple, si vous stockez vos recettes dans UserDefaults
+        guard let data = UserDefaults.standard.data(forKey: "savedRecipes") else {
+            return []
+        }
+        
+        do {
+            let recipes = try JSONDecoder().decode([DetailedRecipe].self, from: data)
+            return recipes
+        } catch {
+            print("Erreur lors du décodage des recettes: \(error)")
+            return []
+        }
+    }
+    
     // Sauvegarder les recettes sélectionnées
     func saveSelectedRecipes(_ recipes: [DetailedRecipe]) async throws {
         try await save(recipes, forKey: "selected_recipes")
     }
+    
     
     // Ajouter une recette aux sélections
     func addToSelection(_ recipe: DetailedRecipe) async {
@@ -196,6 +214,54 @@ extension LocalDataManager {
             await removeFromSelection(recipe)
         } else {
             await addToSelection(recipe)
+        }
+    }
+    
+    // Dans LocalDataManager.swift
+    func saveFoodEntries(_ entries: [FoodEntry]) {
+        do {
+            let data = try JSONEncoder().encode(entries)
+            UserDefaults.standard.set(data, forKey: "foodEntries")
+        } catch {
+            print("Erreur lors de la sauvegarde des entrées du journal : \(error)")
+        }
+    }
+
+    func loadFoodEntries() -> [FoodEntry]? {
+        guard let data = UserDefaults.standard.data(forKey: "foodEntries") else {
+            return nil
+        }
+        
+        do {
+            return try JSONDecoder().decode([FoodEntry].self, from: data)
+        } catch {
+            print("Erreur lors du chargement des entrées du journal : \(error)")
+            return nil
+        }
+    }
+}
+
+extension LocalDataManager {
+    var savedRecipes: [Recipe]? {
+        get {
+            guard let data = UserDefaults.standard.data(forKey: "savedRecipes") else {
+                return nil
+            }
+            
+            do {
+                return try JSONDecoder().decode([Recipe].self, from: data)
+            } catch {
+                print("Erreur lors du chargement des recettes : \(error)")
+                return nil
+            }
+        }
+        set {
+            do {
+                let data = try JSONEncoder().encode(newValue)
+                UserDefaults.standard.set(data, forKey: "savedRecipes")
+            } catch {
+                print("Erreur lors de la sauvegarde des recettes : \(error)")
+            }
         }
     }
 }

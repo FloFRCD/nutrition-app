@@ -65,7 +65,6 @@ struct MealPreferences: Codable {
     var recipesPerType: Int
     var userProfile: UserProfile
     
-    
     init(bannedIngredients: [String] = [],
          preferredIngredients: [String] = [],
          defaultServings: Int = 1,
@@ -98,21 +97,23 @@ struct MealPreferences: Codable {
             }
             
             self.dietaryRestrictions = updatedRestrictions
-            
         }
     }
     
     var aiPromptFormat: String {
         let recipesPerType = self.recipesPerType
         var bulletPoints = ""
-            for mealType in mealTypes {
-                bulletPoints += "- \(recipesPerType) plats de \(mealType.rawValue)\n"
-            }
+        for mealType in mealTypes {
+            bulletPoints += "- \(recipesPerType) plats de \(mealType.rawValue)\n"
+        }
         
-            let promptText = """
-            Tu es un chef cuisinier renommé spécialisé en nutrition.
-            
-            Génère-moi exactement:
+        // Utilisation du NutritionCalculator pour obtenir le texte nutritionnel cohérent
+        let nutritionalText = NutritionCalculator.shared.generateNutritionalPromptText(for: userProfile)
+        
+        let promptText = """
+        Tu es un chef cuisinier renommé spécialisé en nutrition.
+        
+        Génère-moi exactement:
         \(bulletPoints)
         
         Verifie qu'il y a bien 12 plats au total.
@@ -130,6 +131,8 @@ struct MealPreferences: Codable {
         - Restrictions alimentaires: \(dietaryRestrictions.map { $0.rawValue }.joined(separator: ", "))
         - Ingrédients à éviter: \(bannedIngredients.joined(separator: ", "))
         - Ingrédients préférés: \(preferredIngredients.joined(separator: ", "))
+        
+        \(nutritionalText)
         
         Format requis pour chaque suggestion:
         1. Nom du repas (max 10 mots)
@@ -155,9 +158,6 @@ struct MealPreferences: Codable {
         return promptText
     }
     
-}
-
-extension MealPreferences {
     func printDebugPrompt() {
         print("------- DEBUT DU PROMPT ---------")
         print(aiPromptFormat)
@@ -176,7 +176,9 @@ extension MealPreferences {
         }
         return true
     }
-    
+}
+
+extension MealPreferences {
     // Fonction qui calcule les besoins nutritionnels en fonction du profil utilisateur
     func calculateNutritionalNeeds(userProfile: UserProfile) -> String {
         // Calcul du métabolisme basal (BMR) avec la formule de Mifflin-St Jeor

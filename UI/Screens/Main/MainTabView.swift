@@ -25,10 +25,16 @@ struct MainTabView: View {
 //                    Label("Scanner", systemImage: "camera.fill")
 //                }
             
+            JournalView()
+                .tabItem {
+                    Label("Journal", systemImage: "journal")
+                }
+            
             PlanningView()
                 .tabItem {
                     Label("Recettes", systemImage: "calendar")
                 }
+            
             
 //            ShoppingListView()
 //                .tabItem {
