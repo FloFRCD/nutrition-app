@@ -61,7 +61,7 @@ struct ProfileView: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(AppTheme.secondaryAccent)
+                    .background(AppTheme.buttonGradient)
                     .cornerRadius(10)
             }
             .padding(.horizontal)

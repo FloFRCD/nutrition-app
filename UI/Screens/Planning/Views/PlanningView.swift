@@ -40,7 +40,7 @@ struct PlanningView: View {
                 // Sélecteur d'onglets
                 ConsistentTabView(
                     selection: $selectedTab,
-                    titles: ["Suggestions", "Recettes", "Sélection"]
+                    titles: ["Suggestions", "Recettes", "Sélection", "Liste des courses"]
                 )
                 
                 // TabView qui permet le swipe
@@ -71,6 +71,11 @@ struct PlanningView: View {
                     SelectedRecipesView()
                         .environmentObject(localDataManager)
                         .tag(2)
+                    
+                    //Onglet 4: Courses
+                    ShoppingListView()
+                        .environmentObject(localDataManager)
+                        .tag(3)
                 }
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             }
@@ -199,20 +204,28 @@ struct PlanningView: View {
                 .bold()
                 .frame(maxWidth: .infinity)
                 .padding()
-                .background(buttonBackgroundColor)
+                .background(
+                    Group {
+                        if selectedMealSuggestions.isEmpty || selectedMealSuggestions.count > 4 {
+                            Color.gray // Grisé si vide ou trop de sélections
+                        } else {
+                            AppTheme.buttonGradient // Gradient si sélection valide
+                        }
+                    }
+                )
                 .foregroundColor(.white)
                 .cornerRadius(10)
         }
         .disabled(selectedMealSuggestions.isEmpty || selectedMealSuggestions.count > 4)
     }
     
-    private var buttonBackgroundColor: Color {
-        if selectedMealSuggestions.isEmpty || selectedMealSuggestions.count > 4 {
-            return Color.gray // Grisé si vide ou trop de sélections
-        } else {
-            return Color.blue // Bleu si le nombre de sélections est valide (1-4)
-        }
-    }
+//    private var buttonBackgroundColor: Color {
+//        if selectedMealSuggestions.isEmpty || selectedMealSuggestions.count > 4 {
+//            return Color.gray // Grisé si vide ou trop de sélections
+//        } else {
+//            return AppTheme.buttonGradient // Bleu si le nombre de sélections est valide (1-4)
+//        }
+//    }
     
     // Fonction qui génère les détails et bascule directement vers l'onglet des recettes sauvegardées
     private func generateAndSaveDetails() {

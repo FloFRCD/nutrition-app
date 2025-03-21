@@ -84,7 +84,7 @@ struct NextMealView: View {
                 Text(getMealTypeDisplayName(type: recipe.type))
                     .font(.subheadline)
                     .foregroundColor(.gray)
-//                
+                
 //                Text("•")
 //                    .foregroundColor(.gray)
 //                
@@ -296,11 +296,6 @@ struct NextMealView: View {
         return standardizeMealType(type)
     }
     
-    // Obtenir l'heure actuelle formatée
-    private func getCurrentTimeFormatted() -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: Date())
-    }
+
 }
 

@@ -20,25 +20,25 @@ struct MainTabView: View {
                 // Fallback on earlier versions
             }
             
-            ScanView()
-                .tabItem {
-                    Label("Scanner", systemImage: "camera.fill")
-                }
+//            ScanView()
+//                .tabItem {
+//                    Label("Scanner", systemImage: "camera.fill")
+//                }
             
             PlanningView()
                 .tabItem {
-                    Label("Planning", systemImage: "calendar")
+                    Label("Recettes", systemImage: "calendar")
                 }
             
-            ShoppingListView()
-                .tabItem {
-                    Label("Courses", systemImage: "cart.fill")
-                }
+//            ShoppingListView()
+//                .tabItem {
+//                    Label("Courses", systemImage: "cart.fill")
+//                }
             
-            ProfileView()
-                .tabItem {
-                    Label("Profil", systemImage: "person.fill")
-                }
+//            ProfileView()
+//                .tabItem {
+//                    Label("Profil", systemImage: "person.fill")
+//                }
         }
     }
     

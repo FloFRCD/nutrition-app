@@ -10,6 +10,7 @@ import SwiftUI
 @available(iOS 18.0, *)
 struct DailyProgressView: View {
     let userProfile: UserProfile?
+    @EnvironmentObject private var localDataManager: LocalDataManager
     @Binding var isExpanded: Bool
     @Binding var scrollPosition: SwiftUI.ScrollPosition
     var initialAnimation: Bool
@@ -23,9 +24,22 @@ struct DailyProgressView: View {
             let needs = NutritionCalculator.shared.calculateNeeds(for: profile)
             
             VStack(spacing: 15) {
-                Text("Aujourd'hui")
-                    .font(.headline)
-                    .blurOpacityEffect(initialAnimation)
+                HStack {
+                    Text("Salut \(localDataManager.userProfile?.name.components(separatedBy: " ").first ?? "")")
+                        .font(.headline)
+                        .blurOpacityEffect(initialAnimation)
+                    
+                    Text("•")
+                        .foregroundColor(.gray)
+                    
+                    Text(getCurrentTimeFormatted())
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                    
+                }
+//                Text("Salut \(localDataManager.userProfile?.name.components(separatedBy: " ").first ?? "")")
+//                    .font(.headline)
+//                    .blurOpacityEffect(initialAnimation)
                 
                 // Utilisation de votre InfiniteScrollView existante
                 InfiniteScrollView {
@@ -149,6 +163,12 @@ struct DailyProgressView: View {
             Text("Profil utilisateur non disponible")
                 .foregroundColor(.gray)
         }
+    }
+    // Obtenir l'heure actuelle formatée
+    private func getCurrentTimeFormatted() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM"
+        return formatter.string(from: Date())
     }
 }
 

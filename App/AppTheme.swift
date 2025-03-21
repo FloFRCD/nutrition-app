@@ -14,8 +14,15 @@ struct AppTheme {
     static let background = Color.black
     static let cardBackground = Color(hex: "121212")
     static let secondaryBackground = Color(hex: "1E1E1E")
-    static let accent = Color(hex: "36D45B") // Vert comme sur Finary
-    static let secondaryAccent = Color(hex: "624CF6") // Violet comme sur Finary
+    
+    // Nouvelles couleurs basées sur le logo
+    static let primaryPurple = Color(hex: "9933E6") // Violet du logo
+    static let primaryBlue = Color(hex: "3366E6")   // Bleu du logo
+    static let lightPink = Color(hex: "E666CC")     // Rose du logo
+    
+    // Couleurs d'accent mises à jour
+    static let accent = primaryPurple               // Remplace le vert par le violet du logo
+    static let secondaryAccent = primaryBlue        // Remplace l'ancien violet par le bleu du logo
     
     // Couleurs de texte
     static let primaryText = Color.white
@@ -25,6 +32,15 @@ struct AppTheme {
     // Styles de carte
     static let cardBorderRadius: CGFloat = 16
     static let cardPadding: CGFloat = 16
+    
+    // Gradient pour les boutons
+    static var buttonGradient: LinearGradient {
+        LinearGradient(
+            gradient: Gradient(colors: [primaryPurple, primaryBlue]),
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
 }
 
 // MARK: - Extension utilitaire pour les codes couleur hex
