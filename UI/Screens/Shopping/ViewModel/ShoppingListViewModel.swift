@@ -8,11 +8,17 @@
 import Foundation
 class ShoppingListViewModel: ObservableObject {
     @Published var shoppingItems: [IngredientCategory: [ShoppingItem]] = [:]
+    // Ajouter cette propriété à ShoppingListViewModel
+    var itemCount: Int {
+        return shoppingItems.values.reduce(0) { $0 + $1.count }
+    }
     
     init() {
+        print("📱 ShoppingListViewModel init")
         // Initialiser chaque catégorie avec un tableau vide
         for category in IngredientCategory.allCases {
             shoppingItems[category] = []
+            print("  - Catégorie initialisée: \(category.rawValue)")
         }
     }
     
@@ -87,6 +93,8 @@ class ShoppingListViewModel: ObservableObject {
         return shoppingItems.values.allSatisfy { $0.isEmpty }
     }
 }
+
+
 
 
 

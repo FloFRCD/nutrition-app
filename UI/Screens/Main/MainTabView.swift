@@ -27,12 +27,12 @@ struct MainTabView: View {
             
             JournalView()
                 .tabItem {
-                    Label("Journal", systemImage: "journal")
+                    Label("Journal", systemImage: "newspaper")
                 }
             
             PlanningView()
                 .tabItem {
-                    Label("Recettes", systemImage: "calendar")
+                    Label("Recettes", systemImage: "line.3.horizontal")
                 }
             
             

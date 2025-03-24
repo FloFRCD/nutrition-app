@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var localDataManager = LocalDataManager.shared
+    @StateObject private var journalViewModel = JournalViewModel()
     
     var body: some View {
         Group {
@@ -16,6 +17,7 @@ struct ContentView: View {
                 InitialSetupView()
             } else {
                 MainTabView()
+                    .environmentObject(journalViewModel)
             }
         }
     }

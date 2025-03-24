@@ -73,9 +73,12 @@ struct PlanningView: View {
                         .tag(2)
                     
                     //Onglet 4: Courses
-                    ShoppingListView()
-                        .environmentObject(localDataManager)
-                        .tag(3)
+                    ShoppingListWrapper(isActive: selectedTab == 3)
+                            .environmentObject(localDataManager)
+                            .tag(3)
+                    }
+                    .onChange(of: selectedTab) { oldValue, newValue in
+                        print("📱 Changement d'onglet: \(oldValue) -> \(newValue)")
                 }
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             }

@@ -30,6 +30,7 @@
 /* Begin PBXFileReference section */
 		0B2F71852D65FB1D0025DC01 /* nutrition-app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "nutrition-app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0B2F73242D6603D80025DC01 /* nutrition_app.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = nutrition_app.entitlements; sourceTree = "<group>"; };
+		0B4D48432D903AB30096125D /* nutrition-app-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "nutrition-app-Info.plist"; sourceTree = "<group>"; };
 		0BB824502D66254600B3A21D /* nutrition-appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "nutrition-appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BB824512D66254600B3A21D /* nutrition-appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "nutrition-appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BF405182D8D75910039E25D /* Previews Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Previews Assets.xcassets"; sourceTree = "<group>"; };
@@ -94,6 +95,7 @@
 		F187FF3D2D64C41A0040996A = {
 			isa = PBXGroup;
 			children = (
+				0B4D48432D903AB30096125D /* nutrition-app-Info.plist */,
 				F187FF792D64C7A30040996A /* App */,
 				F187FF802D64C7C80040996A /* Core */,
 				F187FFA52D64C8EF0040996A /* Features */,
@@ -407,7 +409,10 @@
 				DEVELOPMENT_TEAM = 6Z4H58U62L;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "nutrition-app-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Nutria;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -446,7 +451,10 @@
 				DEVELOPMENT_TEAM = 6Z4H58U62L;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "nutrition-app-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Nutria;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

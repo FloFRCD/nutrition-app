@@ -11,6 +11,7 @@ import SwiftUI
 struct DailyProgressView: View {
     let userProfile: UserProfile?
     @EnvironmentObject private var localDataManager: LocalDataManager
+    @EnvironmentObject private var journalViewModel: JournalViewModel
     @Binding var isExpanded: Bool
     @Binding var scrollPosition: SwiftUI.ScrollPosition
     var initialAnimation: Bool
@@ -18,10 +19,12 @@ struct DailyProgressView: View {
     @Binding var userSelectedStatIndex: Int? // Ajout d'une liaison pour l'index sélectionné
     @Binding var currentScrollOffset: CGFloat // Ajout pour suivre la position de défilement
     @State private var scrollPhase: ScrollPhase = .idle // Ajout pour suivre la phase de défilement
+    @State private var selectedDate: Date = Date()
     
     var body: some View {
         if let profile = userProfile {
             let needs = NutritionCalculator.shared.calculateNeeds(for: profile)
+            let consumedNutrition = journalViewModel.totalNutritionForDate(selectedDate)
             
             VStack(spacing: 15) {
                 HStack {
@@ -46,7 +49,7 @@ struct DailyProgressView: View {
                     // StatBox pour les calories
                     CarouselStatBox(
                         title: "Calories",
-                        currentValue: "0",
+                        currentValue: "\(Int(consumedNutrition.calories))",
                         currentUnit: "cal",
                         targetValue: "\(Int(needs.totalCalories.rounded()))",
                         targetUnit: "kcal",
@@ -59,7 +62,7 @@ struct DailyProgressView: View {
                     // StatBox pour les protéines
                     CarouselStatBox(
                         title: "Protéines",
-                        currentValue: "0",
+                        currentValue: "\(Int(consumedNutrition.proteins))",
                         currentUnit: "g",
                         targetValue: "\(Int(needs.proteins.rounded()))",
                         targetUnit: "g",
@@ -70,21 +73,21 @@ struct DailyProgressView: View {
                     )
                     
                     // StatBox pour l'eau
-                    CarouselStatBox(
-                        title: "Eau",
-                        currentValue: "0",
-                        currentUnit: "L",
-                        targetValue: "2.5",
-                        targetUnit: "L",
-                        type: .water,
-                        index: 2,
-                        isExpanded: $isExpanded,
-                        selectedIndex: $userSelectedStatIndex
-                    )
+//                    CarouselStatBox(
+//                        title: "Eau",
+//                        currentValue: "\(Int(consumedNutrition.water))",
+//                        currentUnit: "L",
+//                        targetValue: "2.5",
+//                        targetUnit: "L",
+//                        type: .water,
+//                        index: 2,
+//                        isExpanded: $isExpanded,
+//                        selectedIndex: $userSelectedStatIndex
+//                    )
                     
                     CarouselStatBox(
                         title: "Glucides",
-                        currentValue: "0",
+                        currentValue: "\(Int(consumedNutrition.carbohydrates))",
                         currentUnit: "g",
                         targetValue: "\(Int(needs.carbs.rounded()))",
                         targetUnit: "g",
@@ -96,7 +99,7 @@ struct DailyProgressView: View {
                     
                     CarouselStatBox(
                         title: "Lipides",
-                        currentValue: "0",
+                        currentValue: "\(Int(consumedNutrition.fats))",
                         currentUnit: "g",
                         targetValue: "\(Int(needs.fats.rounded()))",
                         targetUnit: "g",
@@ -107,7 +110,7 @@ struct DailyProgressView: View {
                     )
                     CarouselStatBox(
                         title: "Fibres",
-                        currentValue: "0",
+                        currentValue: "\(Int(consumedNutrition.fiber))",
                         currentUnit: "g",
                         targetValue: "\(Int(needs.fiber.rounded()))",
                         targetUnit: "g",
@@ -158,6 +161,10 @@ struct DailyProgressView: View {
                 // Nous remplaçons le gesture par la logique dans onScrollPhaseChange
             }
             .padding(.vertical, 10)
+            .onAppear {
+                            // Forcer le rechargement des données
+                            journalViewModel.loadFoodEntries()
+                        }
         }
         else {
             Text("Profil utilisateur non disponible")
@@ -441,9 +448,16 @@ struct ScrollPhaseObserver: UIViewRepresentable {
 struct ExpandedView: View {
     let needs: NutritionalNeeds
     @Binding var isExpanded: Bool
+    @EnvironmentObject private var journalViewModel: JournalViewModel
+    @State private var selectedDate: Date = Date()
+    
+    
     
     var body: some View {
-        VStack(spacing: 20) {
+        let consumedNutrition = journalViewModel.totalNutritionForDate(selectedDate)
+        
+        
+        return VStack(spacing: 20) {
             // Header
             HStack {
                 Text("Nutrition")
@@ -466,7 +480,7 @@ struct ExpandedView: View {
                 VStack(spacing: 15) {
                     DetailedStatBox(
                         title: "Calories",
-                        current: "0",
+                        current: "\(Int(consumedNutrition.calories))",
                         currentUnit: "cal",
                         // Utiliser l'arrondi pour éviter les décimales
                         target: "\(Int(needs.totalCalories.rounded()))",
@@ -477,7 +491,7 @@ struct ExpandedView: View {
                     
                     DetailedStatBox(
                         title: "Protéines",
-                        current: "0",
+                        current: "\(Int(consumedNutrition.proteins))",
                         currentUnit: "g",
                         target: "\(Int(needs.proteins.rounded()))",
                         targetUnit: "g",
@@ -485,19 +499,19 @@ struct ExpandedView: View {
                         color: .purple
                     )
                     
-                    DetailedStatBox(
-                        title: "Eau",
-                        current: "0",
-                        currentUnit: "L",
-                        target: "2.5",
-                        targetUnit: "L",
-                        maintenance: "/",
-                        color: .blue
-                    )
-                    
+//                    DetailedStatBox(
+//                        title: "Eau",
+//                        current: "0",
+//                        currentUnit: "L",
+//                        target: "2.5",
+//                        targetUnit: "L",
+//                        maintenance: "/",
+//                        color: .blue
+//                    )
+//                    
                     DetailedStatBox(
                         title: "Glucides",
-                        current: "0",
+                        current: "\(Int(consumedNutrition.carbohydrates))",
                         currentUnit: "g",
                         target: "\(Int(needs.carbs.rounded()))",
                         targetUnit: "g",
@@ -507,7 +521,7 @@ struct ExpandedView: View {
                     
                     DetailedStatBox(
                         title: "Lipides",
-                        current: "0",
+                        current: "\(Int(consumedNutrition.fats))",
                         currentUnit: "g",
                         target: "\(Int(needs.fats.rounded()))",
                         targetUnit: "g",
@@ -517,7 +531,7 @@ struct ExpandedView: View {
                     
                     DetailedStatBox(
                         title: "Fibres",
-                        current: "0",
+                        current: "\(Int(consumedNutrition.fiber))",
                         currentUnit: "g",
                         target: "\(Int(needs.fiber.rounded()))",
                         targetUnit: "g",
