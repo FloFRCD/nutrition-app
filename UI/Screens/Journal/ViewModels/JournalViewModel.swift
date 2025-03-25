@@ -135,6 +135,7 @@ class JournalViewModel: ObservableObject {
                 proteins: 12,
                 carbs: 30,
                 fats: 8,
+                fiber: 2,
                 servingSize: 100,
                 servingUnit: .gram
             )
@@ -166,6 +167,7 @@ class JournalViewModel: ObservableObject {
             proteins: nutritionValues.proteins,
             carbs: nutritionValues.carbohydrates,
             fats: nutritionValues.fats,
+            fiber: nutritionValues.fiber,
             servingSize: 1,
             servingUnit: .piece
         )
@@ -198,6 +200,7 @@ class JournalViewModel: ObservableObject {
                 proteins: nutritionInfo.proteins,
                 carbs: nutritionInfo.carbs,
                 fats: nutritionInfo.fats,
+                fiber: nutritionInfo.fiber,
                 servingSize: 1,
                 servingUnit: .piece
             )
@@ -228,6 +231,7 @@ class JournalViewModel: ObservableObject {
             proteins: recipe.nutritionFacts.proteins,
             carbs: recipe.nutritionFacts.carbs,
             fats: recipe.nutritionFacts.fats,
+            fiber: recipe.nutritionFacts.fiber,
             servingSize: 1, // Une portion
             servingUnit: .piece
         )

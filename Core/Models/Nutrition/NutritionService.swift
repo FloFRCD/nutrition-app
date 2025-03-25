@@ -8,10 +8,16 @@
 import Foundation
 import Combine
 
-class NutritionService {
+
+class NutritionService: ObservableObject {
     static let shared = NutritionService()
     private let openFoodFactsService = OpenFoodFactsService()
+    private var ciqualFoods: [CIQUALFood] = []
+    private var isCiqualLoaded = false
     
+    // Ajoutez un publisher pour notifier les changements
+    @Published var foodEntries: [FoodEntry] = []
+
     // MARK: - Recipe Analysis Methods
     
     /// Vérifie si une recette respecte les objectifs nutritionnels d'un profil utilisateur
@@ -102,4 +108,88 @@ class NutritionService {
         // et retournera son ID
         return nil
     }
+    
+    func addCIQUALFoodToJournal(ciqualFoodId: String, quantity: Double, mealType: MealType) {
+        guard let ciqualFood = getCIQUALFood(byId: ciqualFoodId) else {
+            return
+        }
+        
+        let foodEntry = createFoodEntryFromCIQUAL(
+            ciqualFood: ciqualFood,
+            quantity: quantity,
+            mealType: mealType
+        )
+        
+        // Ajoutez cette entrée alimentaire à votre journal
+        addFoodEntry(foodEntry)
+    }
+
+    // 1. Fonction pour charger la base CIQUAL
+    func loadCIQUALDatabase() {
+            if isCiqualLoaded { return }
+            
+            guard let url = Bundle.main.url(forResource: "ciqual_data", withExtension: "json"),
+                  let data = try? Data(contentsOf: url) else {
+                print("Impossible de charger les données CIQUAL")
+                return
+            }
+            
+            do {
+                ciqualFoods = try JSONDecoder().decode([CIQUALFood].self, from: data)
+                isCiqualLoaded = true
+                print("CIQUAL: Chargement réussi de \(ciqualFoods.count) aliments")
+            } catch {
+                print("CIQUAL: Erreur de décodage: \(error)")
+            }
+        }
+        
+        func searchCIQUALFoods(query: String) -> [CIQUALFood] {
+            if query.isEmpty { return [] }
+            
+            loadCIQUALDatabase()
+            
+            return ciqualFoods.filter {
+                $0.nom.lowercased().contains(query.lowercased())
+            }
+        }
+        
+        func getCIQUALFood(byId id: String) -> CIQUALFood? {
+            loadCIQUALDatabase()
+            return ciqualFoods.first(where: { $0.id == id })
+        }
+        
+        func createFoodEntryFromCIQUAL(ciqualFood: CIQUALFood, quantity: Double, mealType: MealType) -> FoodEntry {
+            let food = Food(
+                id: UUID(),
+                name: ciqualFood.nom,
+                calories: Int(ciqualFood.energie_kcal ?? 0),
+                proteins: ciqualFood.proteines ?? 0,
+                carbs: ciqualFood.glucides ?? 0,
+                fats: ciqualFood.lipides ?? 0,
+                fiber: ciqualFood.fibres ?? 0,
+                servingSize: 100,
+                servingUnit: .gram,
+                image: nil
+            )
+            
+            return FoodEntry(
+                id: UUID(),
+                food: food,
+                quantity: quantity,
+                date: Date(),
+                mealType: mealType,
+                source: .manual
+            )
+        }
+        
+        func addFoodEntry(_ foodEntry: FoodEntry) {
+            // Ajouter l'entrée à la liste des entrées
+            foodEntries.append(foodEntry)
+            
+            // La propriété @Published notifiera automatiquement les changements
+            print("Ajout au journal: \(foodEntry.food.name), \(foodEntry.quantity)g, \(foodEntry.mealType)")
+            
+            // Vous pourriez aussi sauvegarder dans CoreData ou autre
+        }
+    
 }

@@ -11,12 +11,14 @@ struct NutritionApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var localDataManager = LocalDataManager.shared
     @StateObject private var storeKitManager = StoreKitManager.shared
+    @StateObject private var nutritionService = NutritionService.shared
     
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(localDataManager)
                 .environmentObject(storeKitManager)
+                .environmentObject(nutritionService)
         }
     }
 }
