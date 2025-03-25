@@ -59,7 +59,8 @@ class AIService {
             "calories": nombre,
             "proteins": nombre en g,
             "carbs": nombre en g,
-            "fats": nombre en g
+            "fats": nombre en g,
+            "fiber": nombre en g
         }
         """
         

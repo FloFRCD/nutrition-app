@@ -20,13 +20,7 @@ class MLService: ObservableObject {
             FoodRecognition(
                 name: "Pomme",
                 confidence: 0.95,
-                nutritionInfo: NutritionInfo(
-                    calories: 52,
-                    proteins: 0.3,
-                    carbs: 14.0,
-                    fats: 0.2,
-                    fiber: 2.4
-                )
+                nutritionInfo: NutritionInfo(calories: 52, proteins: 0.3, carbs: 14.0, fats: 0.2, fiber: 2.4)
             )
         ]
     }

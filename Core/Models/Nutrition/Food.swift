@@ -24,6 +24,53 @@ struct Food: Identifiable, Codable {
     var servingSize: Double
     var servingUnit: ServingUnit
     var image: String?
+    
+    // Gardez la conformité à Encodable par défaut
+    
+    // Implémentation personnalisée de Decodable
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        calories = try container.decode(Int.self, forKey: .calories)
+        proteins = try container.decode(Double.self, forKey: .proteins)
+        carbs = try container.decode(Double.self, forKey: .carbs)
+        fats = try container.decode(Double.self, forKey: .fats)
+        servingSize = try container.decode(Double.self, forKey: .servingSize)
+        servingUnit = try container.decode(ServingUnit.self, forKey: .servingUnit)
+        image = try container.decodeIfPresent(String.self, forKey: .image)
+        
+        // Gestion spéciale pour fiber - utiliser 0.0 comme valeur par défaut si absent
+        do {
+            fiber = try container.decode(Double.self, forKey: .fiber)
+        } catch DecodingError.keyNotFound {
+            fiber = 0.0
+            print("⚠️ Champ 'fiber' manquant dans les données Food - valeur par défaut 0.0 utilisée")
+        } catch {
+            throw error // Propager d'autres erreurs de décodage
+        }
+    }
+    
+    // Constructeur normal pour créer des instances en code
+    init(id: UUID, name: String, calories: Int, proteins: Double, carbs: Double,
+         fats: Double, fiber: Double, servingSize: Double, servingUnit: ServingUnit,
+         image: String?) {
+        self.id = id
+        self.name = name
+        self.calories = calories
+        self.proteins = proteins
+        self.carbs = carbs
+        self.fats = fats
+        self.fiber = fiber
+        self.servingSize = servingSize
+        self.servingUnit = servingUnit
+        self.image = image
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id, name, calories, proteins, carbs, fats, fiber, servingSize, servingUnit, image
+    }
 }
 
 // Définition de FoodEntry
@@ -58,61 +105,47 @@ struct FoodEntry: Identifiable, Codable {
 }
 
 struct CIQUALFood: Codable, Identifiable {
-    let alim_code: String
+    // Les autres propriétés...
+    let alim_code: Int
     let alim_nom_fr: String
     
     // Valeurs nutritionnelles principales
-    let energie_kcal: Double?
-    let proteines: Double?
-    let glucides: Double?
-    let lipides: Double?
-    let sucres: Double?
-    let fibres: Double?
+    let energie__règlement_ue_n__1169_2011__kcal_100_g_: String?
+    let protéines__n_x_6_25__g_100_g_: String?
+    let glucides__g_100_g_: String?
+    let lipides__g_100_g_: String?
+    let sucres__g_100_g_: String?
+    let fibres_alimentaires__g_100_g_: String?
     
-    // Identifiant unique pour Identifiable
-    var id: String { alim_code }
+    // ID pour Identifiable
+    var id: String { return String(alim_code) }
     
-    // Nom formaté pour l'affichage
-    var nom: String {
-        return alim_nom_fr.capitalized
+    // Propriétés calculées pour conversion des valeurs
+    var nom: String { alim_nom_fr }
+    
+    var energie_kcal: Double? {
+        return convertStringToDouble(energie__règlement_ue_n__1169_2011__kcal_100_g_)
     }
     
-    // Mappage des clés JSON
-    enum CodingKeys: String, CodingKey {
-        case alim_code
-        case alim_nom_fr
-        case energie_kcal = "energie_reglemen_ue_n_kcal_100_g"
-        case proteines = "proteines_g_100_g"
-        case glucides = "glucides_g_100_g"
-        case lipides = "lipides_g_100_g"
-        case sucres = "sucres_g_100_g"
-        case fibres = "fibres_alimentaires_g_100_g"
+    var proteines: Double? {
+        return convertStringToDouble(protéines__n_x_6_25__g_100_g_)
     }
     
-    func toFood(quantity: Double = 100) -> Food {
-        return Food(
-            id: UUID(),
-            name: nom,
-            calories: Int(energie_kcal ?? 0),
-            proteins: proteines ?? 0,
-            carbs: glucides ?? 0,
-            fats: lipides ?? 0,
-            fiber: fibres ?? 0,
-            servingSize: 100,
-            servingUnit: .gram,
-            image: nil
-        )
+    var glucides: Double? {
+        return convertStringToDouble(glucides__g_100_g_)
     }
     
-    func createFoodEntryFromCIQUAL(ciqualFood: CIQUALFood, quantity: Double, mealType: MealType) -> FoodEntry {
-        let food = ciqualFood.toFood()
-        
-        return FoodEntry(
-            food: food,
-            quantity: quantity,
-            date: Date(),
-            mealType: mealType,
-            source: .manual // Ou créer une source spécifique comme .ciqual
-        )
+    var lipides: Double? {
+        return convertStringToDouble(lipides__g_100_g_)
+    }
+    
+    var fibres: Double? {
+        return convertStringToDouble(fibres_alimentaires__g_100_g_)
+    }
+    
+    // Fonction utilitaire pour convertir les nombres français (avec virgule)
+    private func convertStringToDouble(_ value: String?) -> Double? {
+        guard let str = value, str != "-" else { return 0 }
+        return Double(str.replacingOccurrences(of: ",", with: "."))
     }
 }

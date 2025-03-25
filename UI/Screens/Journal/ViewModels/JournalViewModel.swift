@@ -8,19 +8,31 @@
 import SwiftUI
 import Combine
 
-import Foundation
-import SwiftUI
 
 class JournalViewModel: ObservableObject {
     // Published properties
     @Published var foodEntries: [FoodEntry] = []
-    @Published var activeSheet: JournalSheet?
+    @Published var _activeSheet: JournalSheet?
     @Published var selectedDate: Date = Date()
     
     // Services
     private let nutritionCalculator = NutritionCalculator.shared
     private let nutritionService = NutritionService.shared
     private let localDataManager = LocalDataManager.shared
+    
+    
+    var activeSheet: JournalSheet? {
+            get {
+                return _activeSheet
+            }
+            set {
+                _activeSheet = newValue
+                if newValue == nil {
+                    // Recharger les entrées quand une sheet est fermée
+                    reloadFoodEntries()
+                }
+            }
+        }
     
     // Computed properties
     var userProfile: UserProfile {
@@ -137,7 +149,8 @@ class JournalViewModel: ObservableObject {
                 fats: 8,
                 fiber: 2,
                 servingSize: 100,
-                servingUnit: .gram
+                servingUnit: .gram,
+                image: nil
             )
             
             let entry = FoodEntry(
@@ -169,7 +182,8 @@ class JournalViewModel: ObservableObject {
             fats: nutritionValues.fats,
             fiber: nutritionValues.fiber,
             servingSize: 1,
-            servingUnit: .piece
+            servingUnit: .piece,
+            image: nil
         )
         
         let entry = FoodEntry(
@@ -202,7 +216,8 @@ class JournalViewModel: ObservableObject {
                 fats: nutritionInfo.fats,
                 fiber: nutritionInfo.fiber,
                 servingSize: 1,
-                servingUnit: .piece
+                servingUnit: .piece,
+                image: nil
             )
             
             let entry = FoodEntry(
@@ -233,7 +248,8 @@ class JournalViewModel: ObservableObject {
             fats: recipe.nutritionFacts.fats,
             fiber: recipe.nutritionFacts.fiber,
             servingSize: 1, // Une portion
-            servingUnit: .piece
+            servingUnit: .piece,
+            image: nil
         )
         
         let entry = FoodEntry(
@@ -271,6 +287,12 @@ class JournalViewModel: ObservableObject {
     func saveFoodEntries() {
         localDataManager.saveFoodEntries(foodEntries)
     }
+    
+    // Dans JournalViewModel, ajoutez cette méthode
+    func reloadFoodEntries() {
+        foodEntries = localDataManager.loadFoodEntries() ?? []
+    }
+
     
     // MARK: - Initialization
     

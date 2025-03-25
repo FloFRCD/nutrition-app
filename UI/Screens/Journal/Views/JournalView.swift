@@ -64,10 +64,20 @@ struct JournalView: View {
                 
             case .ingredientEntry(let mealType):
                 IngredientEntryView(mealType: mealType) { ingredients in
-                    Task {
-                        await viewModel.processAndAddIngredients(ingredients, mealType: mealType, date: viewModel.selectedDate)
+                    // Ne traitez les ingrédients que s'ils ne sont pas vides
+                    if !ingredients.isEmpty {
+                        Task {
+                            await viewModel.processAndAddIngredients(ingredients, mealType: mealType, date: viewModel.selectedDate)
+                        }
                     }
+                    // Sinon, ne faites rien car NutritionService a déjà traité les aliments
                 }
+            case .ingredientEntry(let mealType):
+                    IngredientEntryView(mealType: mealType) { ingredients in
+                        // Nous ne faisons plus rien ici, car tout est géré dans IngredientEntryView
+                        // Nous fermons simplement la sheet
+                        viewModel.activeSheet = nil
+                    }
             }
         }        .navigationTitle("Journal Alimentaire")
     }
