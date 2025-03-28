@@ -11,6 +11,7 @@ import SwiftUI
 struct JournalView: View {
     @StateObject var viewModel = JournalViewModel()
     @EnvironmentObject var localDataManager: LocalDataManager
+    @EnvironmentObject var nutritionService: NutritionService
     @State private var hasAppeared = false
     
     var body: some View {
@@ -26,40 +27,38 @@ struct JournalView: View {
                 
                 // Liste des repas de la journée
                 ScrollView {
-                                    VStack(spacing: 15) {
-                                        ForEach(MealType.allCases, id: \.self) { mealType in
-                                            MealSectionView(
-                                                mealType: mealType,
-                                                entries: viewModel.entriesForMealType(mealType: mealType, date: viewModel.selectedDate),
-                                                targetCalories: viewModel.targetCaloriesFor(mealType: mealType),
-                                                onAddPhoto: { viewModel.showFoodPhotoCapture(for: mealType) },
-                                                onAddRecipe: { viewModel.showRecipeSelection(for: mealType) },
-                                                onAddIngredients: { viewModel.showIngredientEntry(for: mealType) },
-                                                onDeleteEntry: { entry in
-                                                    print("onDeleteEntry")
-                                                    withAnimation {
-                                                        viewModel.removeFoodEntry(entry)
-                                                    }
-                                                }
-                                            )
-                                            .id(UUID()) // Ajouter cette ligne
-                                        }
+                    VStack(spacing: 15) {
+                        ForEach(MealType.allCases, id: \.self) { mealType in
+                            MealSectionView(
+                                mealType: mealType,
+                                entries: viewModel.entriesForMealType(mealType: mealType, date: viewModel.selectedDate),
+                                targetCalories: viewModel.targetCaloriesFor(mealType: mealType),
+                                onAddPhoto: { viewModel.showFoodPhotoCapture(for: mealType) },
+                                onAddRecipe: { viewModel.showRecipeSelection(for: mealType) },
+                                onAddIngredients: { viewModel.showIngredientEntry(for: mealType) },
+                                onAddCustomFood: { viewModel.showCustomFoodEntry(for: mealType) },
+                                onDeleteEntry: { entry in
+                                    print("onDeleteEntry")
+                                    withAnimation {
+                                        viewModel.removeFoodEntry(entry)
                                     }
-                                    .padding()
                                 }
-                            }
+                            )
                         }
-        
-        .onAppear {
-                    // N'exécuter qu'une seule fois
-                    if !hasAppeared {
-                        print("📱 JournalView apparaît pour la première fois")
-                        hasAppeared = true
-                    } else {
-                        print("📱 JournalView réapparaît")
                     }
+                    .padding()
                 }
-                        .sheet(item: $viewModel.activeSheet) { sheet in
+            }
+        }
+        .onAppear {
+            if !hasAppeared {
+                print("📱 JournalView apparaît pour la première fois")
+                hasAppeared = true
+            } else {
+                print("📱 JournalView réapparaît")
+            }
+        }
+        .sheet(item: $viewModel.activeSheet) { sheet in
             switch sheet {
             case .photoCapture(let mealType):
                 FoodPhotoCaptureView(mealType: mealType) { image in
@@ -83,15 +82,14 @@ struct JournalView: View {
                         }
                     }
                 }
+                
+            case .customFoodEntry(let mealType):
+                CustomFoodEntryView(mealType: mealType)
+                    .environmentObject(localDataManager)
+                    .environmentObject(nutritionService)
+                    .environmentObject(viewModel)
             }
-        }        .navigationTitle("Journal Alimentaire")
-    }
-}
-
-// Prévisualisations
-struct JournalView_Previews: PreviewProvider {
-    static var previews: some View {
-        JournalView()
-            .environmentObject(LocalDataManager.shared)
+        }
+        .navigationTitle("Journal Alimentaire")
     }
 }

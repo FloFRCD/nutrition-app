@@ -330,5 +330,8 @@ class JournalViewModel: ObservableObject {
     
     func saveFoodEntries() {
         localDataManager.saveFoodEntries(foodEntries)
-    }    
+    }
+    func showCustomFoodEntry(for mealType: MealType) {
+        activeSheet = .customFoodEntry(mealType: mealType)
+    }
 }

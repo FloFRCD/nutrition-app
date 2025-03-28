@@ -8,109 +8,156 @@
 import SwiftUI
 
 struct MealSectionView: View {
-    let mealType: MealType
-    let entries: [FoodEntry]
-    let targetCalories: Int
-    let onAddPhoto: () -> Void
-    let onAddRecipe: () -> Void
-    let onAddIngredients: () -> Void
-    let onDeleteEntry: (FoodEntry) -> Void
-    
-    @State private var isExpanded = false
+    var mealType: MealType
+    var entries: [FoodEntry]
+    var targetCalories: Int
+    var onAddPhoto: () -> Void
+    var onAddRecipe: () -> Void
+    var onAddIngredients: () -> Void
+    var onAddCustomFood: () -> Void  // Nouveau
+    var onDeleteEntry: (FoodEntry) -> Void
     
     var body: some View {
-        VStack(spacing: 0) {
-            // En-tête de la section (toujours visible)
-            Button(action: { withAnimation { isExpanded.toggle() } }) {
-                HStack {
-                    // Icône du repas
-                    mealType.icon
-                        .foregroundColor(mealType.color)
-                        .frame(width: 40, height: 40)
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(mealType.rawValue)
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                        
-                        Text("\(totalCalories) / \(targetCalories) kcal")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    Spacer()
-                    
-                    // Bouton + pour ajouter rapidement
-                    Button(action: {
-                        withAnimation { isExpanded = true }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            onAddRecipe()
+        VStack(alignment: .leading, spacing: 0) {
+            // En-tête avec titre et calories
+            HStack {
+                Label {
+                    Text(mealType.rawValue)
+                        .font(.headline)
+                } icon: {
+                    // Icône basée sur le type de repas
+                    Group {
+                        switch mealType {
+                        case .breakfast:
+                            Image(systemName: "cup.and.saucer.fill")
+                        case .lunch:
+                            Image(systemName: "fork.knife")
+                        case .dinner:
+                            Image(systemName: "moon.stars.fill")
+                        case .snack:
+                            Image(systemName: "hand.thumbsup.fill")
                         }
-                    }) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title2)
-                            .foregroundColor(.blue)
                     }
-                    
-                    // Chevron indiquant l'état
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .foregroundColor(.gray)
-                        .padding(.leading, 8)
+                    .foregroundColor(mealTypeColor)
                 }
-                .padding()
-                .background(Color(.secondarySystemBackground))
-                .cornerRadius(12)
+                
+                Spacer()
+                
+                // Calories du repas / objectif
+                Text("\(Int(entriesCalories)) / \(targetCalories) kcal")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.vertical, 12)
+            
+            // Liste des entrées
+            if entries.isEmpty {
+                Text("Aucun aliment pour ce repas")
+                    .foregroundColor(.secondary)
+                    .italic()
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding()
+            } else {
+                ForEach(entries) { entry in
+                    FoodEntryRow(entry: entry, onDelete: {
+                        onDeleteEntry(entry)
+                    })
+                    .contentShape(Rectangle())
+                    .swipeActions {
+                        Button(role: .destructive) {
+                            onDeleteEntry(entry)
+                        } label: {
+                            Label("Supprimer", systemImage: "trash")
+                        }
+                    }
+                    .overlay(
+                        Button {
+                            onDeleteEntry(entry)
+                        } label: {
+                            Image(systemName: "trash")
+                                .foregroundColor(.red)
+                        }
+                        .padding(),
+                        alignment: .trailing
+                    )
+                }
             }
             
-            // Contenu déplié (aliments + actions)
-            if isExpanded {
-                           VStack(spacing: 10) {
-                               // Liste des aliments
-                               if entries.isEmpty {
-                                   Text("Aucun aliment pour ce repas")
-                                       .font(.caption)
-                                       .foregroundColor(.gray)
-                                       .padding()
-                               } else {
-                                   ForEach(entries) { entry in
-                                       FoodEntryRow(entry: entry, onDelete: {
-                                           onDeleteEntry(entry)
-                                       })
-                                   }
-                                   .padding(.horizontal)
-                               }
-                               
-                               // Boutons d'action
-                               HStack(spacing: 8) {
-                                   AddFoodButton(
-                                       icon: "camera",
-                                       text: "Photo",
-                                       action: onAddPhoto
-                                   )
-                                   
-                                   AddFoodButton(
-                                       icon: "book",
-                                       text: "Recette",
-                                       action: onAddRecipe
-                                   )
-                                   
-                                   AddFoodButton(
-                                       icon: "list.bullet",
-                                       text: "Ingrédients",
-                                       action: onAddIngredients
-                                   )
-                               }
-                               .padding([.horizontal, .bottom])
-                           }
-                           .background(Color(.tertiarySystemBackground))
-                           .cornerRadius(12)
-                           .transition(.opacity)
-                       }
-                   }
-               }
+            // Boutons d'ajout
+            HStack(spacing: 0) {
+                Button {
+                    onAddPhoto()
+                } label: {
+                    VStack {
+                        Image(systemName: "camera")
+                            .font(.system(size: 24))
+                        Text("Photo")
+                            .font(.caption)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                
+                Button {
+                    onAddRecipe()
+                } label: {
+                    VStack {
+                        Image(systemName: "book")
+                            .font(.system(size: 24))
+                        Text("Recette")
+                            .font(.caption)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                
+                Button {
+                    onAddIngredients()
+                } label: {
+                    VStack {
+                        Image(systemName: "list.bullet")
+                            .font(.system(size: 24))
+                        Text("Ingrédients")
+                            .font(.caption)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                
+                // Nouveau bouton pour les aliments personnalisés
+                Button {
+                    onAddCustomFood()
+                } label: {
+                    VStack {
+                        Image(systemName: "plus.circle")
+                            .font(.system(size: 24))
+                        Text("Personnalisé")
+                            .font(.caption)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            .padding(.vertical, 10)
+        }
+        .padding(.horizontal)
+        .background(Color(.secondarySystemBackground))
+        .cornerRadius(10)
+    }
     
-    private var totalCalories: Int {
-        Int(entries.reduce(0) { $0 + $1.nutritionValues.calories })
+    private var entriesCalories: Double {
+        entries.reduce(0) { result, entry in
+            result + entry.nutritionValues.calories
+        }
+    }
+    
+    private var mealTypeColor: Color {
+        switch mealType {
+        case .breakfast:
+            return .orange
+        case .lunch:
+            return .blue
+        case .dinner:
+            return .purple
+        case .snack:
+            return .green
+        }
     }
 }
 
@@ -143,22 +190,5 @@ extension MealType {
         case .snack:
             return .green
         }
-    }
-}
-
-// Prévisualisations
-struct MealSectionView_Previews: PreviewProvider {
-    static var previews: some View {
-        MealSectionView(
-            mealType: .breakfast,
-            entries: [],
-            targetCalories: 500,
-            onAddPhoto: {},
-            onAddRecipe: {},
-            onAddIngredients: {},
-            onDeleteEntry: { _ in }
-        )
-        .previewLayout(.sizeThatFits)
-        .padding()
     }
 }
