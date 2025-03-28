@@ -35,8 +35,11 @@ class LocalDataManager: ObservableObject {
         Task {
             do {
                 if let profile: UserProfile = try await load(forKey: "userProfile") {
-                    print("Profile chargé:", profile) // Debug pour vérifier les valeurs
-                    userProfile = profile
+                    print("Profile chargé:", profile)
+                    // Explicitement revenir sur le main thread pour mettre à jour @Published
+                    DispatchQueue.main.async {
+                        self.userProfile = profile
+                    }
                 }
             } catch {
                 print("Error loading initial data: \(error)")
