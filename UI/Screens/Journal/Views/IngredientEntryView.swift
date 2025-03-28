@@ -15,6 +15,7 @@ struct IngredientEntryView: View {
     
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var nutritionService: NutritionService
+    @EnvironmentObject var journalViewModel: JournalViewModel
     
     @State private var ingredients: [IngredientEntry] = []
     @State private var isProcessing = false

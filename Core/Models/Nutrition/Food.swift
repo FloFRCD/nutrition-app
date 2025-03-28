@@ -82,6 +82,15 @@ struct FoodEntry: Identifiable, Codable {
     var mealType: MealType
     var source: FoodSource
     
+    init(id: UUID = UUID(), food: Food, quantity: Double, date: Date, mealType: MealType, source: FoodSource) {
+           self.id = id
+           self.food = food
+           self.quantity = quantity
+           self.date = date
+           self.mealType = mealType
+           self.source = source
+       }
+    
     enum FoodSource: String, Codable {
         case manual = "Manuel"
         case foodPhoto = "Photo"
@@ -99,8 +108,37 @@ struct FoodEntry: Identifiable, Codable {
             proteins: food.proteins * ratio,
             carbohydrates: food.carbs * ratio,
             fats: food.fats * ratio,
-            fiber: food.fiber * ratio // À compléter si vous avez cette donnée pour Food
+            fiber: food.fiber * ratio
         )
+    }
+    
+    // Ajoutez ces méthodes pour assurer la compatibilité avec le codage ISO8601 des dates
+    enum CodingKeys: String, CodingKey {
+        case id, food, quantity, date, mealType, source
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        id = try container.decode(UUID.self, forKey: .id)
+        food = try container.decode(Food.self, forKey: .food)
+        quantity = try container.decode(Double.self, forKey: .quantity)
+        mealType = try container.decode(MealType.self, forKey: .mealType)
+        source = try container.decode(FoodSource.self, forKey: .source)
+        
+        // Essayer différentes méthodes de décodage pour la date
+        if let dateString = try? container.decode(String.self, forKey: .date) {
+            let formatter = ISO8601DateFormatter()
+            if let parsedDate = formatter.date(from: dateString) {
+                date = parsedDate
+            } else {
+                throw DecodingError.dataCorruptedError(forKey: .date, in: container, debugDescription: "Cannot parse date string")
+            }
+        } else if let timestamp = try? container.decode(Double.self, forKey: .date) {
+            date = Date(timeIntervalSince1970: timestamp)
+        } else {
+            throw DecodingError.dataCorruptedError(forKey: .date, in: container, debugDescription: "Date is neither string nor double")
+        }
     }
 }
 

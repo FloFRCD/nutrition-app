@@ -19,20 +19,28 @@ class JournalViewModel: ObservableObject {
     private let nutritionCalculator = NutritionCalculator.shared
     private let nutritionService = NutritionService.shared
     private let localDataManager = LocalDataManager.shared
+    private weak var journalViewModel: JournalViewModel?
+    
+    // MARK: - Initialization
+    
+    init() {
+        loadFoodEntries()
+        NutritionService.shared.setJournalViewModel(self)
+    }
     
     
     var activeSheet: JournalSheet? {
-            get {
-                return _activeSheet
-            }
-            set {
-                _activeSheet = newValue
-                if newValue == nil {
-                    // Recharger les entrées quand une sheet est fermée
-                    reloadFoodEntries()
-                }
+        get {
+            return _activeSheet
+        }
+        set {
+            _activeSheet = newValue
+            if newValue == nil {
+                // Recharger les entrées quand une sheet est fermée
+                reloadFoodEntries()
             }
         }
+    }
     
     // Computed properties
     var userProfile: UserProfile {
@@ -116,18 +124,51 @@ class JournalViewModel: ObservableObject {
     
     // MARK: - Food entry management
     
-    func addFoodEntry(_ entry: FoodEntry) {
-        foodEntries.append(entry)
-        saveFoodEntries()
+    func addFoodEntry(_ foodEntry: FoodEntry) {
+        // Si le JournalViewModel est configuré, utilisez-le
+        if let viewModel = journalViewModel {
+            DispatchQueue.main.async {
+                viewModel.addFoodEntry(foodEntry)
+            }
+        } else {
+            // Sinon, utiliser l'ancienne implémentation comme fallback
+            foodEntries.append(foodEntry)
+            LocalDataManager.shared.saveFoodEntries(foodEntries)
+            objectWillChange.send()
+        }
     }
     
     func removeFoodEntry(_ entry: FoodEntry) {
         if let index = foodEntries.firstIndex(where: { $0.id == entry.id }) {
-            withAnimation {
-                foodEntries.remove(at: index)
-                saveFoodEntries()
+            print("foodEntries.remove(at: index)")
+            foodEntries.remove(at: index)
+            
+            // Utiliser Task pour s'assurer que la sauvegarde est terminée avant de continuer
+            Task {
+                // Sauvegarder immédiatement
+                self.localDataManager.saveFoodEntries(self.foodEntries)  // Ajout de 'self.'
+                
+                // Attendre un court moment pour s'assurer que la sauvegarde est terminée
+                try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 secondes
+                
+                // Forcer une synchronisation et une vérification
+                DispatchQueue.main.async {
+                    // Vérifier si la suppression a bien été prise en compte
+                    if let savedEntries = self.localDataManager.loadFoodEntries(),  // Ajout de 'self.'
+                       savedEntries.contains(where: { $0.id == entry.id }) {
+                        // L'entrée existe encore, forcer une nouvelle sauvegarde
+                        print("⚠️ L'entrée supprimée existe encore, forcer une nouvelle sauvegarde")
+                        var correctedEntries = savedEntries
+                        correctedEntries.removeAll { $0.id == entry.id }
+                        self.localDataManager.saveFoodEntries(correctedEntries)  // Ajout de 'self.'
+                        self.foodEntries = correctedEntries
+                    }
+                }
             }
         }
+    }
+    func reloadFoodEntries() {
+        foodEntries = localDataManager.loadFoodEntries() ?? []
     }
     
     // MARK: - Processing methods
@@ -140,7 +181,7 @@ class JournalViewModel: ObservableObject {
             // Simuler un temps de traitement
             try await Task.sleep(nanoseconds: 1_000_000_000)
             
-            let detectedFood = Food(
+            let food = Food(
                 id: UUID(),
                 name: "Aliment détecté",
                 calories: 250,
@@ -154,11 +195,12 @@ class JournalViewModel: ObservableObject {
             )
             
             let entry = FoodEntry(
-                food: detectedFood,
+                id: UUID(),  // Explicitement fournir l'ID, même s'il y a une valeur par défaut
+                food: food,
                 quantity: 1,
                 date: date,
                 mealType: mealType,
-                source: .foodPhoto
+                source: .recipe  // Assurez-vous que FoodSource.recipe est le cas correct
             )
             
             DispatchQueue.main.async {
@@ -252,10 +294,12 @@ class JournalViewModel: ObservableObject {
             image: nil
         )
         
+        // Utiliser la date actuelle ou selectedDate de votre ViewModel
         let entry = FoodEntry(
+            id: UUID(),
             food: food,
-            quantity: servings,
-            date: selectedDate,
+            quantity: servings, // Utilisez servings ici au lieu de 1 fixe
+            date: selectedDate, // Utilisez selectedDate qui est une propriété du ViewModel
             mealType: mealType,
             source: .recipe
         )
@@ -286,17 +330,5 @@ class JournalViewModel: ObservableObject {
     
     func saveFoodEntries() {
         localDataManager.saveFoodEntries(foodEntries)
-    }
-    
-    // Dans JournalViewModel, ajoutez cette méthode
-    func reloadFoodEntries() {
-        foodEntries = localDataManager.loadFoodEntries() ?? []
-    }
-
-    
-    // MARK: - Initialization
-    
-    init() {
-        loadFoodEntries()
-    }
+    }    
 }

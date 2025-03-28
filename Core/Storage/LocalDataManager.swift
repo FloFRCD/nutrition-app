@@ -21,6 +21,9 @@ class LocalDataManager: ObservableObject {
     @Published var meals: [Meal] = []
     @Published var weightEntries: [WeightEntry] = []
     @Published var recentScans: [FoodScan] = []
+    private var lastSaveTime: Date?
+    private let saveDebounceInterval = 0.5
+    private var saveLock = NSLock()
     
     private let queue = DispatchQueue(label: "com.yourapp.localdatamanager", qos: .userInitiated)
     
@@ -76,91 +79,12 @@ class LocalDataManager: ObservableObject {
             }
         }
     }
-    
-    func delete(forKey key: String) {
-        UserDefaults.standard.removeObject(forKey: key)
-    }
-    
-    // Méthode utilitaire pour sauvegarder rapidement l'état complet
-    func saveCurrentState() async {
-        do {
-            if let profile = userProfile {
-                try await save(profile, forKey: "userProfile")
-            }
-            try await save(meals, forKey: "meals")
-            try await save(weightEntries, forKey: "weightEntries")
-        } catch {
-            print("Error saving current state: \(error)")
-        }
-    }
-}
-
-// Methodes gestion des repas
-extension LocalDataManager {
-    func addMeal(_ meal: Meal) async throws {
-        meals.append(meal)
-        try await save(meals, forKey: "meals")
-    }
-    
-    func updateMeal(_ meal: Meal) async throws {
-        if let index = meals.firstIndex(where: { $0.id == meal.id }) {
-            meals[index] = meal
-            try await save(meals, forKey: "meals")
-        }
-    }
-    
-    func deleteMeal(_ mealId: UUID) async throws {
-        meals.removeAll { $0.id == mealId }
-        try await save(meals, forKey: "meals")
-    }
-    
-    func getMealsForDate(_ date: Date) -> [Meal] {
-        let calendar = Calendar.current
-        return meals.filter { meal in
-            calendar.isDate(meal.date, inSameDayAs: date)
-        }
-    }
-}
-
-// Methodes suivi de poid
-extension LocalDataManager {
-    func addWeightEntry(_ entry: WeightEntry) async throws {
-        weightEntries.append(entry)
-        try await save(weightEntries, forKey: "weightEntries")
-    }
-    
-    func getWeightHistory(for period: DateInterval) -> [WeightEntry] {
-        return weightEntries
-            .filter { period.contains($0.date) }
-            .sorted { $0.date < $1.date }
-    }
-    
-    func getLatestWeight() -> WeightEntry? {
-        return weightEntries.max(by: { $0.date < $1.date })
-    }
 }
 
 extension LocalDataManager {
     // Charger les recettes sélectionnées
     func loadSelectedRecipes() async throws -> [DetailedRecipe] {
         return try await load(forKey: "selected_recipes") ?? []
-    }
-    
-    func loadSavedRecipes() -> [DetailedRecipe] {
-        // Récupérer les recettes depuis UserDefaults ou une autre source de données
-        
-        // Par exemple, si vous stockez vos recettes dans UserDefaults
-        guard let data = UserDefaults.standard.data(forKey: "savedRecipes") else {
-            return []
-        }
-        
-        do {
-            let recipes = try JSONDecoder().decode([DetailedRecipe].self, from: data)
-            return recipes
-        } catch {
-            print("Erreur lors du décodage des recettes: \(error)")
-            return []
-        }
     }
     
     // Sauvegarder les recettes sélectionnées
@@ -217,25 +141,62 @@ extension LocalDataManager {
         }
     }
     
+    
     // Dans LocalDataManager.swift
     func saveFoodEntries(_ entries: [FoodEntry]) {
+        
+        saveLock.lock()
+            defer { saveLock.unlock() }
+            // Capturer la pile d'appels
+            let callStack = Thread.callStackSymbols
+            
+            print("SAVE CALL STACK:")
+            for (index, call) in callStack.prefix(8).enumerated() {
+                print("  \(index): \(call)")
+            }
+        // Éviter les sauvegardes trop rapprochées
+        let now = Date()
+        if let lastSave = lastSaveTime, now.timeIntervalSince(lastSave) < saveDebounceInterval {
+            print("⚠️ Sauvegarde ignorée - trop rapprochée de la précédente (\(now.timeIntervalSince(lastSave)) sec)")
+            return
+        }
+        
+        lastSaveTime = now
+        
+        // Ajouter l'ID du thread pour débogage
+        let threadId = Thread.current.description
+        print("💾 [Thread: \(threadId)] saveFoodEntries appelé avec \(entries.count) entrées")
+        
+        // Reste de votre code de sauvegarde...
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
         do {
-            let data = try JSONEncoder().encode(entries)
+            let data = try encoder.encode(entries)
             UserDefaults.standard.set(data, forKey: "foodEntries")
+            UserDefaults.standard.synchronize()
+            print("✅ Entrées du journal sauvegardées : \(entries)")
         } catch {
-            print("Erreur lors de la sauvegarde des entrées du journal : \(error)")
+            print("❌ Erreur lors de la sauvegarde des entrées du journal : \(error)")
         }
     }
-
+    
+    
     func loadFoodEntries() -> [FoodEntry]? {
+        print("func loadFoodEntries() -> [FoodEntry]?")
         guard let data = UserDefaults.standard.data(forKey: "foodEntries") else {
             return nil
         }
         
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        print("let entries = try decoder.decode([FoodEntry].self, from: data)")
         do {
-            return try JSONDecoder().decode([FoodEntry].self, from: data)
+            let entries = try decoder.decode([FoodEntry].self, from: data)
+            // Breakpoint et po ici
+            print("✅ Entrées du journal chargées : \(entries)")
+            return entries
         } catch {
-            print("Erreur lors du chargement des entrées du journal : \(error)")
+            print("❌ Erreur lors du chargement des entrées du journal : \(error)")
             return nil
         }
     }
@@ -263,5 +224,11 @@ extension LocalDataManager {
                 print("Erreur lors de la sauvegarde des recettes : \(error)")
             }
         }
+    }
+    
+    func clearFoodEntries() {
+        UserDefaults.standard.removeObject(forKey: "foodEntries")
+        UserDefaults.standard.synchronize()
+        print("✅ Toutes les entrées du journal ont été effacées")
     }
 }

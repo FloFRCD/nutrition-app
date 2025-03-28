@@ -8,16 +8,18 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var localDataManager = LocalDataManager.shared
+    @ObservedObject private var localDataManager = LocalDataManager.shared
     @StateObject private var journalViewModel = JournalViewModel()
     
     var body: some View {
         Group {
             if localDataManager.userProfile == nil {
                 InitialSetupView()
+                    .environmentObject(localDataManager) // Passer le même objet
             } else {
                 MainTabView()
                     .environmentObject(journalViewModel)
+                    .environmentObject(localDataManager) // Passer le même objet
             }
         }
     }

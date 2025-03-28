@@ -6,7 +6,6 @@
 //
 import Foundation
 
-
 enum MealType: String, Codable, CaseIterable {
     case breakfast = "Petit-déjeuner"
     case lunch = "Déjeuner"

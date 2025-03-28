@@ -11,6 +11,7 @@ import SwiftUI
 struct JournalView: View {
     @StateObject var viewModel = JournalViewModel()
     @EnvironmentObject var localDataManager: LocalDataManager
+    @State private var hasAppeared = false
     
     var body: some View {
         ZStack {
@@ -25,29 +26,40 @@ struct JournalView: View {
                 
                 // Liste des repas de la journée
                 ScrollView {
-                    VStack(spacing: 15) {
-                        // Dans JournalView
-                        ForEach(MealType.allCases, id: \.self) { mealType in
-                            MealSectionView(
-                                mealType: mealType,
-                                entries: viewModel.entriesForMealType(mealType: mealType, date: viewModel.selectedDate),
-                                targetCalories: viewModel.targetCaloriesFor(mealType: mealType),
-                                onAddPhoto: { viewModel.showFoodPhotoCapture(for: mealType) },
-                                onAddRecipe: { viewModel.showRecipeSelection(for: mealType) },
-                                onAddIngredients: { viewModel.showIngredientEntry(for: mealType) },
-                                onDeleteEntry: { entry in
-                                    withAnimation {
-                                        viewModel.removeFoodEntry(entry)
+                                    VStack(spacing: 15) {
+                                        ForEach(MealType.allCases, id: \.self) { mealType in
+                                            MealSectionView(
+                                                mealType: mealType,
+                                                entries: viewModel.entriesForMealType(mealType: mealType, date: viewModel.selectedDate),
+                                                targetCalories: viewModel.targetCaloriesFor(mealType: mealType),
+                                                onAddPhoto: { viewModel.showFoodPhotoCapture(for: mealType) },
+                                                onAddRecipe: { viewModel.showRecipeSelection(for: mealType) },
+                                                onAddIngredients: { viewModel.showIngredientEntry(for: mealType) },
+                                                onDeleteEntry: { entry in
+                                                    print("onDeleteEntry")
+                                                    withAnimation {
+                                                        viewModel.removeFoodEntry(entry)
+                                                    }
+                                                }
+                                            )
+                                            .id(UUID()) // Ajouter cette ligne
+                                        }
                                     }
+                                    .padding()
                                 }
-                            )
+                            }
                         }
+        
+        .onAppear {
+                    // N'exécuter qu'une seule fois
+                    if !hasAppeared {
+                        print("📱 JournalView apparaît pour la première fois")
+                        hasAppeared = true
+                    } else {
+                        print("📱 JournalView réapparaît")
                     }
-                    .padding()
                 }
-            }
-        }
-        .sheet(item: $viewModel.activeSheet) { sheet in
+                        .sheet(item: $viewModel.activeSheet) { sheet in
             switch sheet {
             case .photoCapture(let mealType):
                 FoodPhotoCaptureView(mealType: mealType) { image in
@@ -70,14 +82,7 @@ struct JournalView: View {
                             await viewModel.processAndAddIngredients(ingredients, mealType: mealType, date: viewModel.selectedDate)
                         }
                     }
-                    // Sinon, ne faites rien car NutritionService a déjà traité les aliments
                 }
-            case .ingredientEntry(let mealType):
-                    IngredientEntryView(mealType: mealType) { ingredients in
-                        // Nous ne faisons plus rien ici, car tout est géré dans IngredientEntryView
-                        // Nous fermons simplement la sheet
-                        viewModel.activeSheet = nil
-                    }
             }
         }        .navigationTitle("Journal Alimentaire")
     }
