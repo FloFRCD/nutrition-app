@@ -16,6 +16,7 @@ class NutritionService: ObservableObject {
     private var isCiqualLoaded = false
     private weak var journalViewModel: JournalViewModel?
     @Published var foodEntries: [FoodEntry] = []
+    @Published var customFoods: [CustomFood] = []
     
     // MARK: - Recipe Analysis Methods
     
@@ -236,5 +237,64 @@ class NutritionService: ObservableObject {
                 viewModel.foodEntries = self.foodEntries
             }
         }
+    }
+}
+
+extension NutritionService {
+    
+    // Charger les aliments personnalisés
+    func loadCustomFoods() {
+        customFoods = LocalDataManager.shared.loadCustomFoods()
+        objectWillChange.send()
+    }
+    
+    // Sauvegarder un aliment personnalisé depuis un Food
+    func saveCustomFood(_ food: Food) {
+        let customFood = CustomFood(from: food)
+        LocalDataManager.shared.addCustomFood(customFood)
+        
+        // Mettre à jour la liste en mémoire
+        if !customFoods.contains(where: { $0.id == customFood.id }) {
+            customFoods.append(customFood)
+            objectWillChange.send()
+        }
+        
+        print("✅ Aliment personnalisé sauvegardé: \(food.name)")
+    }
+    
+    // Supprimer un aliment personnalisé
+    func removeCustomFood(id: UUID) {
+        LocalDataManager.shared.removeCustomFood(id: id)
+        
+        // Mettre à jour la liste en mémoire
+        customFoods.removeAll { $0.id == id }
+        objectWillChange.send()
+    }
+    
+    // Rechercher des aliments personnalisés
+    func searchCustomFoods(query: String) -> [CustomFood] {
+        if query.isEmpty {
+            return customFoods
+        }
+        
+        return customFoods.filter {
+            $0.name.lowercased().contains(query.lowercased())
+        }
+    }
+    
+    // Ajouter un aliment personnalisé au journal
+    func addCustomFoodToJournal(customFood: CustomFood, quantity: Double, mealType: MealType, date: Date) {
+        let food = customFood.toFood()
+        
+        let entry = FoodEntry(
+            id: UUID(),
+            food: food,
+            quantity: quantity / food.servingSize,  // Ajuster la quantité en fonction de la taille de portion
+            date: date,
+            mealType: mealType,
+            source: .favorite // Utiliser favorite comme source pour les aliments personnalisés
+        )
+        
+        addFoodEntry(entry)
     }
 }

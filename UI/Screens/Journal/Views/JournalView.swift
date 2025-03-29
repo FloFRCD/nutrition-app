@@ -88,8 +88,34 @@ struct JournalView: View {
                     .environmentObject(localDataManager)
                     .environmentObject(nutritionService)
                     .environmentObject(viewModel)
+            
+            case .customFoodEntry(let mealType):
+                    CustomFoodEntryView(mealType: mealType)
+                        .environmentObject(viewModel)
+                        .environmentObject(nutritionService)
+                        
+            case .myFoodsSelector(let mealType):
+                    NavigationView {
+                        CustomFoodSelectorView { customFood, quantity in
+                            // Créer une entrée alimentaire à partir de l'aliment personnalisé
+                            let food = customFood.toFood()
+                            let entry = FoodEntry(
+                                id: UUID(),
+                                food: food,
+                                quantity: quantity / food.servingSize,
+                                date: viewModel.selectedDate,
+                                mealType: mealType,
+                                source: .favorite
+                            )
+                            
+                            // Ajouter au journal et fermer la feuille
+                            viewModel.addFoodEntry(entry)
+                            viewModel.activeSheet = nil
+                        }
+                        .environmentObject(nutritionService)
+                    }
+                }
             }
-        }
         .navigationTitle("Journal Alimentaire")
     }
 }

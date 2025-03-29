@@ -12,17 +12,15 @@ enum JournalSheet: Identifiable {
     case recipeSelection(mealType: MealType)
     case ingredientEntry(mealType: MealType)
     case customFoodEntry(mealType: MealType)
+    case myFoodsSelector(mealType: MealType)
     
     var id: String {
         switch self {
-        case .photoCapture(let mealType):
-            return "photo_\(mealType.rawValue)"
-        case .recipeSelection(let mealType):
-            return "recipe_\(mealType.rawValue)"
-        case .ingredientEntry(let mealType):
-            return "ingredient_\(mealType.rawValue)"
-        case .customFoodEntry(mealType: let mealType):
-            return "customFood_\(mealType.rawValue)"
+        case .photoCapture(let mealType): return "photoCapture_\(mealType.rawValue)"
+        case .recipeSelection(let mealType): return "recipeSelection_\(mealType.rawValue)"
+        case .ingredientEntry(let mealType): return "ingredientEntry_\(mealType.rawValue)"
+        case .customFoodEntry(let mealType): return "customFoodEntry_\(mealType.rawValue)"
+        case .myFoodsSelector(let mealType): return "myFoodsSelector_\(mealType.rawValue)"
         }
     }
 }

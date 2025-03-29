@@ -220,6 +220,7 @@ struct CustomFoodEntryView: View {
     }
     
     // Ajout de l'aliment au journal
+    // Dans CustomFoodEntryView, modifiez la méthode addFoodToJournal() comme suit:
     private func addFoodToJournal() {
         // Validation
         guard isFormValid else {
@@ -254,14 +255,17 @@ struct CustomFoodEntryView: View {
             image: nil
         )
         
+        // Sauvegarder l'aliment personnalisé dans nutritionService
+        nutritionService.saveCustomFood(food)
+        
         // Création de l'entrée alimentaire
         let entry = FoodEntry(
             id: UUID(),
             food: food,
-            quantity: servingSizeValue,
+            quantity: 1.0, // On utilise 1.0 comme quantité car on définit déjà la taille de la portion dans le food
             date: journalViewModel.selectedDate,
             mealType: mealType,
-            source: .manual
+            source: .favorite // Utiliser favorite comme source pour les aliments personnalisés
         )
         
         // Ajout au journal via le service de nutrition

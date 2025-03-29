@@ -334,4 +334,7 @@ class JournalViewModel: ObservableObject {
     func showCustomFoodEntry(for mealType: MealType) {
         activeSheet = .customFoodEntry(mealType: mealType)
     }
+    func showMyFoodsSelector(for mealType: MealType) {
+            activeSheet = .myFoodsSelector(mealType: mealType)
+        }
 }

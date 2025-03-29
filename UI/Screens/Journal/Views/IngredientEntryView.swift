@@ -21,6 +21,7 @@ struct IngredientEntryView: View {
     @State private var isProcessing = false
     @State private var isShowingCIQUALSearch = false
     @State private var selectedIngredientIndex: Int? = nil
+    @State private var isShowingCustomFoodsSelector = false
     
     
     struct IngredientEntry: Identifiable {
@@ -66,6 +67,16 @@ struct IngredientEntryView: View {
                 .environmentObject(nutritionService)
             }
         }
+        // Ajoutez ce sheet dans le body, après le sheet existant pour CIQUAL
+        .sheet(isPresented: $isShowingCustomFoodsSelector) {
+            NavigationView {
+                CustomFoodSelectorView { customFood, quantity in
+                    addCustomFood(customFood, quantity: quantity)
+                }
+                .environmentObject(nutritionService)
+            }
+        }
+
     }
     
     private var ingredientsSection: some View {
@@ -166,19 +177,37 @@ struct IngredientEntryView: View {
     }
     
     private var addButton: some View {
-        Button {
-            isShowingCIQUALSearch = true
-        } label: {
-            HStack {
-                Image(systemName: "plus.circle.fill")
-                    .foregroundColor(.blue)
-                Text("Ajouter un aliment")
-                    .foregroundColor(.blue)
+        VStack(spacing: 10) {
+            // Bouton pour rechercher dans CIQUAL
+            Button {
+                isShowingCIQUALSearch = true
+            } label: {
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.blue)
+                    Text("Chercher dans CIQUAL")
+                        .foregroundColor(.blue)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
+            .buttonStyle(BorderedButtonStyle())
+            
+            // Bouton pour les aliments personnalisés
+            Button {
+                isShowingCustomFoodsSelector = true
+            } label: {
+                HStack {
+                    Image(systemName: "star.fill")
+                        .foregroundColor(.orange)
+                    Text("Mes aliments personnalisés")
+                        .foregroundColor(.orange)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+            }
+            .buttonStyle(BorderedButtonStyle())
         }
-        .buttonStyle(BorderedButtonStyle())
     }
     
     private var nutritionSummarySection: some View {
@@ -311,15 +340,44 @@ struct IngredientEntryView: View {
         
         isProcessing = true
         
-        // Ajouter chaque ingrédient CIQUAL au journal via NutritionService
+        // Ajouter chaque ingrédient au journal via NutritionService
         for ingredient in ingredients {
             if let ciqualId = ingredient.ciqualId,
                let quantity = Double(ingredient.quantity) {
+                // Cas d'un ingrédient CIQUAL
                 nutritionService.addCIQUALFoodToJournal(
                     ciqualFoodId: ciqualId,
                     quantity: quantity,
                     mealType: mealType
                 )
+            } else if let quantity = Double(ingredient.quantity),
+                      let nutrition = ingredient.nutritionInfo {
+                // Cas d'un ingrédient personnalisé ou autre (sans ciqualId)
+                // Créer un Food à partir des informations nutritionnelles
+                let food = Food(
+                    id: UUID(),
+                    name: ingredient.name,
+                    calories: Int(nutrition.calories),
+                    proteins: nutrition.proteins,
+                    carbs: nutrition.carbohydrates,
+                    fats: nutrition.fats,
+                    fiber: nutrition.fiber,
+                    servingSize: 100, // Base standard pour les valeurs nutritionnelles
+                    servingUnit: .gram,
+                    image: nil
+                )
+                
+                // Créer et ajouter l'entrée au journal
+                let entry = FoodEntry(
+                    id: UUID(),
+                    food: food,
+                    quantity: quantity / 100.0, // Ajuster selon la quantité (car servingSize = 100g)
+                    date: journalViewModel.selectedDate,
+                    mealType: mealType,
+                    source: .manual
+                )
+                
+                nutritionService.addFoodEntry(entry)
             }
         }
         
@@ -329,6 +387,24 @@ struct IngredientEntryView: View {
         // Fermer la vue après un court délai
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
             presentationMode.wrappedValue.dismiss()
+        }
+    }
+    private func addCustomFood(_ customFood: CustomFood, quantity: Double) {
+        withAnimation {
+            let nutritionValues = NutritionValues(
+                calories: Double(customFood.calories),
+                proteins: customFood.proteins,
+                carbohydrates: customFood.carbs,
+                fats: customFood.fats,
+                fiber: customFood.fiber
+            )
+            
+            ingredients.append(IngredientEntry(
+                name: customFood.name,
+                quantity: String(format: "%.1f", quantity),
+                ciqualId: nil, // Pas d'ID CIQUAL pour les aliments personnalisés
+                nutritionInfo: nutritionValues
+            ))
         }
     }
 }

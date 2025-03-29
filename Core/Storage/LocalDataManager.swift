@@ -24,6 +24,7 @@ class LocalDataManager: ObservableObject {
     private var lastSaveTime: Date?
     private let saveDebounceInterval = 0.5
     private var saveLock = NSLock()
+    private let customFoodsKey = "customFoods"
     
     private let queue = DispatchQueue(label: "com.yourapp.localdatamanager", qos: .userInitiated)
     
@@ -233,5 +234,74 @@ extension LocalDataManager {
         UserDefaults.standard.removeObject(forKey: "foodEntries")
         UserDefaults.standard.synchronize()
         print("✅ Toutes les entrées du journal ont été effacées")
+    }
+}
+
+extension LocalDataManager {
+
+    
+    func saveCustomFoods(_ customFoods: [CustomFood]) {
+        saveLock.lock()
+        defer { saveLock.unlock() }
+        
+        print("💾 saveCustomFoods appelé avec \(customFoods.count) aliments personnalisés")
+        
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        do {
+            let data = try encoder.encode(customFoods)
+            UserDefaults.standard.set(data, forKey: customFoodsKey)
+            UserDefaults.standard.synchronize()
+            print("✅ Aliments personnalisés sauvegardés")
+        } catch {
+            print("❌ Erreur lors de la sauvegarde des aliments personnalisés : \(error)")
+        }
+    }
+    
+    func loadCustomFoods() -> [CustomFood] {
+        guard let data = UserDefaults.standard.data(forKey: customFoodsKey) else {
+            print("⚠️ Aucun aliment personnalisé trouvé")
+            return []
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        do {
+            let customFoods = try decoder.decode([CustomFood].self, from: data)
+            print("✅ \(customFoods.count) aliments personnalisés chargés")
+            return customFoods
+        } catch {
+            print("❌ Erreur lors du chargement des aliments personnalisés : \(error)")
+            return []
+        }
+    }
+    
+    func addCustomFood(_ customFood: CustomFood) {
+        var customFoods = loadCustomFoods()
+        
+        // Vérifier si l'aliment existe déjà (par ID)
+        if !customFoods.contains(where: { $0.id == customFood.id }) {
+            customFoods.append(customFood)
+            saveCustomFoods(customFoods)
+            print("✅ Aliment personnalisé ajouté : \(customFood.name)")
+        } else {
+            print("ℹ️ L'aliment personnalisé existe déjà : \(customFood.name)")
+        }
+    }
+    
+    func removeCustomFood(id: UUID) {
+        var customFoods = loadCustomFoods()
+        customFoods.removeAll { $0.id == id }
+        saveCustomFoods(customFoods)
+        print("✅ Aliment personnalisé supprimé")
+    }
+    
+    func updateCustomFood(_ customFood: CustomFood) {
+        var customFoods = loadCustomFoods()
+        if let index = customFoods.firstIndex(where: { $0.id == customFood.id }) {
+            customFoods[index] = customFood
+            saveCustomFoods(customFoods)
+            print("✅ Aliment personnalisé mis à jour : \(customFood.name)")
+        }
     }
 }

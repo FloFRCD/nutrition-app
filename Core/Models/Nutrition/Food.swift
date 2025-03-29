@@ -187,3 +187,42 @@ struct CIQUALFood: Codable, Identifiable {
         return Double(str.replacingOccurrences(of: ",", with: "."))
     }
 }
+
+struct CustomFood: Codable, Identifiable {
+    let id: UUID
+    let name: String
+    let calories: Int
+    let proteins: Double
+    let carbs: Double
+    let fats: Double
+    let fiber: Double
+    let servingSize: Double
+    let servingUnit: ServingUnit
+    
+    init(from food: Food) {
+        self.id = food.id
+        self.name = food.name
+        self.calories = food.calories
+        self.proteins = food.proteins
+        self.carbs = food.carbs
+        self.fats = food.fats
+        self.fiber = food.fiber
+        self.servingSize = food.servingSize
+        self.servingUnit = food.servingUnit
+    }
+    
+    func toFood() -> Food {
+        return Food(
+            id: id,
+            name: name,
+            calories: calories,
+            proteins: proteins,
+            carbs: carbs,
+            fats: fats,
+            fiber: fiber,
+            servingSize: servingSize,
+            servingUnit: servingUnit,
+            image: nil
+        )
+    }
+}
