@@ -9,14 +9,16 @@ import Foundation
 
 struct FoodScan: Identifiable, Codable {
     let id: UUID
-    let food: Food
+    let foodName: String
+    let nutritionInfo: NutritionInfo
     let date: Date
-    let isChecked: Bool
+    let mealType: MealType
     
-    init(id: UUID = UUID(), food: Food, date: Date = Date(), isChecked: Bool = false) {
+    init(id: UUID = UUID(), foodName: String, nutritionInfo: NutritionInfo, date: Date, mealType: MealType) {
         self.id = id
-        self.food = food
+        self.foodName = foodName
+        self.nutritionInfo = nutritionInfo
         self.date = date
-        self.isChecked = isChecked
+        self.mealType = mealType
     }
 }

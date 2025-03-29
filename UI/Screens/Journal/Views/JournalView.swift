@@ -57,15 +57,33 @@ struct JournalView: View {
             } else {
                 print("📱 JournalView réapparaît")
             }
+            
+            // Ajouter l'observation de notification ici
+            NotificationCenter.default.addObserver(
+                forName: .dismissAllSheets,
+                object: nil,
+                queue: .main
+            ) { _ in
+                // Utiliser weak self pour éviter les cycles de rétention
+                DispatchQueue.main.async {
+                    self.viewModel.activeSheet = nil
+                    print("✅ Toutes les sheets ont été fermées")
+                }
+            }
         }
+        .onDisappear {
+            // Se désabonner de la notification
+            NotificationCenter.default.removeObserver(
+                self,
+                name: .dismissAllSheets,
+                object: nil
+            )
+        }
+        
         .sheet(item: $viewModel.activeSheet) { sheet in
             switch sheet {
             case .photoCapture(let mealType):
-                FoodPhotoCaptureView(mealType: mealType) { image in
-                    Task {
-                        await viewModel.processAndAddFoodPhoto(image, mealType: mealType, date: viewModel.selectedDate)
-                    }
-                }
+                FoodPhotoCaptureView(mealType: mealType)
                 
             case .recipeSelection(let mealType):
                 RecipeSelectionForJournalView(mealType: mealType) { recipe, servings in
@@ -118,4 +136,5 @@ struct JournalView: View {
             }
         .navigationTitle("Journal Alimentaire")
     }
+    
 }

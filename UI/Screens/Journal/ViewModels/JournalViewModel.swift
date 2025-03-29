@@ -124,17 +124,29 @@ class JournalViewModel: ObservableObject {
     
     // MARK: - Food entry management
     
-    func addFoodEntry(_ foodEntry: FoodEntry) {
-        // Si le JournalViewModel est configuré, utilisez-le
-        if let viewModel = journalViewModel {
-            DispatchQueue.main.async {
-                viewModel.addFoodEntry(foodEntry)
-            }
-        } else {
-            // Sinon, utiliser l'ancienne implémentation comme fallback
-            foodEntries.append(foodEntry)
-            LocalDataManager.shared.saveFoodEntries(foodEntries)
+    func addFoodEntry(_ entry: FoodEntry) {
+        // Charger les entrées existantes
+        var existingEntries = LocalDataManager.shared.loadFoodEntries() ?? []
+        
+        // Vérifier si une entrée similaire existe déjà (même nom, même date et même repas)
+        let entryExists = existingEntries.contains { existingEntry in
+            return existingEntry.food.name == entry.food.name &&
+                   Calendar.current.isDate(existingEntry.date, inSameDayAs: entry.date) &&
+                   existingEntry.mealType == entry.mealType
+        }
+        
+        // N'ajouter que si elle n'existe pas déjà
+        if !entryExists {
+            existingEntries.append(entry)
+            LocalDataManager.shared.saveFoodEntries(existingEntries)
+            
+            // Si vous utilisez une propriété published
+            self.foodEntries = existingEntries
             objectWillChange.send()
+            
+            print("✅ Nouvelle entrée ajoutée : \(entry.food.name) pour \(entry.mealType.rawValue)")
+        } else {
+            print("⚠️ Entrée déjà existante, non ajoutée : \(entry.food.name) pour \(entry.mealType.rawValue)")
         }
     }
     
@@ -337,4 +349,60 @@ class JournalViewModel: ObservableObject {
     func showMyFoodsSelector(for mealType: MealType) {
             activeSheet = .myFoodsSelector(mealType: mealType)
         }
+}
+
+extension JournalViewModel {
+    func processAndAddFoodPhoto(_ image: UIImage, mealType: MealType) async {
+        do {
+            // Analyse de l'image avec GPT-4 Vision
+            let (foodName, nutritionInfo) = try await AIService.shared.analyzeFoodPhoto(image)
+            
+            // Créer un Food à partir des informations
+            let food = Food(
+                id: UUID(),
+                name: foodName,
+                calories: Int(nutritionInfo.calories),
+                proteins: nutritionInfo.proteins,
+                carbs: nutritionInfo.carbs,
+                fats: nutritionInfo.fats,
+                fiber: nutritionInfo.fiber,
+                servingSize: 1,
+                servingUnit: .piece,
+                image: nil
+            )
+            
+            // Créer une entrée pour le journal
+            let entry = FoodEntry(
+                id: UUID(),
+                food: food,
+                quantity: 1,
+                date: selectedDate,
+                mealType: mealType,
+                source: .foodPhoto
+            )
+            
+            // Enregistrer le scan dans l'historique
+            let foodScan = FoodScan(
+                foodName: foodName,
+                nutritionInfo: nutritionInfo,
+                date: Date(),
+                mealType: mealType
+            )
+            LocalDataManager.shared.saveFoodScan(foodScan)
+            
+            // Ajouter l'entrée au journal
+            DispatchQueue.main.async {
+                self.addFoodEntry(entry)
+                self.activeSheet = nil
+            }
+        } catch {
+            print("Erreur lors de l'analyse de l'image: \(error)")
+            
+            // Gestion de l'erreur - vous pouvez ajouter ici un code pour afficher une alerte
+            DispatchQueue.main.async {
+                self.activeSheet = nil
+                // Vous pourriez déclencher une alerte ou un message d'erreur ici
+            }
+        }
+    }
 }

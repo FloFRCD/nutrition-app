@@ -32,8 +32,8 @@ private struct FilledRecentScansView: View {
             VStack(spacing: 8) {
                 ForEach(scans) { scan in
                     FoodScanItem(
-                        name: scan.food.name,
-                        calories: "\(scan.food.calories)",
+                        name: scan.foodName,  // Utilisez directement foodName
+                        calories: "\(Int(scan.nutritionInfo.calories))",  // Accédez aux calories via nutritionInfo
                         time: formatDate(scan.date)
                     )
                 }

@@ -217,3 +217,65 @@ enum OpenAIError: Error {
     case apiError(String)
 }
 
+extension AIService {
+    func analyzeFoodPhoto(_ image: UIImage) async throws -> (String, NutritionInfo) {
+        // Conversion de l'image en base64
+        guard let imageData = image.jpegData(compressionQuality: 0.7) else {
+            throw OpenAIError.decodingError("Impossible de convertir l'image")
+        }
+        
+        let base64Image = imageData.base64EncodedString()
+        let url = URL(string: "https://api.openai.com/v1/chat/completions")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body: [String: Any] = [
+            "model": "gpt-4o",
+            "messages": [
+                [
+                    "role": "user",
+                    "content": [
+                        ["type": "text", "text": "Analyse cette photo et identifie les aliments présents et leur quantité. Donne-moi le nom du plat ainsi que les informations nutritionnelles, soit très précis dans l'analyse, c'est très important. Réponds uniquement en JSON dans ce format exact: {\"food_name\": \"nom du plat\", \"nutrition\": {\"calories\": nombre, \"proteins\": nombre en g, \"carbs\": nombre en g, \"fats\": nombre en g, \"fiber\": nombre en g}}"],
+                        ["type": "image_url", "image_url": ["url": "data:image/jpeg;base64,\(base64Image)"]]
+                    ]
+                ]
+            ],
+            "max_tokens": 1000
+        ]
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        let (data, urlResponse) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = urlResponse as? HTTPURLResponse else {
+            throw OpenAIError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            throw OpenAIError.networkError("Status code: \(httpResponse.statusCode)")
+        }
+        
+        let openAIResponse = try JSONDecoder().decode(OpenAIResponse.self, from: data)
+        let jsonString = openAIResponse.choices.first?.message.content ?? ""
+        
+        // Nettoyer la réponse pour s'assurer qu'elle ne contient que du JSON
+        let cleanedJSON = jsonString.replacingOccurrences(of: "```json", with: "")
+            .replacingOccurrences(of: "```", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        guard let jsonData = cleanedJSON.data(using: .utf8) else {
+            throw OpenAIError.decodingError("Impossible de convertir la réponse en données JSON")
+        }
+        
+        struct FoodAnalysisResponse: Codable {
+            let food_name: String
+            let nutrition: NutritionInfo
+        }
+        
+        let response = try JSONDecoder().decode(FoodAnalysisResponse.self, from: jsonData)
+        return (response.food_name, response.nutrition)
+    }
+}
+

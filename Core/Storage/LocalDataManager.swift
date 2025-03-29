@@ -21,6 +21,7 @@ class LocalDataManager: ObservableObject {
     @Published var meals: [Meal] = []
     @Published var weightEntries: [WeightEntry] = []
     @Published var recentScans: [FoodScan] = []
+    private let foodScansKey = "foodScans"
     private var lastSaveTime: Date?
     private let saveDebounceInterval = 0.5
     private var saveLock = NSLock()
@@ -303,5 +304,56 @@ extension LocalDataManager {
             saveCustomFoods(customFoods)
             print("✅ Aliment personnalisé mis à jour : \(customFood.name)")
         }
+    }
+}
+
+extension LocalDataManager {
+    
+    func saveFoodScan(_ scan: FoodScan) {
+        var scans = loadFoodScans()
+        scans.append(scan)
+        // Limiter à 20 scans maximum
+        if scans.count > 20 {
+            scans.removeFirst(scans.count - 20)
+        }
+        
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        do {
+            let data = try encoder.encode(scans)
+            UserDefaults.standard.set(data, forKey: foodScansKey)
+            UserDefaults.standard.synchronize()
+            
+            // Mettre à jour la propriété publiée
+            DispatchQueue.main.async {
+                self.recentScans = scans
+            }
+            
+            print("✅ Scan alimentaire sauvegardé : \(scan.foodName)")
+        } catch {
+            print("❌ Erreur lors de la sauvegarde du scan : \(error)")
+        }
+    }
+    
+    func loadFoodScans() -> [FoodScan] {
+        guard let data = UserDefaults.standard.data(forKey: foodScansKey) else {
+            return []
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        do {
+            let scans = try decoder.decode([FoodScan].self, from: data)
+            return scans
+        } catch {
+            print("❌ Erreur lors du chargement des scans : \(error)")
+            return []
+        }
+    }
+    
+    func getRecentFoodScans(limit: Int = 5) -> [FoodScan] {
+        let allScans = loadFoodScans()
+        // Trier par date décroissante et limiter au nombre demandé
+        return Array(allScans.sorted(by: { $0.date > $1.date }).prefix(limit))
     }
 }
