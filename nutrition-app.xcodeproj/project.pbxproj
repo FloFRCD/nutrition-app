@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0B4D49322D933D7C0096125D /* ciqual_data.json in Resources */ = {isa = PBXBuildFile; fileRef = 0B4D49312D933D7C0096125D /* ciqual_data.json */; };
 		0BF405192D8D75910039E25D /* Previews Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0BF405182D8D75910039E25D /* Previews Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -31,32 +30,48 @@
 /* Begin PBXFileReference section */
 		0B2F71852D65FB1D0025DC01 /* nutrition-app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "nutrition-app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0B2F73242D6603D80025DC01 /* nutrition_app.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = nutrition_app.entitlements; sourceTree = "<group>"; };
-		0B4D48432D903AB30096125D /* nutrition-app-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "nutrition-app-Info.plist"; sourceTree = "<group>"; };
-		0B4D49312D933D7C0096125D /* ciqual_data.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = ciqual_data.json; sourceTree = "<group>"; };
 		0BB824502D66254600B3A21D /* nutrition-appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "nutrition-appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BB824512D66254600B3A21D /* nutrition-appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "nutrition-appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BF405182D8D75910039E25D /* Previews Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Previews Assets.xcassets"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		F187FF792D64C7A30040996A /* App */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = App;
-			sourceTree = "<group>";
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		0B538CD72D98AA82008F899B /* Exceptions for "nutrition-app-info" folder in "nutrition-app" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"nutrition-app-Info.plist",
+			);
+			target = F187FF452D64C41A0040996A /* nutrition-app */;
 		};
-		F187FF802D64C7C80040996A /* Core */ = {
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		0B538CA92D98A5BA008F899B /* Core */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Core;
 			sourceTree = "<group>";
 		};
-		F187FFA52D64C8EF0040996A /* Features */ = {
+		0B538CAA2D98A5EF008F899B /* Features */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Features;
 			sourceTree = "<group>";
 		};
-		F187FFBB2D64C9EA0040996A /* UI */ = {
+		0B538CB32D98A69F008F899B /* UI */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = UI;
+			sourceTree = "<group>";
+		};
+		0B538CD62D98AA5D008F899B /* nutrition-app-info */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				0B538CD72D98AA82008F899B /* Exceptions for "nutrition-app-info" folder in "nutrition-app" target */,
+			);
+			path = "nutrition-app-info";
+			sourceTree = "<group>";
+		};
+		F187FF792D64C7A30040996A /* App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = App;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -97,12 +112,11 @@
 		F187FF3D2D64C41A0040996A = {
 			isa = PBXGroup;
 			children = (
-				0B4D49312D933D7C0096125D /* ciqual_data.json */,
-				0B4D48432D903AB30096125D /* nutrition-app-Info.plist */,
 				F187FF792D64C7A30040996A /* App */,
-				F187FF802D64C7C80040996A /* Core */,
-				F187FFA52D64C8EF0040996A /* Features */,
-				F187FFBB2D64C9EA0040996A /* UI */,
+				0B538CA92D98A5BA008F899B /* Core */,
+				0B538CAA2D98A5EF008F899B /* Features */,
+				0B538CB32D98A69F008F899B /* UI */,
+				0B538CD62D98AA5D008F899B /* nutrition-app-info */,
 				0B2F71852D65FB1D0025DC01 /* nutrition-app.app */,
 				0B2F73242D6603D80025DC01 /* nutrition_app.entitlements */,
 				0B2F73282D6605AA0025DC01 /* Preview Content */,
@@ -127,10 +141,11 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				0B538CA92D98A5BA008F899B /* Core */,
+				0B538CAA2D98A5EF008F899B /* Features */,
+				0B538CB32D98A69F008F899B /* UI */,
+				0B538CD62D98AA5D008F899B /* nutrition-app-info */,
 				F187FF792D64C7A30040996A /* App */,
-				F187FF802D64C7C80040996A /* Core */,
-				F187FFA52D64C8EF0040996A /* Features */,
-				F187FFBB2D64C9EA0040996A /* UI */,
 			);
 			name = "nutrition-app";
 			packageProductDependencies = (
@@ -228,7 +243,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0B4D49322D933D7C0096125D /* ciqual_data.json in Resources */,
 				0BF405192D8D75910039E25D /* Previews Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
