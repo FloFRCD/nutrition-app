@@ -15,27 +15,33 @@ struct DateSelectorView: View {
         HStack {
             Button(action: { moveDate(by: -1) }) {
                 Image(systemName: "chevron.left")
-                    .foregroundColor(.primary)
+                    .foregroundColor(.gray)
+                    .font(.system(size: 16, weight: .medium))
             }
+            .padding(.horizontal, 8)
             
             Spacer()
             
-            Button(action: { selectedDate = Date() }) {
-                Text(dateFormatter.string(from: selectedDate))
-                    .font(.headline)
-                    .foregroundColor(.primary)
-            }
+            Text(dateFormatter.string(from: selectedDate))
+                .font(.headline)
+                .foregroundColor(.black)
             
             Spacer()
             
             Button(action: { moveDate(by: 1) }) {
                 Image(systemName: "chevron.right")
-                    .foregroundColor(.primary)
+                    .foregroundColor(.gray)
+                    .font(.system(size: 16, weight: .medium))
             }
+            .padding(.horizontal, 8)
         }
-        .padding()
-        .background(Color(.tertiarySystemBackground))
+        .padding(.vertical, 8) // Réduction de l'épaisseur verticale
+        .padding(.horizontal, 12)
+        .background(Color.clear)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2) // Ombre très subtile
     }
+    
     
     private func moveDate(by days: Int) {
         if let newDate = Calendar.current.date(byAdding: .day, value: days, to: selectedDate) {
@@ -51,13 +57,6 @@ struct DateSelectorView: View {
         
         // Si c'est aujourd'hui, afficher "Aujourd'hui"
         if Calendar.current.isDateInToday(selectedDate) {
-            let todayFormatter = DateFormatter()
-            todayFormatter.locale = Locale(identifier: "fr_FR")
-            
-            // Définir une fonction personnalisée pour le formatage
-            todayFormatter.setLocalizedDateFormatFromTemplate("")
-            
-            // Hack: surcharger la méthode string(from:) pour toujours renvoyer "Aujourd'hui"
             class CustomFormatter: DateFormatter {
                 override func string(from date: Date) -> String {
                     return "Aujourd'hui"
@@ -73,7 +72,8 @@ struct DateSelectorView: View {
     }
 }
 
-// Extension utilitaire pour les formatters
+
+// Extension utilitaire pour les formatters (inchangée)
 extension DateFormatter {
     func with(_ configure: (inout DateFormatter) -> Void) -> DateFormatter {
         var copy = self

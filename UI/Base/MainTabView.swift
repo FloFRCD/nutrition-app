@@ -9,61 +9,46 @@ import Foundation
 import SwiftUI
 
 struct MainTabView: View {
+    @State private var selectedTab = 0
+    @EnvironmentObject var localDataManager: LocalDataManager
+    @EnvironmentObject var journalViewModel: JournalViewModel
+    
     var body: some View {
-        TabView {
-            if #available(iOS 18.0, *) {
-                HomeView()
-                    .tabItem {
-                        Label("Accueil", systemImage: "house.fill")
+        ZStack {
+            // Fond blanc avec effets subtils
+            AppBackgroundLight()
+            
+            // Contenu basé sur l'onglet sélectionné
+            VStack {
+                ZStack {
+                    // Affichage conditionnel de la vue en fonction de l'onglet sélectionné
+                    if selectedTab == 0 {
+                        if #available(iOS 18.0, *) {
+                            HomeView()
+                        } else {
+                            Text("Cette fonctionnalité nécessite iOS 18")
+                                .foregroundColor(.black)
+                        }
+                    } else if selectedTab == 1 {
+                        JournalView()
+                    } else if selectedTab == 2 {
+                        PlanningView()
                     }
-            } else {
-                // Fallback on earlier versions
+                }
+                .animation(.easeInOut(duration: 0.3), value: selectedTab)
+                
+                Spacer(minLength: 0)
             }
             
-//            ScanView()
-//                .tabItem {
-//                    Label("Scanner", systemImage: "camera.fill")
-//                }
-            
-            JournalView()
-                .tabItem {
-                    Label("Journal", systemImage: "newspaper")
-                }
-            
-            PlanningView()
-                .tabItem {
-                    Label("Recettes", systemImage: "line.3.horizontal")
-                }
-            
-            
-//            ShoppingListView()
-//                .tabItem {
-//                    Label("Courses", systemImage: "cart.fill")
-//                }
-            
-//            ProfileView()
-//                .tabItem {
-//                    Label("Profil", systemImage: "person.fill")
-//                }
+            // TabBar personnalisée fixée en bas
+            VStack {
+                Spacer()
+                CustomTabBar(selectedTab: $selectedTab)
+            }
+            .ignoresSafeArea(.keyboard)
         }
-    }
-    
-    private func createUserProfile() -> UserProfile {
-        return UserProfile(
-            name: "Florian",
-            age: 30,
-            gender: .male,
-            height: 180,
-            weight: 80,
-            fitnessGoal: .loseWeight, // Utilisez la bonne valeur de votre enum FitnessGoal
-            activityLevel: .moderatelyActive,
-            activityDetails: ActivityDetails(
-                        exerciseDaysPerWeek: 3,
-                        exerciseDuration: 45,
-                        exerciseIntensity: .moderate,
-                        jobActivity: .seated,
-                        dailyActivity: .moderate
-                    )  // Utilisez la bonne valeur de votre enum ActivityLevel
-        )
+        .environmentObject(localDataManager)
+        .environmentObject(journalViewModel)
+        .preferredColorScheme(.light)
     }
 }

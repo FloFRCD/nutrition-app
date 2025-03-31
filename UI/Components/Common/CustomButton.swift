@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import StoreKit
+import AVFoundation
 
 struct CustomButton: View {
     let title: String
@@ -50,5 +52,59 @@ enum ButtonStyle {
         case .destructive:
             return .white
         }
+    }
+}
+
+// Style pour le bouton principal
+struct PrimaryButtonStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .background(AppTheme.primaryButtonBackground)
+            .cornerRadius(20)
+            .foregroundColor(.white)
+            .shadow(color: Color.black.opacity(0.3), radius: 5, x: 0, y: 3)
+    }
+}
+
+// Style pour le bouton d'action
+struct ActionButtonStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .background(AppTheme.actionButtonBackground)
+            .cornerRadius(20)
+            .foregroundColor(.white)
+            .shadow(color: Color.black.opacity(0.3), radius: 5, x: 0, y: 3)
+    }
+}
+
+// Style pour le bouton secondaire
+struct SecondaryButtonStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .background(AppTheme.secondaryButtonBackground)
+            .cornerRadius(20)
+            .foregroundColor(.white)
+            .shadow(color: Color.black.opacity(0.2), radius: 3, x: 0, y: 2)
+    }
+}
+
+// Extensions pour faciliter l'utilisation
+extension View {
+    func primaryButtonStyle() -> some View {
+        self.modifier(PrimaryButtonStyle())
+    }
+    
+    func actionButtonStyle() -> some View {
+        self.modifier(ActionButtonStyle())
+    }
+    
+    func secondaryButtonStyle() -> some View {
+        self.modifier(SecondaryButtonStyle())
     }
 }

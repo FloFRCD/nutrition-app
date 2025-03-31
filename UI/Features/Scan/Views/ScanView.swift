@@ -26,7 +26,7 @@ struct ScannerCardView: View {
                     .font(.subheadline)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
-                    .background(AppTheme.buttonGradient)
+                    .background(AppTheme.actionButtonGradient)
                     .cornerRadius(20)
                     .foregroundColor(.white)
             }
@@ -51,7 +51,7 @@ struct ScannerCardView: View {
                         .font(.footnote)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(AppTheme.buttonGradient)
+                        .background(AppTheme.actionButtonGradient)
                         .foregroundColor(.white)
                         .cornerRadius(8)
                 }

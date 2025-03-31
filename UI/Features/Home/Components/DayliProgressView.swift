@@ -30,7 +30,6 @@ struct DailyProgressView: View {
                 HStack {
                     Text("Salut \(localDataManager.userProfile?.name.components(separatedBy: " ").first ?? "")")
                         .font(.headline)
-                        .blurOpacityEffect(initialAnimation)
                     
                     Text("•")
                         .foregroundColor(.gray)
@@ -40,9 +39,6 @@ struct DailyProgressView: View {
                         .foregroundColor(.gray)
                     
                 }
-                //                Text("Salut \(localDataManager.userProfile?.name.components(separatedBy: " ").first ?? "")")
-                //                    .font(.headline)
-                //                    .blurOpacityEffect(initialAnimation)
                 
                 // Utilisation de votre InfiniteScrollView existante
                 InfiniteScrollView {
@@ -71,20 +67,7 @@ struct DailyProgressView: View {
                         isExpanded: $isExpanded,
                         selectedIndex: $userSelectedStatIndex
                     )
-                    
-                    // StatBox pour l'eau
-//                    CarouselStatBox(
-//                        title: "Eau",
-//                        currentValue: "\(Int(consumedNutrition.water))",
-//                        currentUnit: "L",
-//                        targetValue: "2.5",
-//                        targetUnit: "L",
-//                        type: .water,
-//                        index: 2,
-//                        isExpanded: $isExpanded,
-//                        selectedIndex: $userSelectedStatIndex
-//                    )
-                    
+                                        
                     CarouselStatBox(
                         title: "Glucides",
                         currentValue: "\(Int(consumedNutrition.carbohydrates))",
@@ -154,10 +137,6 @@ struct DailyProgressView: View {
                         userSelectedStatIndex = activeIndex
                     }
                 }
-                //                .visualEffect { content, proxy in
-                //                    content
-                //                        .offset(y: !initialAnimation ? -(proxy.size.height + 100) : 0)
-                //                }
                 // Nous remplaçons le gesture par la logique dans onScrollPhaseChange
             }
             .padding(.vertical, 10)
@@ -194,46 +173,67 @@ struct CarouselStatBox: View {
     var body: some View {
         GeometryReader { geometry in
             VStack(alignment: .leading, spacing: 8) {
+                // Titre avec la couleur spécifique au type
                 Text(title)
-                    .foregroundColor(.white)
-                    .font(.subheadline)
+                    .foregroundColor(type.textColor)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .padding(.top, 4)
                 
-                VStack(alignment: .leading, spacing: 2) {
+                // Section Actuel
+                VStack(alignment: .leading, spacing: 4) {
                     Text("Actuel")
                         .font(.caption)
-                        .foregroundColor(.white.opacity(0.8))
+                        .foregroundColor(Color.gray.opacity(0.8))
+                    
                     HStack(alignment: .firstTextBaseline, spacing: 2) {
                         Text(currentValue)
-                            .font(.title3)
-                            .bold()
-                            .foregroundColor(.white)
+                            .font(.system(size: 26, weight: .bold))
+                            .foregroundColor(type.textColor)
+                        
                         Text(currentUnit)
                             .font(.caption)
-                            .foregroundColor(.white.opacity(0.8))
+                            .foregroundColor(type.textColor.opacity(0.7))
+                            .padding(.leading, 1)
                     }
                 }
                 
-                VStack(alignment: .leading, spacing: 2) {
+                // Séparateur de la couleur du type
+                Rectangle()
+                    .fill(type.textColor.opacity(0.2))
+                    .frame(height: 1)
+                    .padding(.vertical, 4)
+                
+                // Section Objectif
+                VStack(alignment: .leading, spacing: 4) {
                     Text("Objectif")
                         .font(.caption)
-                        .foregroundColor(.white.opacity(0.8))
+                        .foregroundColor(Color.gray.opacity(0.8))
+                    
                     HStack(alignment: .firstTextBaseline, spacing: 2) {
                         Text(targetValue)
-                            .font(.callout)
-                            .bold()
-                            .foregroundColor(.white)
+                            .font(.body)
+                            .fontWeight(.semibold)
+                            .foregroundColor(type.textColor)
+                        
                         Text(targetUnit)
                             .font(.caption)
-                            .foregroundColor(.white.opacity(0.8))
+                            .foregroundColor(type.textColor.opacity(0.7))
+                            .padding(.leading, 1)
                     }
                 }
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
             .frame(width: geometry.size.width, height: geometry.size.height)
-            .background(type.gradient)
+            .background(Color.white)
             .cornerRadius(15)
-            .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 2)
+//            .shadow(color: type.shadowColor.opacity(0.2), radius: 10, x: 0, y: 4)
+            .overlay(
+                // Bordure légère de la couleur du type
+                RoundedRectangle(cornerRadius: 15)
+                    .stroke(type.textColor.opacity(0.05), lineWidth: 0.5)
+            )
             .onTapGesture {
                 withAnimation(.spring()) {
                     isExpanded = true
@@ -245,13 +245,14 @@ struct CarouselStatBox: View {
         .scrollTransition(.interactive.threshold(.centered), axis: .horizontal) { content, phase in
             content
                 .scaleEffect(phase == .identity ? 1.05 : 0.95)
-                .opacity(phase == .identity ? 1 : 0.5)
+                .opacity(phase == .identity ? 1 : 0.9)
                 .offset(y: phase == .identity ? -5 : 0)
         }
     }
 }
 
-// Types de statistiques
+// Extension pour StatType pour ajouter la couleur d'ombre correspondante
+// Modification de l'énumération StatType existante
 enum StatType {
     case calories
     case proteins
@@ -260,46 +261,27 @@ enum StatType {
     case fats
     case fiber
     
-    var gradient: LinearGradient {
+    // Couleur du texte pour chaque type
+    var textColor: Color {
         switch self {
         case .calories:
-            return LinearGradient(
-                colors: [Color.orange.opacity(0.8), Color.red.opacity(0.3)],
-                startPoint: .topTrailing,
-                endPoint: .bottomLeading
-            )
+            return Color.orange
         case .proteins:
-            return LinearGradient(
-                colors: [Color.purple.opacity(0.6), Color.purple.opacity(0.3)],
-                startPoint: .topTrailing,
-                endPoint: .bottomLeading
-            )
+            return AppTheme.primaryPurple
         case .water:
-            return LinearGradient(
-                colors: [Color.blue.opacity(0.6), Color.blue.opacity(0.3)],
-                startPoint: .topTrailing,
-                endPoint: .bottomLeading
-            )
-            
+            return AppTheme.primaryBlue
         case .carbohydrates:
-            return LinearGradient(
-                colors: [Color.yellow.opacity(0.6), Color.yellow.opacity(0.3)],
-                startPoint: .topTrailing,
-                endPoint: .bottomLeading
-            )
+            return Color(hex: "D4AF37") // Or/jaune
         case .fats:
-            return LinearGradient(
-                colors: [Color.red.opacity(0.6), Color.red.opacity(0.3)],
-                startPoint: .topTrailing,
-                endPoint: .bottomLeading
-            )
+            return Color(hex: "FF6B6B") // Rouge-corail
         case .fiber:
-            return LinearGradient(
-                colors: [Color.green.opacity(0.6), Color.green.opacity(0.3)],
-                startPoint: .topTrailing,
-                endPoint: .bottomLeading
-            )
+            return Color(hex: "4CAF50") // Vert
         }
+    }
+    
+    // Couleur d'ombre correspondante
+    var shadowColor: Color {
+        return textColor
     }
 }
 

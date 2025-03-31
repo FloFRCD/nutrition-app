@@ -171,7 +171,7 @@ struct NextMealView: View {
                             .font(.footnote)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
-                            .background(Color.clear)
+                            .background(Color.black)
                             .foregroundColor(.white)
                             .cornerRadius(8)
                             .overlay( /// apply a rounded border

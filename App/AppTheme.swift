@@ -15,14 +15,16 @@ struct AppTheme {
     static let cardBackground = Color(hex: "121212")
     static let secondaryBackground = Color(hex: "1E1E1E")
     
-    // Nouvelles couleurs basées sur le logo
-    static let primaryPurple = Color(hex: "9933E6") // Violet du logo
-    static let primaryBlue = Color(hex: "3366E6")   // Bleu du logo
-    static let lightPink = Color(hex: "E666CC")     // Rose du logo
+    // Couleurs principales basées sur l'image
+    static let primaryPurple = Color(hex: "9933FF") // Violet plus vif du logo/UI
+    static let primaryBlue = Color(hex: "3366FF")   // Bleu plus vif
+    static let lightPink = Color(hex: "E666CC")     // Rose pour les accents
+    static let vibrantGreen = Color(hex: "44CC44")  // Vert pour les boutons d'action
     
     // Couleurs d'accent mises à jour
-    static let accent = primaryPurple               // Remplace le vert par le violet du logo
-    static let secondaryAccent = primaryBlue        // Remplace l'ancien violet par le bleu du logo
+    static let accent = primaryPurple
+    static let secondaryAccent = primaryBlue
+    static let actionAccent = vibrantGreen
     
     // Couleurs de texte
     static let primaryText = Color.white
@@ -33,12 +35,53 @@ struct AppTheme {
     static let cardBorderRadius: CGFloat = 16
     static let cardPadding: CGFloat = 16
     
+    // Propriétés pour la TabBar
+    static let tabBarBackground = Color.black.opacity(0.7)
+    static let tabBarActiveBlur = Color.white.opacity(0.15)
+    static let tabBarUnselectedItemColor = Color.gray
+    
+    // Couleurs pour les boutons
+    static let primaryButtonBackground = primaryPurple
+    static let secondaryButtonBackground = Color(hex: "333333")
+    static let actionButtonBackground = vibrantGreen
+    
+    // Couleurs pour les blobs d'arrière-plan
+    static let backgroundBlob1 = primaryPurple.opacity(0.30)
+    static let backgroundBlob2 = primaryBlue.opacity(0.30)
+    static let backgroundBlob3 = lightPink.opacity(0.15)
+    
     // Gradient pour les boutons
-    static var buttonGradient: LinearGradient {
+    static var primaryButtonGradient: LinearGradient {
         LinearGradient(
             gradient: Gradient(colors: [primaryPurple, primaryBlue]),
             startPoint: .leading,
             endPoint: .trailing
+        )
+    }
+    
+    // Gradient pour le bouton d'action (comme le bouton Scanner vert)
+    static var tabBarGradient: LinearGradient {
+        LinearGradient(
+            gradient: Gradient(colors: [Color.white, vibrantGreen.opacity(0.1)]),
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
+    
+    static var actionButtonGradient: LinearGradient {
+        LinearGradient(
+            gradient: Gradient(colors: [vibrantGreen, vibrantGreen.opacity(0.8)]),
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
+    
+    // Gradient pour l'arrière-plan de la tabBar sélectionnée
+    static var selectedTabGradient: LinearGradient {
+        LinearGradient(
+            gradient: Gradient(colors: [primaryPurple.opacity(0.7), primaryBlue.opacity(0.5)]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
         )
     }
 }
@@ -69,3 +112,5 @@ extension Color {
         )
     }
 }
+
+

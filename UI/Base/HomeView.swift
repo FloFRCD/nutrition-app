@@ -23,15 +23,24 @@ struct HomeView: View {
     @State private var scrollPhase: ScrollPhase = .idle
     @State private var userSelectedStatIndex: Int? = nil
     @State private var upcomingMeals: [PlannedMeal] = []
+    @State private var centeredCardID: String? = nil
+    
+    // Déterminer le type actif basé sur l'index sélectionné
+    private var activeStatType: StatType? {
+        guard let index = userSelectedStatIndex else { return nil }
+        
+        let types: [StatType] = [.calories, .proteins, .carbohydrates, .fats, .fiber, .water]
+        return index < types.count ? types[index] : nil
+    }
     
     var body: some View {
         NavigationView {
             ZStack {
-                // Fond principal
-                AppTheme.background.ignoresSafeArea()
+                // Fond dynamique qui change avec la carte sélectionnée
+                AnimatedBackground()
                 
                 VStack(spacing: 0) {
-                    
+                    // En-tête avec logo et bouton profil (reste inchangé)
                     HStack {
                         VStack(alignment: .center, spacing: 4) {
                             Image("Icon-scan")
@@ -43,7 +52,7 @@ struct HomeView: View {
                             Text("NutrIA")
                                 .font(.title2)
                                 .fontWeight(.bold)
-                                .foregroundColor(AppTheme.primaryText)
+                                .foregroundColor(.black)
                         }
                         
                         Spacer()
@@ -54,20 +63,20 @@ struct HomeView: View {
                                     .resizable()
                                     .aspectRatio(contentMode: .fit)
                                     .frame(width: 40, height: 40)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(AppTheme.primaryPurple)
                                 
                                 Text("Profil")
                                     .font(.caption)
                                     .fontWeight(.bold)
-                                    .foregroundColor(.white)
-                                    .opacity(0.5)
+                                    .foregroundColor(.black)
+                                    .opacity(0.7)
                             }
                         }
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 10)
                     
-                    // Carousel fixe (toujours visible)
+                    // Carousel de statistiques (transmet l'index sélectionné)
                     DailyProgressView(
                         userProfile: localDataManager.userProfile,
                         isExpanded: $isNutritionExpanded,
@@ -77,28 +86,29 @@ struct HomeView: View {
                         userSelectedStatIndex: $userSelectedStatIndex,
                         currentScrollOffset: $currentScrollOffset
                     )
-                    .colorScheme(.dark)
+                    .scrollTargetLayout()
+                    .scrollPosition(id: $centeredCardID)
+                    .onChange(of: centeredCardID) { oldValue, newValue in
+                        if let newID = newValue {
+                            // Convertir l'ID en index
+                            userSelectedStatIndex = convertIDToIndex(newID)
+                        }
+                    }
                     .padding(.horizontal)
                     .padding(.bottom, 10)
                     
-                    // Contenu défilant
+                    // Le reste du contenu en cartes blanches
                     ScrollView {
                         VStack(spacing: 15) {
-                            // Section Scanner compacte comme carte
-                            ScannerCardView(onScanTap: {
-                                showingScanView = true
-                            })
-                            .background(AppTheme.cardBackground)
-                            .cornerRadius(AppTheme.cardBorderRadius)
-                            
-                            // Section Repas
+                            // Carte de repas en blanc
                             NextMealView()
                                 .environmentObject(localDataManager)
-                                .background(AppTheme.cardBackground)
+                                .background(Color.white)
                                 .cornerRadius(AppTheme.cardBorderRadius)
+                                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
                             
                             // Espace en bas
-                            Spacer().frame(height: 30)
+                            Spacer().frame(height: 80)
                         }
                         .padding(.horizontal)
                     }
@@ -106,7 +116,7 @@ struct HomeView: View {
                 .blur(radius: isNutritionExpanded ? 3 : 0)
                 .zIndex(0)
                 
-                // Overlay sombre et vue expandée
+                // Overlay pour la vue expandée (reste largement inchangé)
                 if isNutritionExpanded, let profile = localDataManager.userProfile {
                     ZStack {
                         Color.black.opacity(0.7)
@@ -122,11 +132,11 @@ struct HomeView: View {
                             isExpanded: $isNutritionExpanded
                         )
                         .padding()
-                        .background(AppTheme.cardBackground)
+                        .background(Color.white)
                         .cornerRadius(20)
-                        .shadow(color: Color.black.opacity(0.3), radius: 10)
+                        .shadow(color: Color.black.opacity(0.1), radius: 15)
                         .padding(.horizontal)
-                        .foregroundColor(AppTheme.primaryText)
+                        .foregroundColor(.black)
                     }
                     .transition(.opacity)
                     .zIndex(1)
@@ -156,7 +166,17 @@ struct HomeView: View {
                     })
             }
         }
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(.light)
     }
 }
 
+extension HomeView {
+    private func convertIDToIndex(_ id: String) -> Int {
+        // Supposons que vos IDs sont au format "stat_0", "stat_1", etc.
+        if let indexString = id.split(separator: "_").last,
+           let index = Int(indexString) {
+            return index
+        }
+        return 0 // Valeur par défaut
+    }
+}

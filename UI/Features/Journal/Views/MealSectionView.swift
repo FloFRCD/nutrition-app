@@ -15,10 +15,9 @@ struct MealSectionView: View {
     var barcode: () -> Void
     var onAddRecipe: () -> Void
     var onAddIngredients: () -> Void
-    var onAddCustomFood: () -> Void  // Nouveau
+    var onAddCustomFood: () -> Void
     var onDeleteEntry: (FoodEntry) -> Void
 
-    
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // En-tête avec titre et calories
@@ -26,6 +25,7 @@ struct MealSectionView: View {
                 Label {
                     Text(mealType.rawValue)
                         .font(.headline)
+                        .foregroundColor(.black)
                 } icon: {
                     // Icône basée sur le type de repas
                     Group {
@@ -48,14 +48,19 @@ struct MealSectionView: View {
                 // Calories du repas / objectif
                 Text("\(Int(entriesCalories)) / \(targetCalories) kcal")
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.gray)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(12)
             }
-            .padding(.vertical, 12)
+            .padding(.vertical, 16)
+            .padding(.horizontal, 16)
             
             // Liste des entrées
             if entries.isEmpty {
                 Text("Aucun aliment pour ce repas")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.gray)
                     .italic()
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding()
@@ -85,74 +90,51 @@ struct MealSectionView: View {
                 }
             }
             
-            // Boutons d'ajout
+            // Boutons d'ajout avec design amélioré
             HStack(spacing: 0) {
-                Button {
-                    onAddPhoto()
-                } label: {
-                    VStack {
-                        Image(systemName: "camera")
-                            .font(.system(size: 24))
-                        Text("Photo")
-                            .font(.caption)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
+                ActionButton(
+                    icon: "camera",
+                    text: "Photo",
+                    color: AppTheme.primaryPurple,
+                    action: onAddPhoto
+                )
                 
-                Button {
-                    barcode()
-                } label: {
-                        VStack {
-                            Image(systemName: "barcode.viewfinder")
-                                .font(.system(size: 24))
-                            Text("Code-barres")
-                                .font(.caption)
-                        }
-                        .foregroundColor(.green)
-                    }
+                ActionButton(
+                    icon: "barcode.viewfinder",
+                    text: "Code-barres",
+                    color: AppTheme.vibrantGreen,
+                    action: barcode
+                )
                 
-                Button {
-                    onAddRecipe()
-                } label: {
-                    VStack {
-                        Image(systemName: "book")
-                            .font(.system(size: 24))
-                        Text("Recette")
-                            .font(.caption)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
+                ActionButton(
+                    icon: "book",
+                    text: "Recette",
+                    color: AppTheme.primaryBlue,
+                    action: onAddRecipe
+                )
                 
-                Button {
-                    onAddIngredients()
-                } label: {
-                    VStack {
-                        Image(systemName: "list.bullet")
-                            .font(.system(size: 24))
-                        Text("Ingrédients")
-                            .font(.caption)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
+                ActionButton(
+                    icon: "list.bullet",
+                    text: "Ingrédients",
+                    color: Color(hex: "D4AF37"),
+                    action: onAddIngredients
+                )
                 
-                // Nouveau bouton pour les aliments personnalisés
-                Button {
-                    onAddCustomFood()
-                } label: {
-                    VStack {
-                        Image(systemName: "plus.circle")
-                            .font(.system(size: 24))
-                        Text("Personnalisé")
-                            .font(.caption)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
+                ActionButton(
+                    icon: "plus.circle",
+                    text: "Personnalisé",
+                    color: Color(hex: "FF6B6B"),
+                    action: onAddCustomFood
+                )
             }
-            .padding(.vertical, 10)
+            .padding(.vertical, 12)
+            .background(Color.gray.opacity(0.05))
+            .cornerRadius(16)
         }
-        .padding(.horizontal)
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(10)
+        .padding(.horizontal, 0)
+        .background(Color.white)
+        .cornerRadius(20)
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
     }
     
     private var entriesCalories: Double {
@@ -166,16 +148,40 @@ struct MealSectionView: View {
         case .breakfast:
             return .orange
         case .lunch:
-            return .blue
+            return AppTheme.primaryBlue
         case .dinner:
-            return .purple
+            return AppTheme.primaryPurple
         case .snack:
-            return .green
+            return AppTheme.vibrantGreen
         }
     }
 }
 
-// Extension pour obtenir des icônes et couleurs pour les types de repas
+// Nouveau composant pour les boutons d'action
+struct ActionButton: View {
+    let icon: String
+    let text: String
+    let color: Color
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.system(size: 22))
+                    .foregroundColor(color)
+                
+                Text(text)
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+        }
+    }
+}
+
+// Extension existante pour obtenir des icônes et couleurs pour les types de repas
 extension MealType {
     var icon: some View {
         Group {
@@ -198,11 +204,11 @@ extension MealType {
         case .breakfast:
             return .orange
         case .lunch:
-            return .blue
+            return AppTheme.primaryBlue
         case .dinner:
-            return .purple
+            return AppTheme.primaryPurple
         case .snack:
-            return .green
+            return AppTheme.vibrantGreen
         }
     }
 }

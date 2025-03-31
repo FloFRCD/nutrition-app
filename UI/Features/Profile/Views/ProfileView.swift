@@ -27,14 +27,14 @@ struct ProfileView: View {
             .sheet(isPresented: $showingEditProfile) {
                 if let profile = localDataManager.userProfile {
                     ProfileEditView(userProfile: profile)
-                        .preferredColorScheme(.dark)
+                        .preferredColorScheme(.light)
                         .accentColor(AppTheme.accent)
                 }
             }
             .foregroundColor(AppTheme.primaryText)
         }
         .accentColor(AppTheme.accent)
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(.light)
     }
     
     // Extraction du contenu dans une fonction pour réduire la complexité
@@ -61,7 +61,7 @@ struct ProfileView: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(AppTheme.buttonGradient)
+                    .background(AppTheme.actionButtonGradient)
                     .cornerRadius(10)
             }
             .padding(.horizontal)

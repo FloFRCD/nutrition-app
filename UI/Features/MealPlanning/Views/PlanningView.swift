@@ -212,7 +212,7 @@ struct PlanningView: View {
                         if selectedMealSuggestions.isEmpty || selectedMealSuggestions.count > 4 {
                             Color.gray // Grisé si vide ou trop de sélections
                         } else {
-                            AppTheme.buttonGradient // Gradient si sélection valide
+                            AppTheme.actionButtonGradient // Gradient si sélection valide
                         }
                     }
                 )

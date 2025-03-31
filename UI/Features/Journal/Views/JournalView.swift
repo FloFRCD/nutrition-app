@@ -16,14 +16,26 @@ struct JournalView: View {
     
     var body: some View {
         ZStack {
-            Color(.systemBackground).edgesIgnoringSafeArea(.all)
+            // Fond animé
+            AnimatedBackground()
             
             VStack(spacing: 0) {
-                // En-tête avec résumé nutritionnel
+                // En-tête avec résumé nutritionnel modernisé
                 NutritionSummaryHeader(viewModel: viewModel)
+                    .background(Color.white)
+                    .cornerRadius(20)
+                    .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+                    .padding(.horizontal)
+                    .padding(.top, 16)
                 
-                // Sélecteur de date
+                // Sélecteur de date avec design amélioré
                 DateSelectorView(selectedDate: $viewModel.selectedDate)
+                    .padding(.vertical, 16)
+                    .background(Color.white)
+                    .cornerRadius(20)
+                    .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+                    .padding(.horizontal)
+                    .padding(.top, 12)
                 
                 // Liste des repas de la journée
                 ScrollView {
@@ -39,41 +51,38 @@ struct JournalView: View {
                                 onAddIngredients: { viewModel.showIngredientEntry(for: mealType) },
                                 onAddCustomFood: { viewModel.showCustomFoodEntry(for: mealType) },
                                 onDeleteEntry: { entry in
-                                    print("onDeleteEntry")
                                     withAnimation {
                                         viewModel.removeFoodEntry(entry)
                                     }
                                 }
                             )
                         }
+                        
+                        // Espace au bas de la page pour la TabBar
+                        Spacer().frame(height: 100)
                     }
-                    .padding()
+                    .padding(.horizontal)
+                    .padding(.top, 12)
                 }
             }
         }
         .onAppear {
             if !hasAppeared {
-                print("📱 JournalView apparaît pour la première fois")
                 hasAppeared = true
-            } else {
-                print("📱 JournalView réapparaît")
             }
             
-            // Ajouter l'observation de notification ici
+            // Notification observer
             NotificationCenter.default.addObserver(
                 forName: .dismissAllSheets,
                 object: nil,
                 queue: .main
             ) { _ in
-                // Utiliser weak self pour éviter les cycles de rétention
                 DispatchQueue.main.async {
                     self.viewModel.activeSheet = nil
-                    print("✅ Toutes les sheets ont été fermées")
                 }
             }
         }
         .onDisappear {
-            // Se désabonner de la notification
             NotificationCenter.default.removeObserver(
                 self,
                 name: .dismissAllSheets,
@@ -82,7 +91,9 @@ struct JournalView: View {
         }
         
         .sheet(item: $viewModel.activeSheet) { sheet in
+            // Switch case inchangé
             switch sheet {
+            // Vos cas existants...
             case .photoCapture(let mealType):
                 FoodPhotoCaptureView(mealType: mealType)
                 
@@ -139,6 +150,7 @@ struct JournalView: View {
                 }
             }
         .navigationTitle("Journal Alimentaire")
+        .navigationBarTitleDisplayMode(.inline)
     }
     
 }
