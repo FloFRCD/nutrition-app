@@ -13,6 +13,12 @@ struct HomeView: View {
     @ObservedObject private var localDataManager = LocalDataManager.shared
     @State private var isNutritionExpanded = false
     @State private var showingScanView = false
+    @State private var isTabBarVisible = true
+    
+    //bouton profil annimé
+    @State private var playAnimation = false
+    @State private var showProfile = false
+
     
     // États pour le défilement automatique
     @State private var scrollPosition: SwiftUI.ScrollPosition = .init()
@@ -25,6 +31,7 @@ struct HomeView: View {
     @State private var upcomingMeals: [PlannedMeal] = []
     @State private var centeredCardID: String? = nil
     
+    
     // Déterminer le type actif basé sur l'index sélectionné
     private var activeStatType: StatType? {
         guard let index = userSelectedStatIndex else { return nil }
@@ -34,7 +41,7 @@ struct HomeView: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 // Fond dynamique qui change avec la carte sélectionnée
                 AnimatedBackground()
@@ -57,14 +64,18 @@ struct HomeView: View {
                         
                         Spacer()
                         
-                        NavigationLink(destination: ProfileView()) {
-                            VStack(alignment: .center, spacing: 4) {
-                                Image(systemName: "atom")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
+                        Button {
+                            
+                            playAnimation = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                                isTabBarVisible = false
+                                showProfile = true
+                            }
+                        } label: {
+                            VStack(spacing: 4) {
+                                LottieProfileIcon(play: $playAnimation)
                                     .frame(width: 40, height: 40)
-                                    .foregroundColor(AppTheme.primaryPurple)
-                                
+
                                 Text("Profil")
                                     .font(.caption)
                                     .fontWeight(.bold)
@@ -72,6 +83,8 @@ struct HomeView: View {
                                     .opacity(0.7)
                             }
                         }
+
+
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 10)
@@ -142,6 +155,14 @@ struct HomeView: View {
                     .zIndex(1)
                 }
             }
+            .navigationDestination(isPresented: $showProfile) {
+                ProfileView(isTabBarVisible: $isTabBarVisible)
+            }
+            .navigationTitle("Accueil")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbarBackground(.hidden, for: .navigationBar)
+                .toolbarColorScheme(.light, for: .navigationBar)
+                .tint(.black)
             .navigationBarHidden(true)
             .onReceive(timer) { _ in
                 if !isUserInteracting {
@@ -157,7 +178,7 @@ struct HomeView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingScanView) {
+            .sheet(isPresented: $showingScanView) {
             NavigationView {
                 ScanView()
                     .navigationTitle("Scanner un aliment")

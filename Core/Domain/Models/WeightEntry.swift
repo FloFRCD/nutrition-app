@@ -7,9 +7,16 @@
 
 import Foundation
 
-struct WeightEntry: Identifiable, Codable {
-    let id: UUID
-    var weight: Double
-    var date: Date
-    var note: String?
+struct WeightEntry: Identifiable {
+    var id = UUID()
+    let date: Date
+    let weight: Double
+    let note: String?
+    
+    init(id: UUID = UUID(), date: Date, weight: Double, note: String? = nil) {
+        self.id = id
+        self.date = date
+        self.weight = weight
+        self.note = note
+    }
 }

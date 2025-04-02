@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0B538CE72D9D0FF6008F899B /* profile-animation.json in Resources */ = {isa = PBXBuildFile; fileRef = 0B538CE62D9D0FF6008F899B /* profile-animation.json */; };
+		0B538CE92D9D0FFB008F899B /* ProfileIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B538CE82D9D0FFB008F899B /* ProfileIconView.swift */; };
+		0B538CEB2D9D10D5008F899B /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 0B538CEA2D9D10D5008F899B /* Lottie */; };
 		0BF405192D8D75910039E25D /* Previews Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0BF405182D8D75910039E25D /* Previews Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -27,23 +30,29 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		0B538DF22D9D142C008F899B /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		0B2F71852D65FB1D0025DC01 /* nutrition-app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "nutrition-app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0B2F73242D6603D80025DC01 /* nutrition_app.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = nutrition_app.entitlements; sourceTree = "<group>"; };
+		0B4D48432D903AB30096125D /* nutrition-app-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "nutrition-app-Info.plist"; sourceTree = "<group>"; };
+		0B538CE62D9D0FF6008F899B /* profile-animation.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "profile-animation.json"; sourceTree = "<group>"; };
+		0B538CE82D9D0FFB008F899B /* ProfileIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileIconView.swift; sourceTree = "<group>"; };
 		0BB824502D66254600B3A21D /* nutrition-appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "nutrition-appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BB824512D66254600B3A21D /* nutrition-appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "nutrition-appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BF405182D8D75910039E25D /* Previews Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Previews Assets.xcassets"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		0B538CD72D98AA82008F899B /* Exceptions for "nutrition-app-info" folder in "nutrition-app" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				"nutrition-app-Info.plist",
-			);
-			target = F187FF452D64C41A0040996A /* nutrition-app */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		0B538CA92D98A5BA008F899B /* Core */ = {
@@ -61,14 +70,6 @@
 			path = UI;
 			sourceTree = "<group>";
 		};
-		0B538CD62D98AA5D008F899B /* nutrition-app-info */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				0B538CD72D98AA82008F899B /* Exceptions for "nutrition-app-info" folder in "nutrition-app" target */,
-			);
-			path = "nutrition-app-info";
-			sourceTree = "<group>";
-		};
 		F187FF792D64C7A30040996A /* App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = App;
@@ -81,6 +82,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0B538CEB2D9D10D5008F899B /* Lottie in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -105,6 +107,8 @@
 			isa = PBXGroup;
 			children = (
 				0BF405182D8D75910039E25D /* Previews Assets.xcassets */,
+				0B538CE62D9D0FF6008F899B /* profile-animation.json */,
+				0B538CE82D9D0FFB008F899B /* ProfileIconView.swift */,
 			);
 			path = "Preview Content";
 			sourceTree = "<group>";
@@ -116,8 +120,8 @@
 				0B538CA92D98A5BA008F899B /* Core */,
 				0B538CAA2D98A5EF008F899B /* Features */,
 				0B538CB32D98A69F008F899B /* UI */,
-				0B538CD62D98AA5D008F899B /* nutrition-app-info */,
 				0B2F71852D65FB1D0025DC01 /* nutrition-app.app */,
+				0B4D48432D903AB30096125D /* nutrition-app-Info.plist */,
 				0B2F73242D6603D80025DC01 /* nutrition_app.entitlements */,
 				0B2F73282D6605AA0025DC01 /* Preview Content */,
 				0BB824502D66254600B3A21D /* nutrition-appTests.xctest */,
@@ -135,6 +139,7 @@
 				F187FF422D64C41A0040996A /* Sources */,
 				F187FF432D64C41A0040996A /* Frameworks */,
 				F187FF442D64C41A0040996A /* Resources */,
+				0B538DF22D9D142C008F899B /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -144,11 +149,11 @@
 				0B538CA92D98A5BA008F899B /* Core */,
 				0B538CAA2D98A5EF008F899B /* Features */,
 				0B538CB32D98A69F008F899B /* UI */,
-				0B538CD62D98AA5D008F899B /* nutrition-app-info */,
 				F187FF792D64C7A30040996A /* App */,
 			);
 			name = "nutrition-app";
 			packageProductDependencies = (
+				0B538CEA2D9D10D5008F899B /* Lottie */,
 			);
 			productName = "nutrition-app";
 			productReference = 0B2F71852D65FB1D0025DC01 /* nutrition-app.app */;
@@ -226,6 +231,9 @@
 			);
 			mainGroup = F187FF3D2D64C41A0040996A;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				0B538CE52D9D0F96008F899B /* XCRemoteSwiftPackageReference "lottie-ios" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F187FF3D2D64C41A0040996A;
 			projectDirPath = "";
@@ -243,6 +251,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0B538CE72D9D0FF6008F899B /* profile-animation.json in Resources */,
 				0BF405192D8D75910039E25D /* Previews Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -268,6 +277,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0B538CE92D9D0FFB008F899B /* ProfileIconView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -625,6 +635,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		0B538CE52D9D0F96008F899B /* XCRemoteSwiftPackageReference "lottie-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/airbnb/lottie-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.5.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0B538CEA2D9D10D5008F899B /* Lottie */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B538CE52D9D0F96008F899B /* XCRemoteSwiftPackageReference "lottie-ios" */;
+			productName = Lottie;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F187FF3E2D64C41A0040996A /* Project object */;
 }

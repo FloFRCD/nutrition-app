@@ -10,6 +10,7 @@ import SwiftUI
 
 // MARK: - Theme Colors
 struct AppTheme {
+    
     // Couleurs primaires
     static let background = Color.black
     static let cardBackground = Color(hex: "121212")
@@ -22,7 +23,7 @@ struct AppTheme {
     static let vibrantGreen = Color(hex: "44CC44")  // Vert pour les boutons d'action
     
     // Couleurs d'accent mises à jour
-    static let accent = primaryPurple
+    static let accent = vibrantGreen
     static let secondaryAccent = primaryBlue
     static let actionAccent = vibrantGreen
     
@@ -53,7 +54,7 @@ struct AppTheme {
     // Gradient pour les boutons
     static var primaryButtonGradient: LinearGradient {
         LinearGradient(
-            gradient: Gradient(colors: [primaryPurple, primaryBlue]),
+            gradient: Gradient(colors: [vibrantGreen, secondaryAccent]), // vert → bleu
             startPoint: .leading,
             endPoint: .trailing
         )
@@ -79,7 +80,7 @@ struct AppTheme {
     // Gradient pour l'arrière-plan de la tabBar sélectionnée
     static var selectedTabGradient: LinearGradient {
         LinearGradient(
-            gradient: Gradient(colors: [primaryPurple.opacity(0.7), primaryBlue.opacity(0.5)]),
+            gradient: Gradient(colors: [primaryBlue.opacity(0.7), vibrantGreen.opacity(0.5)]),
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )

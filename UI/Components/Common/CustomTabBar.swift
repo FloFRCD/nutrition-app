@@ -11,6 +11,7 @@ import SwiftUI
 
 struct CustomTabBar: View {
     @Binding var selectedTab: Int
+    @Binding var isTabBarVisible: Bool
     
     // Liste des options de la TabBar
     private let tabs = [
@@ -20,28 +21,31 @@ struct CustomTabBar: View {
     ]
     
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(tabs, id: \.index) { tab in
-                tabButton(tab: tab)
+        if isTabBarVisible {
+            HStack(spacing: 0) {
+                ForEach(tabs, id: \.index) { tab in
+                    tabButton(tab: tab)
+                }
             }
+            .padding(.vertical, 10) // Réduction de la hauteur
+            .padding(.horizontal, 12)
+            .background(
+                // Fond plus léger
+                ZStack {
+                    AppTheme.tabBarGradient.opacity(0.5)
+                        .background(.ultraThinMaterial)
+                }
+                
+                    .cornerRadius(30)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 30)
+                    .stroke(Color.gray.opacity(0.1), lineWidth: 0.5)
+            )
+            .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 3)
+            .padding(.horizontal, 40)
+            .padding(.bottom, 20) // Réduction de l'espace en bas
         }
-        .padding(.vertical, 10) // Réduction de la hauteur
-        .padding(.horizontal, 12)
-        .background(
-            // Fond plus léger
-            ZStack {
-                AppTheme.tabBarGradient.opacity(0.5)
-                    .background(.ultraThinMaterial)
-            }
-            .cornerRadius(30)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 30)
-                .stroke(Color.gray.opacity(0.1), lineWidth: 0.5)
-        )
-        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 3)
-        .padding(.horizontal, 40)
-        .padding(.bottom, 20) // Réduction de l'espace en bas
     }
     
     private func tabButton(tab: TabItem) -> some View {
@@ -71,4 +75,12 @@ struct TabItem {
     let title: String
     let icon: String
     let index: Int
+}
+
+class TabBarSettings: ObservableObject {
+    @Binding var isVisible: Bool
+    
+    init(isVisible: Binding<Bool>) {
+        self._isVisible = isVisible
+    }
 }

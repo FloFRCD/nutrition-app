@@ -12,6 +12,7 @@ struct MainTabView: View {
     @State private var selectedTab = 0
     @EnvironmentObject var localDataManager: LocalDataManager
     @EnvironmentObject var journalViewModel: JournalViewModel
+    @State private var isTabBarVisible = true
     
     var body: some View {
         ZStack {
@@ -42,13 +43,25 @@ struct MainTabView: View {
             
             // TabBar personnalisée fixée en bas
             VStack {
-                Spacer()
-                CustomTabBar(selectedTab: $selectedTab)
+                            Spacer()
+                            if isTabBarVisible {  // Condition ajoutée ici
+                                CustomTabBar(selectedTab: $selectedTab, isTabBarVisible: $isTabBarVisible)
+                            }
+                        }
+                        .ignoresSafeArea(.keyboard)
+                    }
+                    .environmentObject(localDataManager)
+                    .environmentObject(journalViewModel)
+                    .preferredColorScheme(.light)
+                    .onReceive(NotificationCenter.default.publisher(for: .hideTabBar)) { _ in
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isTabBarVisible = false
+                        }
+                    }
+                    .onReceive(NotificationCenter.default.publisher(for: .showTabBar)) { _ in
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isTabBarVisible = true
+                        }
+                    }
+                }
             }
-            .ignoresSafeArea(.keyboard)
-        }
-        .environmentObject(localDataManager)
-        .environmentObject(journalViewModel)
-        .preferredColorScheme(.light)
-    }
-}

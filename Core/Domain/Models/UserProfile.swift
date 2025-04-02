@@ -14,6 +14,8 @@ struct UserProfile: Identifiable, Codable {
     var gender: Gender
     var height: Double // en cm
     var weight: Double // en kg
+    var startingWeight: Double  // Poids initial au début du suivi
+    var targetWeight: Double?   // Objectif de poids défini par l'utilisateur
     var bodyFatPercentage: Double? // en %
     var fitnessGoal: FitnessGoal
     var activityLevel: ActivityLevel
@@ -27,6 +29,8 @@ struct UserProfile: Identifiable, Codable {
         gender: Gender,
         height: Double,
         weight: Double,
+        startingWeight: Double? = nil,
+        targetWeight: Double? = nil,
         bodyFatPercentage: Double? = nil,
         fitnessGoal: FitnessGoal,
         activityLevel: ActivityLevel,
@@ -39,6 +43,8 @@ struct UserProfile: Identifiable, Codable {
         self.gender = gender
         self.height = height
         self.weight = weight
+        self.startingWeight = startingWeight ?? weight
+        self.targetWeight = targetWeight
         self.bodyFatPercentage = bodyFatPercentage
         self.fitnessGoal = fitnessGoal
         self.activityLevel = activityLevel

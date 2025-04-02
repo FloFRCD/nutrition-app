@@ -12,7 +12,7 @@ class WeightTrackerViewModel: ObservableObject {
     @Published var showingAddEntry = false
     
     func addWeightEntry(_ weight: Double) {
-        let entry = WeightEntry(id: UUID(), weight: weight, date: Date())
+        let entry = WeightEntry(id: UUID(), date: Date(), weight: weight)
         weightEntries.append(entry)
         // Sauvegarder dans LocalDataManager
     }

@@ -28,7 +28,7 @@ struct DailyProgressView: View {
             
             VStack(spacing: 15) {
                 HStack {
-                    Text("Salut \(localDataManager.userProfile?.name.components(separatedBy: " ").first ?? "")")
+                    Text("Bonjour \(localDataManager.userProfile?.name.components(separatedBy: " ").first ?? "")")
                         .font(.headline)
                     
                     Text("•")

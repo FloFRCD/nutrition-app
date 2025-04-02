@@ -8,26 +8,34 @@
 import SwiftUI
 
 struct ProgressBar: View {
-    let value: Double
-    let total: Double
-    var color: Color = .blue
-    
-    private var progress: Double {
-        min(max(value / total, 0), 1)
-    }
+    var value: Double
+    var color: Color
     
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
+                // Background
                 Rectangle()
-                    .fill(color.opacity(0.3))
+                    .frame(width: geometry.size.width, height: 20)
+                    .opacity(0.1)
+                    .foregroundColor(color)
+                    .cornerRadius(10)
                 
+                // Progress
                 Rectangle()
-                    .fill(color)
-                    .frame(width: geometry.size.width * progress)
+                    .frame(width: min(CGFloat(value) * geometry.size.width, geometry.size.width), height: 20)
+                    .foregroundColor(color)
+                    .cornerRadius(10)
+                
+                // Label
+                Text("\(Int(value * 100))%")
+                    .font(.caption)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 10)
+                    .frame(width: geometry.size.width, alignment: .center)
             }
         }
-        .cornerRadius(8)
-        .frame(height: 8)
+        .frame(height: 20)
     }
 }

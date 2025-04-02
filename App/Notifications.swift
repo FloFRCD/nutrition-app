@@ -16,5 +16,7 @@ extension Notification.Name {
     /// Notification pour mettre à jour le journal alimentaire
     static let refreshFoodJournal = Notification.Name("refreshFoodJournal")
     
-    // Vous pourrez ajouter d'autres notifications ici au besoin
+    static let hideTabBar = Notification.Name("hideTabBar")
+    static let showTabBar = Notification.Name("showTabBar")
 }
+

@@ -13,12 +13,26 @@ struct NutritionApp: App {
     @StateObject private var storeKitManager = StoreKitManager.shared
     @StateObject private var nutritionService = NutritionService.shared
     
+    init() {
+            let appearance = UINavigationBarAppearance()
+            appearance.configureWithTransparentBackground()
+            appearance.titleTextAttributes = [.foregroundColor: UIColor.clear]
+            appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.clear]
+
+            UINavigationBar.appearance().standardAppearance = appearance
+            UINavigationBar.appearance().scrollEdgeAppearance = appearance
+            UINavigationBar.appearance().tintColor = UIColor.black
+        }
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environmentObject(localDataManager)
-                .environmentObject(storeKitManager)
-                .environmentObject(nutritionService)
+            NavigationStack {
+                ContentView()
+                    .environmentObject(localDataManager)
+                    .environmentObject(storeKitManager)
+                    .environmentObject(nutritionService)
+            }
+            .tint(.black)
         }
     }
 }

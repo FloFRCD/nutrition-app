@@ -356,4 +356,27 @@ extension LocalDataManager {
         // Trier par date décroissante et limiter au nombre demandé
         return Array(allScans.sorted(by: { $0.date > $1.date }).prefix(limit))
     }
+    func updateWeight(to newWeight: Double) {
+        userProfile?.weight = newWeight
+        saveProfile()
+    }
+
+    func updateTargetWeight(to newTarget: Double) {
+        userProfile?.targetWeight = newTarget
+        saveProfile()
+    }
+    
+    func saveProfile() {
+        Task {
+            if let profile = userProfile {
+                do {
+                    try await save(profile, forKey: "userProfile")
+                    print("✅ Profil sauvegardé avec succès depuis LocalDataManager")
+                } catch {
+                    print("❌ Erreur lors de la sauvegarde du profil :", error)
+                }
+            }
+        }
+    }
+    
 }

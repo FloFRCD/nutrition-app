@@ -51,7 +51,7 @@ struct AppBackgroundLight: View {
             
             // Blob effet 1 - violet clair avec flou
             Circle()
-                .fill(AppTheme.primaryPurple.opacity(0.05))
+                .fill(AppTheme.accent.opacity(0.05))
                 .frame(width: 300, height: 300)
                 .blur(radius: 70)
                 .offset(x: -100, y: -180)
@@ -74,61 +74,44 @@ struct AppBackgroundLight: View {
 }
 
 struct DynamicBackground: View {
-    var activeType: StatType?
-    @State private var animateGradient = false
-    
+    var profileTab: ProfileTab
+
+    var backgroundColor: Color {
+        switch profileTab {
+        case .info:
+            return AppTheme.vibrantGreen
+        case .stats:
+            return AppTheme.primaryBlue
+        case .settings:
+            return AppTheme.primaryPurple
+        }
+    }
+
     var body: some View {
         ZStack {
-            // Fond blanc de base
             Color.white.edgesIgnoringSafeArea(.all)
-            
-            if let type = activeType {
-                // Blob principal de la couleur du type actif
-                Circle()
-                    .fill(type.textColor.opacity(0.1))
-                    .frame(width: 300, height: 300)
-                    .blur(radius: 70)
-                    .offset(x: -100, y: -180)
-                    .animation(.easeInOut(duration: 1.5), value: type)
-                
-                // Blob secondaire avec une nuance différente
-                Circle()
-                    .fill(type.textColor.opacity(0.08))
-                    .frame(width: 350, height: 350)
-                    .blur(radius: 80)
-                    .offset(x: 120, y: 200)
-                    .animation(.easeInOut(duration: 1.5), value: type)
-                
-                // Blob tertiaire pour plus de profondeur
-                Ellipse()
-                    .fill(type.textColor.opacity(0.05))
-                    .frame(width: 250, height: 250)
-                    .blur(radius: 60)
-                    .offset(x: 50, y: -50)
-                    .animation(.easeInOut(duration: 1.5), value: type)
-            } else {
-                // Blobs par défaut si aucun type n'est sélectionné
-                Circle()
-                    .fill(AppTheme.primaryPurple.opacity(0.1))
-                    .frame(width: 300, height: 300)
-                    .blur(radius: 70)
-                    .offset(x: -100, y: -180)
-                
-                Circle()
-                    .fill(AppTheme.primaryBlue.opacity(0.08))
-                    .frame(width: 350, height: 350)
-                    .blur(radius: 80)
-                    .offset(x: 120, y: 200)
-                
-                Ellipse()
-                    .fill(AppTheme.lightPink.opacity(0.05))
-                    .frame(width: 250, height: 250)
-                    .blur(radius: 60)
-                    .offset(x: 50, y: -50)
-            }
+
+            Circle()
+                .fill(backgroundColor.opacity(0.1))
+                .frame(width: 300, height: 300)
+                .blur(radius: 70)
+                .offset(x: -100, y: -180)
+
+            Circle()
+                .fill(backgroundColor.opacity(0.08))
+                .frame(width: 350, height: 350)
+                .blur(radius: 80)
+                .offset(x: 120, y: 200)
+
+            Ellipse()
+                .fill(backgroundColor.opacity(0.05))
+                .frame(width: 250, height: 250)
+                .blur(radius: 60)
+                .offset(x: 50, y: -50)
         }
     }
 }
+
 
 import SwiftUI
 import CoreMotion
