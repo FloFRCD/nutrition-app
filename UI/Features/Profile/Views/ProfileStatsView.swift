@@ -6,6 +6,7 @@ struct ProfileStatsView: View {
     
     let weightData: [WeightEntry]
     let foodEntries: [FoodEntry]
+    let userProfile: UserProfile
     
     var body: some View {
         VStack {
@@ -26,7 +27,8 @@ struct ProfileStatsView: View {
             // TabView avec effet de swipe
             TabView(selection: $selectedTab) {
                 // Premier graphique: Poids
-                WeightChartView(weightData: weightData)
+                WeightChartView(userProfile: userProfile)
+
                     .tag(0)
                 
                 // Second graphique: Calories
@@ -76,45 +78,42 @@ struct ProfileStatsView: View {
 }
 
 struct WeightChartView: View {
-    let weightData: [WeightEntry]
-    let userProfile = LocalDataManager.shared.userProfile ?? UserProfile.default
+    let userProfile: UserProfile
+    
+    private var today: Date {
+        Calendar.current.startOfDay(for: Date())
+    }
+    
+    private var last7Days: [Date] {
+        (0..<7).compactMap {
+            Calendar.current.date(byAdding: .day, value: -$0, to: today)
+        }.reversed()
+    }
 
-        // 🔽 AJOUTE CETTE PROPRIÉTÉ ICI
-        private var generatedWeightData: [WeightEntry] {
-            let startWeight = userProfile.startingWeight
-            let endWeight = userProfile.weight
-            let days = 7
-            let today = Calendar.current.startOfDay(for: Date())
-
-            return (0..<days).map { i in
-                let weight = startWeight + (Double(i) / Double(days - 1)) * (endWeight - startWeight)
-                let date = Calendar.current.date(byAdding: .day, value: -(days - 1 - i), to: today)!
-                return WeightEntry(date: date, weight: weight)
-            }
+    private var generatedWeightData: [WeightEntry] {
+        let start = userProfile.startingWeight
+        let end = userProfile.weight
+        let totalDays = 7
+        
+        return (0..<totalDays).compactMap { i in
+            let ratio = Double(i) / Double(totalDays - 1)
+            let weight = start + ratio * (end - start)
+            let date = Calendar.current.date(byAdding: .day, value: -(totalDays - 1 - i), to: today)!
+            return WeightEntry(date: date, weight: weight)
         }
-
-    // Formatter pour afficher uniquement le jour du mois
-    private func dayNumberFormatter(from date: Date) -> String {
-        String(Calendar.current.component(.day, from: date))
     }
-
-    // Filtrage des 7 derniers jours avec poids
-    private var recentWeightData: [WeightEntry] {
-        let calendar = Calendar.current
-        return weightData
-            .filter { calendar.dateComponents([.day], from: $0.date, to: Date()).day ?? 0 < 7 }
-            .sorted { $0.date < $1.date }
-    }
-
+    
     private var yRange: ClosedRange<Double> {
-        let max = userProfile.startingWeight + 5
-        let min = userProfile.targetWeight ?? (max - 10) // fallback au cas où pas d’objectif
-
-        return min...max
+        let min = min(userProfile.weight, userProfile.targetWeight ?? userProfile.weight)
+        let max = max(userProfile.weight, userProfile.startingWeight)
+        return (min - 2)...(max + 2)
     }
 
-
-
+    private func dayLabel(for date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.setLocalizedDateFormatFromTemplate("d MMM")
+        return formatter.string(from: date)
+    }
 
     var body: some View {
         Chart {
@@ -124,36 +123,35 @@ struct WeightChartView: View {
                     y: .value("Poids", entry.weight)
                 )
                 .interpolationMethod(.catmullRom)
-                .foregroundStyle(Color.green)
                 .lineStyle(StrokeStyle(lineWidth: 3))
-
+                .foregroundStyle(.green)
+                
                 PointMark(
                     x: .value("Date", entry.date),
                     y: .value("Poids", entry.weight)
                 )
-                .foregroundStyle(Color.green)
+                .foregroundStyle(.green)
             }
-
         }
         .chartYScale(domain: yRange)
-
-        .chartYAxis {
-            AxisMarks(position: .leading)
-        }
         .chartXAxis {
             AxisMarks(values: generatedWeightData.map(\.date)) { value in
                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [2, 2]))
                 AxisTick()
                 AxisValueLabel {
                     if let date = value.as(Date.self) {
-                        Text(dayNumberFormatter(from: date))
+                        Text(dayLabel(for: date))
                     }
                 }
             }
         }
+        .chartYAxis {
+            AxisMarks(position: .leading)
+        }
         .padding()
     }
 }
+
 
 
 struct CaloriesChartView: View {

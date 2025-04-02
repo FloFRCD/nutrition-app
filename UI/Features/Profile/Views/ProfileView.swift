@@ -324,7 +324,8 @@ struct ProfileView: View {
             ProfileCardView(title: "Diagrammes", icon: "chart.line.uptrend.xyaxis") {
                 ProfileStatsView(
                     weightData: weightData,
-                    foodEntries: LocalDataManager.shared.loadFoodEntries() ?? []
+                    foodEntries: LocalDataManager.shared.loadFoodEntries() ?? [],
+                    userProfile: profile
                 )
                 .frame(height: 300)
                 .padding(.horizontal, 8)
