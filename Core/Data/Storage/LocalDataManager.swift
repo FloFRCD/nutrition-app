@@ -379,4 +379,11 @@ extension LocalDataManager {
         }
     }
     
+    func getCaloriesConsumed(on date: Date) -> Int {
+        let entries = loadFoodEntries() ?? []
+        return entries
+            .filter { Calendar.current.isDate($0.date, inSameDayAs: date) }
+            .map { Int($0.nutritionValues.calories) }
+            .reduce(0, +)
+    }
 }

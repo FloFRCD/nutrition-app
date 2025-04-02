@@ -10,6 +10,7 @@ import SwiftUI
 import Charts
 
 struct ProfileView: View {
+    @EnvironmentObject var journalViewModel: JournalViewModel
     @ObservedObject private var localDataManager = LocalDataManager.shared
     @State private var showingEditProfile = false
     @State private var selectedTab: ProfileTab = .info
@@ -19,6 +20,12 @@ struct ProfileView: View {
     
     @State private var editedWeight: String = ""
     @State private var editedTargetWeight: String = ""
+    
+    @State private var showWeight = true
+    @State private var showConsumed = true
+    @State private var showBurned = true
+
+
     
     // Données fictives pour le graphique de poids
     @State private var weightData: [WeightEntry] = [
@@ -306,71 +313,23 @@ struct ProfileView: View {
     
     // Contenu de l'onglet statistiques
     private func statsContent(profile: UserProfile) -> some View {
-        VStack(spacing: 20) {
+        let caloriesPerDay = getCaloriesPerDay(from: weightData)
+        let burnedCaloriesPerDay = caloriesPerDay.map { DailyCalorieStat(date: $0.date, value: 2200, type: "Brûlées")
+        }
+        
+
+        return VStack(spacing: 20) {
             // Graphique de poids
-            ProfileCardView(title: "Évolution du poids", icon: "chart.line.uptrend.xyaxis") {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Text("Derniers 30 jours")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        
-                        Spacer()
-                        
-                        Text("\(weightChangeFormatted(weightData)) kg")
-                            .font(.headline)
-                            .foregroundColor(weightChange(weightData) < 0 ? .green : .red)
-                    }
-                    
-                    Chart {
-                        ForEach(weightData) { entry in
-                            LineMark(
-                                x: .value("Date", entry.date),
-                                y: .value("Poids", entry.weight)
-                            )
-                            .foregroundStyle(AppTheme.accent.gradient)
-                            .interpolationMethod(.catmullRom)
-                            
-                            PointMark(
-                                x: .value("Date", entry.date),
-                                y: .value("Poids", entry.weight)
-                            )
-                            .foregroundStyle(AppTheme.accent.gradient)
-                        }
-                    }
-                    .frame(height: 200)
-                    .chartYScale(domain: [weightData.min(by: { $0.weight < $1.weight })?.weight ?? 0 - 1,
-                                         weightData.max(by: { $0.weight < $1.weight })?.weight ?? 0 + 1])
-                    .chartXAxis {
-                        AxisMarks(values: .stride(by: .day, count: 10)) { value in
-                            AxisGridLine()
-                            AxisValueLabel(format: .dateTime.day().month())
-                        }
-                    }
-                    
-                    Button(action: {
-                        showHealthKitPermissions = true
-                    }) {
-                        Label("Synchroniser avec Apple Santé", systemImage: "heart.circle.fill")
-                            .font(.subheadline)
-                            .foregroundColor(AppTheme.accent)
-                    }
-                    .padding(.top, 8)
-                    // Par
-                    Button(action: {
-                        showHealthKitPermissions = true
-                    }) {
-                        Label("Synchroniser avec Apple Santé", systemImage: "heart.circle.fill")
-                            .font(.subheadline)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(AppTheme.vibrantGreen)
-                            .cornerRadius(10)
-                    }
-                    .padding(.top, 12)
-                }
+            // MARK: - Carte Évolution du poids
+            ProfileCardView(title: "Diagrammes", icon: "chart.line.uptrend.xyaxis") {
+                ProfileStatsView(
+                    weightData: weightData,
+                    foodEntries: LocalDataManager.shared.loadFoodEntries() ?? []
+                )
+                .frame(height: 300)
+                .padding(.horizontal, 8)
             }
+
             
             // Répartition des macros
             ProfileCardView(title: "Répartition des macronutriments", icon: "chart.pie.fill") {
@@ -418,46 +377,18 @@ struct ProfileView: View {
                     Text(getGoalDescription(profile: profile))
                         .font(.subheadline)
                         .foregroundColor(.secondary)
-                    
+
                     ProgressBar(
                         value: calculateProgressToGoal(profile: profile),
                         color: AppTheme.accent
                     )
-                    
-                    HStack(spacing: 8) {
-                        Text("Poids actuel:")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
 
-                        TextField("Poids", text: $editedWeight)
-                            .keyboardType(.decimalPad)
-                            .frame(width: 60)
-                            .multilineTextAlignment(.trailing)
-                            .textFieldStyle(.roundedBorder)
-
-                        Button(action: {
-                            if let newWeight = Double(editedWeight) {
-                                localDataManager.updateWeight(to: newWeight)
-                            }
-                        }) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundColor(AppTheme.actionAccent)
-                        }
-                    }
-
-                    
                     HStack {
-                        Text("Poids de départ")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        
+                        Text("Poids de départ").font(.caption).foregroundColor(.secondary)
                         Spacer()
-                        
-                        Text("Objectif")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        Text("Objectif").font(.caption).foregroundColor(.secondary)
                     }
-                    
+
                     HStack {
                         Text("\(Int(profile.startingWeight)) kg")
                             .font(.subheadline)
@@ -465,25 +396,39 @@ struct ProfileView: View {
 
                         Spacer()
 
-                        HStack(spacing: 8) {
-                            TextField("", text: $editedTargetWeight)
-                                .keyboardType(.decimalPad)
-                                .frame(width: 60)
-                                .multilineTextAlignment(.trailing)
-                                .textFieldStyle(.roundedBorder)
-
-                            Button(action: {
-                                if let newTarget = Double(editedTargetWeight) {
-                                    localDataManager.updateTargetWeight(to: newTarget)
-                                }
-                            }) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(AppTheme.actionAccent)
+                        TextField("Objectif", value: Binding(
+                            get: { profile.targetWeight ?? profile.weight },
+                            set: { newTarget in
+                                localDataManager.updateTargetWeight(to: newTarget)
                             }
-                        }
+                        ), format: .number)
+                        .keyboardType(.decimalPad)
+                        .multilineTextAlignment(.trailing)
+                        .frame(width: 60)
+                        .textFieldStyle(.roundedBorder)
+                    }
+
+                    HStack {
+                        Text("Poids actuel").font(.caption).foregroundColor(.secondary)
+                        Spacer()
+                    }
+
+                    HStack {
+                        TextField("Poids", value: Binding(
+                            get: { profile.weight },
+                            set: { newWeight in
+                                localDataManager.updateWeight(to: newWeight)
+                            }
+                        ), format: .number)
+                        .keyboardType(.decimalPad)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 80)
+
+                        Spacer()
                     }
                 }
             }
+
         }
         .padding()
     }
@@ -609,6 +554,33 @@ struct ProfileView: View {
         return profile.weight / (heightInMeters * heightInMeters)
     }
     
+    private func getCaloriesPerDay(from entries: [WeightEntry]) -> [DailyCalorieStat] {
+        let allEntries = LocalDataManager.shared.loadFoodEntries() ?? []
+
+        let grouped = Dictionary(grouping: allEntries) { Calendar.current.startOfDay(for: $0.date) }
+
+        return entries.map { weightEntry in
+            let day = Calendar.current.startOfDay(for: weightEntry.date)
+            let total = grouped[day]?.reduce(0) { $0 + $1.nutritionValues.calories } ?? 0
+            return DailyCalorieStat(date: day, value: total, type: "Consommées")
+        }
+    }
+
+    
+    private func minWeight(profile: UserProfile) -> Double {
+        min(profile.weight, profile.targetWeight ?? profile.weight) - 1
+    }
+
+    private func maxWeight(profile: UserProfile) -> Double {
+        max(profile.startingWeight, profile.weight, profile.targetWeight ?? profile.weight) + 1
+    }
+
+    
+    private func maxCaloriesYScale() -> Int {
+        let all = weightData.map { localDataManager.getCaloriesConsumed(on: $0.date) } + [2200]
+        return (all.max() ?? 2500) + 300
+    }
+    
     private func calculateProgressToGoal(profile: UserProfile) -> Double {
         guard let targetWeight = profile.targetWeight else { return 0.0 }
         
@@ -647,6 +619,14 @@ struct ProfileView: View {
         return String(format: "%.1f", change)
     }
 }
+
+struct DailyCalorieStat: Identifiable {
+    let id = UUID()
+    let date: Date
+    let value: Double
+    var type: String
+}
+
 
 // Modèles et composants auxiliaires
 enum ProfileTab: CaseIterable {
