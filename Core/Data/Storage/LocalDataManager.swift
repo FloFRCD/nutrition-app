@@ -6,6 +6,8 @@
 //
 
 import Foundation
+import CoreData
+
 
 enum LocalDataError: Error {
     case saveError(String)
@@ -27,28 +29,35 @@ class LocalDataManager: ObservableObject {
     private var saveLock = NSLock()
     private let customFoodsKey = "customFoods"
     
+    let context = PersistenceController.shared.container.viewContext
+    let request: NSFetchRequest<WeightRecord> = WeightRecord.fetchRequest()
+    
+
+    
     private let queue = DispatchQueue(label: "com.yourapp.localdatamanager", qos: .userInitiated)
     
     private init() {
-        loadInitialData()
     }
     
-    private func loadInitialData() {
-        Task {
+    func loadInitialData() {
+        Task { [weak self] in
             do {
-                if let profile: UserProfile = try await load(forKey: "userProfile") {
-                    print("Profile chargé:", profile)
-                    // Explicitement revenir sur le main thread pour mettre à jour @Published
+                if let profile: UserProfile = try await self?.load(forKey: "userProfile") {
+                    print("✅ Profil chargé :", profile)
                     DispatchQueue.main.async {
-                        self.userProfile = profile
+                        self?.userProfile = profile
                     }
+
+                    // Charger le poids après avoir chargé le profil
+                    await self?.syncWeightWithLatestRecord()
                 }
             } catch {
-                print("Error loading initial data: \(error)")
+                print("❌ Erreur lors du chargement initial du profil :", error)
             }
         }
     }
-    
+
+
     func save<T: Encodable>(_ object: T, forKey key: String) async throws {
         return try await withCheckedThrowingContinuation { continuation in
             queue.async {
@@ -146,6 +155,76 @@ extension LocalDataManager {
         }
     }
     
+    func addWeight(_ value: Double) {
+        let context = PersistenceController.shared.container.viewContext
+        let entry = WeightRecord(context: context)
+        entry.weight = value
+        entry.date = Date()
+        try? context.save()
+    }
+    
+    func syncWeightWithLatestRecord() async {
+        let request: NSFetchRequest<WeightRecord> = WeightRecord.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \WeightRecord.date, ascending: false)]
+        request.fetchLimit = 1
+
+        do {
+            if let latest = try context.fetch(request).first {
+                DispatchQueue.main.async {
+                    if self.userProfile != nil {
+                        self.userProfile?.weight = latest.weight
+                        self.saveProfile()
+                    }
+                }
+                print("✅ Poids mis à jour à partir de l'historique : \(latest.weight) kg")
+            }
+        } catch {
+            print("❌ Erreur lors de la synchronisation du poids :", error.localizedDescription)
+        }
+    }
+
+
+    
+    func saveWeight(_ weight: Double, for date: Date = Date()) {
+        let context = PersistenceController.shared.container.viewContext
+        let request: NSFetchRequest<WeightRecord> = WeightRecord.fetchRequest()
+        request.predicate = NSPredicate(format: "date == %@", Calendar.current.startOfDay(for: date) as NSDate)
+
+        do {
+            if let existing = try context.fetch(request).first {
+                existing.weight = weight
+            } else {
+                let newEntry = WeightRecord(context: context)
+                newEntry.date = Calendar.current.startOfDay(for: date)
+                newEntry.weight = weight
+            }
+            try context.save()
+            print("✅ Poids \(weight) kg enregistré pour le \(date.formatted(.dateTime.day().month().year()))")
+        } catch {
+            print("❌ Erreur lors de l'enregistrement du poids : \(error)")
+        }
+    }
+
+
+
+    func fetchWeightsForLast7Days() -> [WeightEntry] {
+        let context = PersistenceController.shared.container.viewContext
+        let request: NSFetchRequest<WeightRecord> = WeightRecord.fetchRequest()
+        
+        let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -6, to: Calendar.current.startOfDay(for: Date()))!
+        request.predicate = NSPredicate(format: "date >= %@", sevenDaysAgo as NSDate)
+        request.sortDescriptors = [NSSortDescriptor(key: "date", ascending: true)]
+
+        do {
+            let records = try context.fetch(request)
+            return records.map { WeightEntry(date: $0.date!, weight: $0.weight) }
+        } catch {
+            print("❌ Erreur lors de la récupération des poids : \(error)")
+            return []
+        }
+    }
+
+
     
     // Dans LocalDataManager.swift
     func saveFoodEntries(_ entries: [FoodEntry]) {

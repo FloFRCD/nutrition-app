@@ -120,6 +120,13 @@ struct HomeView: View {
                                 .cornerRadius(AppTheme.cardBorderRadius)
                                 .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
                             
+                            ProgressStatsCardView()
+                                .environmentObject(localDataManager)
+                                .background(Color.white)
+                                .cornerRadius(AppTheme.cardBorderRadius)
+                                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+
+                            
                             // Espace en bas
                             Spacer().frame(height: 80)
                         }

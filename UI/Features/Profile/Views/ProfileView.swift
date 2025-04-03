@@ -24,19 +24,11 @@ struct ProfileView: View {
     @State private var showWeight = true
     @State private var showConsumed = true
     @State private var showBurned = true
+    @State private var showWeightListView = false
+    @State private var showAddWeightSheet = false
+    @State private var showWeightList = false
 
 
-    
-    // Données fictives pour le graphique de poids
-    @State private var weightData: [WeightEntry] = [
-        WeightEntry(date: Calendar.current.date(byAdding: .day, value: -30, to: Date())!, weight: 75),
-        WeightEntry(date: Calendar.current.date(byAdding: .day, value: -25, to: Date())!, weight: 74.5),
-        WeightEntry(date: Calendar.current.date(byAdding: .day, value: -20, to: Date())!, weight: 74.2),
-        WeightEntry(date: Calendar.current.date(byAdding: .day, value: -15, to: Date())!, weight: 73.8),
-        WeightEntry(date: Calendar.current.date(byAdding: .day, value: -10, to: Date())!, weight: 73.5),
-        WeightEntry(date: Calendar.current.date(byAdding: .day, value: -5, to: Date())!, weight: 73),
-        WeightEntry(date: Date(), weight: 72.5)
-    ]
     
     var body: some View {
         NavigationStack {
@@ -313,7 +305,7 @@ struct ProfileView: View {
     
     // Contenu de l'onglet statistiques
     private func statsContent(profile: UserProfile) -> some View {
-        let caloriesPerDay = getCaloriesPerDay(from: weightData)
+        let caloriesPerDay = getCaloriesPerDay(from: LocalDataManager.shared.fetchWeightsForLast7Days())
         let burnedCaloriesPerDay = caloriesPerDay.map { DailyCalorieStat(date: $0.date, value: 2200, type: "Brûlées")
         }
         
@@ -323,57 +315,83 @@ struct ProfileView: View {
             // MARK: - Carte Évolution du poids
             ProfileCardView(title: "Diagrammes", icon: "chart.line.uptrend.xyaxis") {
                 ProfileStatsView(
-                    weightData: weightData,
+                    weightData: localDataManager.fetchWeightsForLast7Days(),
                     foodEntries: LocalDataManager.shared.loadFoodEntries() ?? [],
                     userProfile: profile
                 )
+
                 .frame(height: 300)
                 .padding(.horizontal, 8)
             }
 
             
-            // Répartition des macros
-            ProfileCardView(title: "Répartition des macronutriments", icon: "chart.pie.fill") {
+            ProfileCardView(title: "Total sur les 7 derniers jours", icon: "chart.pie.fill") {
                 VStack(spacing: 16) {
                     let needs = NutritionCalculator.shared.calculateNeeds(for: profile)
-                    // Calcul des pourcentages
-                    let proteinPercent = (needs.proteins * 4 / needs.totalCalories) * 100
-                    let carbsPercent = (needs.carbs * 4 / needs.totalCalories) * 100
-                    let fatsPercent = (needs.fats * 9 / needs.totalCalories) * 100
-                    
+
+                    // Besoins hebdomadaires
+                    let weeklyCaloriesNeed = needs.totalCalories * 7
+                    let weeklyProteinNeed = needs.proteins * 7
+                    let weeklyCarbsNeed = needs.carbs * 7
+                    let weeklyFatsNeed = needs.fats * 7
+
+                    // Derniers jours
+                    let entries = LocalDataManager.shared.loadFoodEntries() ?? []
+                    let last7Days = (0..<7).compactMap {
+                        Calendar.current.date(byAdding: .day, value: -$0, to: Date())
+                    }
+                    let recentEntries = entries.filter { entry in
+                        last7Days.contains { Calendar.current.isDate($0, inSameDayAs: entry.date) }
+                    }
+
+                    // Apports réels
+                    let totalCalories = recentEntries.reduce(0.0) { $0 + $1.nutritionValues.calories }
+                    let totalProteins = recentEntries.reduce(0.0) { $0 + $1.nutritionValues.proteins }
+                    let totalCarbs    = recentEntries.reduce(0.0) { $0 + $1.nutritionValues.carbohydrates }
+                    let totalFats     = recentEntries.reduce(0.0) { $0 + $1.nutritionValues.fats }
+
+                    // Pourcentages
+                    let proteinPercent = weeklyCaloriesNeed > 0 ? (totalProteins * 4 / weeklyCaloriesNeed) * 100 : 0
+                    let carbsPercent   = weeklyCaloriesNeed > 0 ? (totalCarbs * 4 / weeklyCaloriesNeed) * 100 : 0
+                    let fatsPercent    = weeklyCaloriesNeed > 0 ? (totalFats * 9 / weeklyCaloriesNeed) * 100 : 0
+
+                    // Cercle des macros
                     HStack(spacing: 20) {
                         MacroCircleView(
                             percent: proteinPercent,
-                            color: Color.purple,
+                            color: .purple,
                             title: "Protéines",
-                            value: "\(Int(needs.proteins))g"
+                            value: "\(Int(totalProteins))g / \(Int(weeklyProteinNeed))g"
                         )
-                        
                         MacroCircleView(
                             percent: carbsPercent,
-                            color: Color.orange,
+                            color: .orange,
                             title: "Glucides",
-                            value: "\(Int(needs.carbs))g"
+                            value: "\(Int(totalCarbs))g / \(Int(weeklyCarbsNeed))g"
                         )
-                        
                         MacroCircleView(
                             percent: fatsPercent,
-                            color: Color.blue,
+                            color: .blue,
                             title: "Lipides",
-                            value: "\(Int(needs.fats))g"
+                            value: "\(Int(totalFats))g / \(Int(weeklyFatsNeed))g"
                         )
                     }
-                    
-                    Text("Calories journalières: \(Int(needs.totalCalories)) kcal")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+
+                    Text(" \(Int(totalCalories)) kcal sur \(Int(weeklyCaloriesNeed)) kcal")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                        .multilineTextAlignment(.center)
                         .padding(.top, 8)
+
                 }
                 .padding(.vertical, 8)
             }
+
+
             
             // Progrès vers l'objectif
-            ProfileCardView(title: "Progrès vers l'objectif", icon: "target") {
+            ProfileCardView(title: "Progression", icon: "target") {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(getGoalDescription(profile: profile))
                         .font(.subheadline)
@@ -409,26 +427,48 @@ struct ProfileView: View {
                         .textFieldStyle(.roundedBorder)
                     }
 
-                    HStack {
-                        Text("Poids actuel").font(.caption).foregroundColor(.secondary)
-                        Spacer()
+                    Button {
+                        showAddWeightSheet = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "plus.circle.fill")
+                            Text("Ajouter mon poids aujourd’hui")
+                                .fontWeight(.semibold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.accentColor.opacity(0.1))
+                        .foregroundColor(.accentColor)
+                        .cornerRadius(12)
                     }
 
                     HStack {
-                        TextField("Poids", value: Binding(
-                            get: { profile.weight },
-                            set: { newWeight in
-                                localDataManager.updateWeight(to: newWeight)
-                            }
-                        ), format: .number)
-                        .keyboardType(.decimalPad)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 80)
-
                         Spacer()
+                        Button {
+                            showWeightList = true
+                        } label: {
+                            Label("Historique", systemImage: "list.bullet.rectangle.portrait")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.gray.opacity(0.15))
                     }
                 }
+                .sheet(isPresented: $showAddWeightSheet) {
+                    AddWeightTodayView()
+                        .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
+                        .presentationDetents([.fraction(0.3)])
+                }
+
+                .sheet(isPresented: $showWeightList) {
+                    WeightListView()
+                        .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
+                }
             }
+
+            .sheet(isPresented: $showWeightListView) {
+                WeightListView()
+            }
+
 
         }
         .padding()
@@ -578,7 +618,7 @@ struct ProfileView: View {
 
     
     private func maxCaloriesYScale() -> Int {
-        let all = weightData.map { localDataManager.getCaloriesConsumed(on: $0.date) } + [2200]
+        let all = getCaloriesPerDay(from: LocalDataManager.shared.fetchWeightsForLast7Days()).map { localDataManager.getCaloriesConsumed(on: $0.date) } + [2200]
         return (all.max() ?? 2500) + 300
     }
     
@@ -745,6 +785,49 @@ struct MacroCircleView: View {
             Text(value)
                 .font(.subheadline)
                 .fontWeight(.medium)
+        }
+    }
+}
+struct MacroCircleHomeView: View {
+    let percent: Double
+    let color: Color
+    let title: String
+    let value: String
+
+    var body: some View {
+        VStack(spacing: 6) {
+            ZStack {
+                // Cercle d'arrière-plan
+                Circle()
+                    .stroke(color.opacity(0.2), lineWidth: 5.5)
+                    .frame(width: 50, height: 50)
+
+                // Cercle de progression
+                Circle()
+                    .trim(from: 0, to: CGFloat(min(percent / 100, 1.0)))
+                    .stroke(
+                        color,
+                        style: StrokeStyle(lineWidth: 5.5, lineCap: .round)
+                    )
+                    .frame(width: 50, height: 50)
+                    .rotationEffect(Angle(degrees: -90)) // <- correction ici
+
+                // Pourcentage au centre
+                Text("\(Int(percent))%")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(color)
+            }
+
+            // Titre
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+            // Valeur
+            Text(value)
+                .font(.subheadline)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
     }
 }

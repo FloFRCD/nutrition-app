@@ -27,7 +27,7 @@ struct ProfileStatsView: View {
             // TabView avec effet de swipe
             TabView(selection: $selectedTab) {
                 // Premier graphique: Poids
-                WeightChartView(userProfile: userProfile)
+                WeightChartView(weightData: weightData)
 
                     .tag(0)
                 
@@ -78,36 +78,61 @@ struct ProfileStatsView: View {
 }
 
 struct WeightChartView: View {
-    let userProfile: UserProfile
-    
+    let weightData: [WeightEntry] // ✅ Données passées depuis ProfileStatsView
+
     private var today: Date {
         Calendar.current.startOfDay(for: Date())
     }
-    
+
     private var last7Days: [Date] {
         (0..<7).compactMap {
             Calendar.current.date(byAdding: .day, value: -$0, to: today)
         }.reversed()
     }
 
-    private var generatedWeightData: [WeightEntry] {
-        let start = userProfile.startingWeight
-        let end = userProfile.weight
-        let totalDays = 7
-        
-        return (0..<totalDays).compactMap { i in
-            let ratio = Double(i) / Double(totalDays - 1)
-            let weight = start + ratio * (end - start)
-            let date = Calendar.current.date(byAdding: .day, value: -(totalDays - 1 - i), to: today)!
-            return WeightEntry(date: date, weight: weight)
+    private func filledWeightData(from entries: [WeightEntry]) -> [WeightEntry] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        let last7Days = (0..<7).compactMap {
+            calendar.date(byAdding: .day, value: -$0, to: today)
+        }.reversed()
+
+        let sortedEntries = entries.sorted(by: { $0.date < $1.date })
+
+        var result: [WeightEntry] = []
+        var lastKnownWeight: Double? = nil
+
+        for day in last7Days {
+            if let entry = sortedEntries.first(where: { calendar.isDate($0.date, inSameDayAs: day) }) {
+                lastKnownWeight = entry.weight
+                result.append(entry)
+            } else if let last = lastKnownWeight {
+                result.append(WeightEntry(date: day, weight: last))
+            } else {
+                // ⚠️ On ne génère rien si on n’a aucune donnée
+                continue
+            }
         }
+
+        return result
     }
-    
+
+
     private var yRange: ClosedRange<Double> {
-        let min = min(userProfile.weight, userProfile.targetWeight ?? userProfile.weight)
-        let max = max(userProfile.weight, userProfile.startingWeight)
-        return (min - 2)...(max + 2)
+        let weights = filledWeightData(from: weightData).map { $0.weight }
+        guard let min = weights.min(), let max = weights.max() else {
+            return 60...100
+        }
+
+        // Ajoute une marge pour aérer le graphique
+        let padding = 2.0
+        let lowerBound = floor(min - padding)
+        let upperBound = ceil(max + padding)
+
+        return lowerBound...upperBound
     }
+
 
     private func dayLabel(for date: Date) -> String {
         let formatter = DateFormatter()
@@ -117,7 +142,7 @@ struct WeightChartView: View {
 
     var body: some View {
         Chart {
-            ForEach(generatedWeightData) { entry in
+            ForEach(filledWeightData(from: weightData), id: \.date) { entry in
                 LineMark(
                     x: .value("Date", entry.date),
                     y: .value("Poids", entry.weight)
@@ -125,7 +150,7 @@ struct WeightChartView: View {
                 .interpolationMethod(.catmullRom)
                 .lineStyle(StrokeStyle(lineWidth: 3))
                 .foregroundStyle(.green)
-                
+
                 PointMark(
                     x: .value("Date", entry.date),
                     y: .value("Poids", entry.weight)
@@ -135,8 +160,8 @@ struct WeightChartView: View {
         }
         .chartYScale(domain: yRange)
         .chartXAxis {
-            AxisMarks(values: generatedWeightData.map(\.date)) { value in
-                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [2, 2]))
+            AxisMarks(values: last7Days) { value in
+                AxisGridLine()
                 AxisTick()
                 AxisValueLabel {
                     if let date = value.as(Date.self) {
@@ -151,6 +176,9 @@ struct WeightChartView: View {
         .padding()
     }
 }
+
+
+
 
 
 

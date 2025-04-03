@@ -15,12 +15,16 @@ struct ContentView: View {
         Group {
             if localDataManager.userProfile == nil {
                 InitialSetupView()
-                    .environmentObject(localDataManager) // Passer le même objet
+                    .environmentObject(localDataManager)
             } else {
                 MainTabView()
                     .environmentObject(journalViewModel)
-                    .environmentObject(localDataManager) // Passer le même objet
+                    .environmentObject(localDataManager)
             }
+        }
+        .task {
+            await localDataManager.loadInitialData()
         }
     }
 }
+

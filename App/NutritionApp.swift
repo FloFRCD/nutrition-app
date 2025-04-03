@@ -12,6 +12,7 @@ struct NutritionApp: App {
     @StateObject private var localDataManager = LocalDataManager.shared
     @StateObject private var storeKitManager = StoreKitManager.shared
     @StateObject private var nutritionService = NutritionService.shared
+    let persistenceController = PersistenceController.shared
     
     init() {
             let appearance = UINavigationBarAppearance()
@@ -31,6 +32,7 @@ struct NutritionApp: App {
                     .environmentObject(localDataManager)
                     .environmentObject(storeKitManager)
                     .environmentObject(nutritionService)
+                    .environment(\.managedObjectContext, persistenceController.container.viewContext)
             }
             .tint(.black)
         }
