@@ -15,6 +15,20 @@ struct ActivityDetails: Codable {
     let exerciseIntensity: ExerciseIntensity
     let jobActivity: JobActivityLevel
     let dailyActivity: DailyActivityLevel
+    
+    init(
+            exerciseDaysPerWeek: Int = 3,
+            exerciseDuration: Int = 45,
+            exerciseIntensity: ExerciseIntensity = .moderate,
+            jobActivity: JobActivityLevel = .seated,
+            dailyActivity: DailyActivityLevel = .moderate
+        ) {
+            self.exerciseDaysPerWeek = exerciseDaysPerWeek
+            self.exerciseDuration = exerciseDuration
+            self.exerciseIntensity = exerciseIntensity
+            self.jobActivity = jobActivity
+            self.dailyActivity = dailyActivity
+        }
 }
 
 // Calculer le facteur d'activité basé sur les détails

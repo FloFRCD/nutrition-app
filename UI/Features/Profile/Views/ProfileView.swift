@@ -20,6 +20,7 @@ struct ProfileView: View {
     
     @State private var editedWeight: String = ""
     @State private var editedTargetWeight: String = ""
+    @State private var editedStartingWeight: String = ""
     
     @State private var showWeight = true
     @State private var showConsumed = true
@@ -27,6 +28,7 @@ struct ProfileView: View {
     @State private var showWeightListView = false
     @State private var showAddWeightSheet = false
     @State private var showWeightList = false
+    
 
 
     
@@ -81,6 +83,7 @@ struct ProfileView: View {
                     ProfileEditView(userProfile: profile)
                         .preferredColorScheme(.light)
                         .accentColor(AppTheme.accent)
+                        .environmentObject(localDataManager)
                 }
             }
             .sheet(isPresented: $showHealthKitPermissions) {
@@ -93,6 +96,9 @@ struct ProfileView: View {
             NotificationCenter.default.post(name: .hideTabBar, object: nil)
             editedWeight = String(format: "%.1f", localDataManager.userProfile?.weight ?? 0)
             editedTargetWeight = String(format: "%.1f", localDataManager.userProfile?.targetWeight ?? 0)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .weightDataDidChange)) { _ in
+            localDataManager.reloadProfile()
         }
         .onDisappear {
             NotificationCenter.default.post(name: .showTabBar, object: nil)
@@ -323,6 +329,7 @@ struct ProfileView: View {
                 .frame(height: 300)
                 .padding(.horizontal, 8)
             }
+            
 
             
             ProfileCardView(title: "Total sur les 7 derniers jours", icon: "chart.pie.fill") {
@@ -393,38 +400,64 @@ struct ProfileView: View {
             // Progrès vers l'objectif
             ProfileCardView(title: "Progression", icon: "target") {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(getGoalDescription(profile: profile))
+                    if let profile = localDataManager.userProfile {
+                        let target = profile.targetWeight ?? profile.weight
+                        let delta = abs(profile.startingWeight - target)
+                        let actuel = profile.weight - profile.startingWeight
+                        let expectedDirection = profile.startingWeight > target ? -1.0 : 1.0
+                        let progressValue = delta > 0 ? (actuel / delta) * expectedDirection : 0.0
+                        let clampedProgress = min(max(progressValue, -1.0), 1.0)
+
+                        let isRegression = clampedProgress < 0
+                        let displayPercent = abs(clampedProgress * 100)
+
+                        ProgressBar(
+                            value: abs(clampedProgress),
+                            color: isRegression ? .red : AppTheme.accent
+                        )
+                        .frame(height: 16)
+
+                        HStack {
+                            Text("Poids de départ").font(.caption).foregroundColor(.secondary)
+                            Spacer()
+                            Text("Objectif").font(.caption).foregroundColor(.secondary)
+                        }
+
+                        HStack {
+                            TextField("Départ", text: Binding(
+                                get: { String(format: "%.0f", profile.startingWeight) },
+                                set: { newValue in
+                                    if let newWeight = Double(newValue.replacingOccurrences(of: ",", with: ".")) {
+                                        localDataManager.updateStartingWeight(to: newWeight)
+                                    }
+                                }
+                            ))
+                            .keyboardType(.decimalPad)
+                            .frame(width: 60)
+                            .textFieldStyle(.roundedBorder)
+
+                            Spacer()
+
+                            TextField("Objectif", value: Binding(
+                                get: { profile.targetWeight ?? profile.weight },
+                                set: { newTarget in
+                                    localDataManager.updateTargetWeight(to: newTarget)
+                                }
+                            ), format: .number)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 60)
+                            .textFieldStyle(.roundedBorder)
+                        }
+
+                        Text(
+                            isRegression
+                                ? String(format: "%.1f %% en trop", displayPercent)
+                                : String(format: "%.1f %% atteint", displayPercent)
+                        )
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
-
-                    ProgressBar(
-                        value: calculateProgressToGoal(profile: profile),
-                        color: AppTheme.accent
-                    )
-
-                    HStack {
-                        Text("Poids de départ").font(.caption).foregroundColor(.secondary)
-                        Spacer()
-                        Text("Objectif").font(.caption).foregroundColor(.secondary)
-                    }
-
-                    HStack {
-                        Text("\(Int(profile.startingWeight)) kg")
-                            .font(.subheadline)
-                            .fontWeight(.bold)
-
-                        Spacer()
-
-                        TextField("Objectif", value: Binding(
-                            get: { profile.targetWeight ?? profile.weight },
-                            set: { newTarget in
-                                localDataManager.updateTargetWeight(to: newTarget)
-                            }
-                        ), format: .number)
-                        .keyboardType(.decimalPad)
-                        .multilineTextAlignment(.trailing)
-                        .frame(width: 60)
-                        .textFieldStyle(.roundedBorder)
+                        .fontWeight(.bold)
+                        .foregroundColor(isRegression ? .red : AppTheme.accent)
                     }
 
                     Button {
@@ -464,6 +497,7 @@ struct ProfileView: View {
                         .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
                 }
             }
+
 
             .sheet(isPresented: $showWeightListView) {
                 WeightListView()
@@ -593,6 +627,11 @@ struct ProfileView: View {
     private func calculateBMI(profile: UserProfile) -> Double {
         let heightInMeters = profile.height / 100
         return profile.weight / (heightInMeters * heightInMeters)
+    }
+    
+    private func progressBarColor(profile: UserProfile) -> Color {
+        let progress = calculateProgressToGoal(profile: profile)
+        return progress < 0 ? .red : AppTheme.accent
     }
     
     private func getCaloriesPerDay(from entries: [WeightEntry]) -> [DailyCalorieStat] {

@@ -123,6 +123,21 @@ extension LocalDataManager {
         }
     }
     
+    @MainActor
+    func reloadProfile() {
+        Task {
+            do {
+                if let loaded: UserProfile = try await load(forKey: "userProfile") {
+                    self.userProfile = loaded
+                    await self.syncWeightWithLatestRecord()
+                }
+            } catch {
+                print("❌ Erreur lors du rechargement du profil :", error)
+            }
+        }
+    }
+
+    
     // Retirer une recette des sélections
     func removeFromSelection(_ recipe: DetailedRecipe) async {
         do {
@@ -224,6 +239,17 @@ extension LocalDataManager {
         }
     }
 
+    func updateStartingWeight(to newValue: Double) {
+        if var profile = self.userProfile {
+            profile.startingWeight = newValue
+            Task {
+                try? await save(profile, forKey: "userProfile")
+                await MainActor.run {
+                    self.userProfile = profile
+                }
+            }
+        }
+    }
 
     
     // Dans LocalDataManager.swift

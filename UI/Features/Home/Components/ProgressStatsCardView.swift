@@ -11,7 +11,8 @@ import SwiftUI
 struct ProgressStatsCardView: View {
     @ObservedObject private var localDataManager = LocalDataManager.shared
     @State private var currentIndex = 0
-    
+    @State private var tempStartingWeight: String = ""
+
     var body: some View {
         TabView(selection: $currentIndex) {
             goalProgressCard()
@@ -21,8 +22,9 @@ struct ProgressStatsCardView: View {
                 weeklySummaryCard(profile: profile)
                     .tag(1)
             }
-        }        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-        .frame(height: 180)
+        }
+        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+        .frame(height: 220)
         .background(Color.white)
         .cornerRadius(AppTheme.cardBorderRadius)
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
@@ -34,41 +36,71 @@ struct ProgressStatsCardView: View {
                         .frame(width: 6, height: 6)
                 }
             }
-            .padding(.top, 150)
+            .padding(.top, 190)
         )
+        .onAppear {
+            tempStartingWeight = "\(Int(localDataManager.userProfile?.startingWeight ?? 0))"
+        }
     }
-    
-    // MARK: - Carte Progrès vers l'objectif
+
     private func goalProgressCard() -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Progression")
                 .font(.headline)
                 .foregroundColor(.black)
-            
+
             if let profile = localDataManager.userProfile {
-                let progress = calculateProgressToGoal(profile: profile)
+                let (progress, isNegative) = calculateProgressToGoal(profile: profile)
                 
-                ProgressBar(value: progress, color: AppTheme.accent)
-                    .frame(height: 16)
+                ProgressBar(
+                    value: abs(progress),
+                    color: isNegative ? .red : AppTheme.accent
+                )
+                .frame(height: 16)
                 
                 HStack {
-                    Text("Départ : \(Int(profile.startingWeight)) kg")
+                    Text("Poids de départ")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                     Spacer()
-                    Text("Objectif : \(Int(profile.targetWeight ?? profile.weight)) kg")
+                    Text("Objectif")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
-                .font(.caption)
-                .foregroundColor(.gray)
-                
-                Text(String(format: "%.1f %% atteint", progress * 100))
+
+                HStack {
+                    TextField("Départ", text: $tempStartingWeight)
+                        .keyboardType(.decimalPad)
+                        .frame(width: 60)
+                        .onSubmit {
+                            if let newStart = Double(tempStartingWeight) {
+                                localDataManager.updateStartingWeight(to: newStart)
+                            }
+                        }
+
+                    Spacer()
+
+                    TextField("Objectif", value: Binding(
+                        get: { profile.targetWeight ?? profile.weight },
+                        set: { newTarget in
+                            localDataManager.updateTargetWeight(to: newTarget)
+                        }
+                    ), format: .number)
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 60)
+                    .textFieldStyle(.roundedBorder)
+                }
+
+                Text(String(format: "%.1f %% %@", abs(progress * 100), isNegative ? "en trop" : "atteint"))
                     .font(.subheadline)
                     .fontWeight(.bold)
-                    .foregroundColor(AppTheme.accent)
+                    .foregroundColor(isNegative ? .red : AppTheme.accent)
             }
         }
         .padding()
     }
-    
-    // MARK: - Carte Résumé des 7 jours
+
     private func weeklySummaryCard(profile: UserProfile) -> some View {
         let entries = LocalDataManager.shared.loadFoodEntries() ?? []
         let needs = NutritionCalculator.shared.calculateNeeds(for: profile)
@@ -126,25 +158,22 @@ struct ProgressStatsCardView: View {
                 .frame(maxWidth: .infinity)
             }
 
-
             Text("\(Int(totalCalories)) kcal sur \(Int(targetCalories)) kcal")
                 .font(.subheadline)
                 .fontWeight(.semibold)
                 .frame(maxWidth: .infinity, alignment: .center)
         }
         .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.white)
-//        .cornerRadius(20)
-        .shadow(radius: 5)
     }
 
-
-    
-    private func calculateProgressToGoal(profile: UserProfile) -> Double {
-        guard let target = profile.targetWeight else { return 0.0 }
-        let delta = abs(profile.startingWeight - target)
-        let actuel = abs(profile.startingWeight - profile.weight)
-        return delta > 0 ? min(max(actuel / delta, 0), 1) : 0
+    private func calculateProgressToGoal(profile: UserProfile) -> (Double, Bool) {
+        guard let target = profile.targetWeight else { return (0.0, false) }
+        let delta = profile.startingWeight - target
+        let actuel = profile.startingWeight - profile.weight
+        let ratio = delta != 0 ? actuel / delta : 0
+        let isNegative = (delta > 0 && ratio < 0) || (delta < 0 && ratio > 1)
+        return (ratio, isNegative)
     }
 }
+
+

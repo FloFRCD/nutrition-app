@@ -39,7 +39,6 @@ struct WeightListView: View {
                         .foregroundColor(AppTheme.accent)
 
                     Spacer()
-                    // Espace pour équilibrer
                     Text(" ").frame(width: 60)
                 }
                 .padding(.horizontal)
@@ -66,7 +65,7 @@ struct WeightListView: View {
 
                 Divider()
 
-                // Liste des poids
+                // Liste des poids avec suppression
                 List {
                     ForEach(weightRecords) { record in
                         HStack {
@@ -78,6 +77,7 @@ struct WeightListView: View {
                         }
                         .padding(.vertical, 4)
                     }
+                    .onDelete(perform: deleteWeight)
                 }
                 .scrollContentBackground(.hidden)
                 .background(Color.white)
@@ -86,6 +86,7 @@ struct WeightListView: View {
         }
     }
 
+    // Formatage date
     private func formattedDate(_ date: Date?) -> String {
         guard let date = date else { return "-" }
         let formatter = DateFormatter()
@@ -93,6 +94,7 @@ struct WeightListView: View {
         return formatter.string(from: date)
     }
 
+    // Sauvegarde
     private func saveWeight() {
         guard let value = Double(weight.replacingOccurrences(of: ",", with: ".")) else { return }
 
@@ -107,7 +109,22 @@ struct WeightListView: View {
             print("❌ Erreur lors de l’enregistrement du poids :", error)
         }
     }
+
+    private func deleteWeight(at offsets: IndexSet) {
+        for index in offsets {
+            let record = weightRecords[index]
+            viewContext.delete(record)
+        }
+
+        do {
+            try viewContext.save()
+            NotificationCenter.default.post(name: .weightDataDidChange, object: nil)
+        } catch {
+            print("Erreur lors de la suppression :", error)
+        }
+    }
 }
+
 
 
 
