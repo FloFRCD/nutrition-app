@@ -40,7 +40,10 @@ struct SelectedRecipesView: View {
                                 
                                 // Recettes de ce type
                                 ForEach(recipes) { recipe in
-                                    NavigationLink(destination: SingleRecipeDetailView(recipe: recipe)) {
+                                    NavigationLink {
+                                        SingleRecipeDetailView(recipe: recipe)
+                                            .environmentObject(localDataManager) // ✅ injection ici
+                                    } label: {
                                         SavedRecipeCard(recipe: recipe)
                                     }
                                     .buttonStyle(PlainButtonStyle())

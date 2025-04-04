@@ -184,6 +184,7 @@ struct WeightChartView: View {
 
 struct CaloriesChartView: View {
     let foodEntries: [FoodEntry]
+    @StateObject var viewModel = JournalViewModel()
 
     private var lastSevenDays: [Date] {
         let calendar = Calendar.current
@@ -200,21 +201,14 @@ struct CaloriesChartView: View {
     // Données formatées
     private var calorieStats: [DailyCalorieStat] {
         lastSevenDays.flatMap { date in
-            let consumed = caloriesConsumed(on: date)
+            let consumed = viewModel.caloriesConsumed(on: date)
+            let burned = viewModel.getBurnedCalories(for: date)
             return [
                 DailyCalorieStat(date: date, value: consumed, type: "Consommées"),
-                DailyCalorieStat(date: date, value: 350, type: "Brûlées")
+                DailyCalorieStat(date: date, value: burned, type: "Brûlées")
             ]
         }
     }
-
-    private func caloriesConsumed(on date: Date) -> Double {
-        let entriesForDate = foodEntries.filter {
-            Calendar.current.isDate($0.date, inSameDayAs: date)
-        }
-        return entriesForDate.reduce(0) { $0 + $1.nutritionValues.calories }
-    }
-
     private var maxCalorieScale: Double {
         let maxValue = calorieStats.map { $0.value }.max() ?? 0
         return max(2000, ceil(maxValue / 500) * 500)

@@ -298,6 +298,7 @@ struct ProfileEditView: View {
                 try? await localDataManager.save(profile, forKey: "userProfile")
                 await MainActor.run {
                     localDataManager.userProfile = profile
+                    localDataManager.addWeightRecordIfNeeded(for: profile.weight)
                     dismiss()
                 }
             }

@@ -8,6 +8,8 @@
 import Foundation
 class ShoppingListViewModel: ObservableObject {
     @Published var shoppingItems: [IngredientCategory: [ShoppingItem]] = [:]
+    private var localDataManager: LocalDataManager?
+    
     // Ajouter cette propriété à ShoppingListViewModel
     var itemCount: Int {
         return shoppingItems.values.reduce(0) { $0 + $1.count }
@@ -88,9 +90,64 @@ class ShoppingListViewModel: ObservableObject {
         }
     }
     
+    @MainActor
+    func addCustomItem(name: String, quantity: Double, unit: String, category: IngredientCategory) async {
+        // Normaliser le nom et l’unité pour comparaison
+        let normalizedName = name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let normalizedUnit = unit.lowercased()
+
+        // Vérifier si un item identique existe déjà
+        if var existingItems = shoppingItems[category] {
+            if let index = existingItems.firstIndex(where: {
+                $0.name.lowercased() == normalizedName && $0.unit.lowercased() == normalizedUnit
+            }) {
+                // Fusionner la quantité
+                shoppingItems[category]?[index].quantity += quantity
+                await saveCustomItems()
+                return
+            }
+        }
+
+        // Sinon, ajouter un nouvel item
+        let newItem = ShoppingItem(
+            name: name,
+            quantity: quantity,
+            unit: unit,
+            category: category,
+            isChecked: false
+        )
+
+        shoppingItems[category, default: []].append(newItem)
+        await saveCustomItems()
+    }
+    
+    @MainActor
+    func deleteItem(_ item: ShoppingItem) async {
+        if var items = shoppingItems[item.category] {
+            items.removeAll { $0.id == item.id }
+            shoppingItems[item.category] = items
+            await saveCustomItems()
+        }
+    }
+
+
+
+
+    func saveCustomItems() async {
+        do {
+            try await localDataManager?.save(shoppingItems, forKey: "custom_shopping_items")
+        } catch {
+            print("❌ Erreur de sauvegarde des items custom : \(error)")
+        }
+    }
+    
     // Vérifier si la liste est vide
     var isEmpty: Bool {
         return shoppingItems.values.allSatisfy { $0.isEmpty }
+    }
+    
+    func setDependencies(localDataManager: LocalDataManager) {
+        self.localDataManager = localDataManager
     }
 }
 

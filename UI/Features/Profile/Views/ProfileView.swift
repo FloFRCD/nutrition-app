@@ -29,6 +29,12 @@ struct ProfileView: View {
     @State private var showAddWeightSheet = false
     @State private var showWeightList = false
     
+    // Notifications
+    @AppStorage("mealRemindersEnabled") private var mealRemindersEnabled = false
+    @AppStorage("waterRemindersEnabled") private var waterRemindersEnabled = false
+    @AppStorage("weeklyUpdateEnabled") private var weeklyUpdateEnabled = false
+
+    
 
 
     
@@ -93,13 +99,17 @@ struct ProfileView: View {
 
         }
         .onAppear {
+            NotificationManager.shared.requestPermission()
             NotificationCenter.default.post(name: .hideTabBar, object: nil)
             editedWeight = String(format: "%.1f", localDataManager.userProfile?.weight ?? 0)
             editedTargetWeight = String(format: "%.1f", localDataManager.userProfile?.targetWeight ?? 0)
         }
+        
         .onReceive(NotificationCenter.default.publisher(for: .weightDataDidChange)) { _ in
             localDataManager.reloadProfile()
         }
+
+        
         .onDisappear {
             NotificationCenter.default.post(name: .showTabBar, object: nil)
         }
@@ -448,6 +458,11 @@ struct ProfileView: View {
                             .multilineTextAlignment(.trailing)
                             .frame(width: 60)
                             .textFieldStyle(.roundedBorder)
+                            .keyboardToolbar {
+                                    Button("Fermer") {
+                                        hideKeyboard()
+                                    }
+                                }
                         }
 
                         Text(
@@ -508,80 +523,111 @@ struct ProfileView: View {
         .padding()
     }
     
-    // Contenu de l'onglet paramètres
     private func settingsContent() -> some View {
         VStack(spacing: 20) {
-            // Intégrations
-            ProfileCardView(title: "Intégrations", icon: "link") {
-                SettingsToggleRow(
-                    title: "Apple Santé",
-                    icon: "heart.circle.fill",
-                    iconColor: .red,
-                    isEnabled: .constant(false),
-                    action: {
-                        showHealthKitPermissions = true
-                    }
-                )
-                
-                Button(action: {
-                    showHealthKitPermissions = true
-                }) {
-                    HStack {
-                        Text("Configurer Apple Santé")
-                            .font(.subheadline)
-                        
-                        Spacer()
-                        
-                        Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                    }
-                    .padding(.vertical, 8)
-                }
-            }
             
-            // Notifications
+            // Intégrations
             ProfileCardView(title: "Notifications", icon: "bell.fill") {
+                //                SettingsToggleRow(
+                //                    title: "Apple Santé",
+                //                    icon: "heart.circle.fill",
+                //                    iconColor: .red,
+                //                    isEnabled: .constant(false),
+                //                    action: {
+                //                        showHealthKitPermissions = true
+                //                    }
+                //                )
+                //
+                //                Button(action: {
+                //                    showHealthKitPermissions = true
+                //                }) {
+                //                    HStack {
+                //                        Text("Configurer Apple Santé")
+                //                            .font(.subheadline)
+                //                        Spacer()
+                //                        Image(systemName: "chevron.right")
+                //                            .font(.caption)
+                //                            .foregroundColor(.gray)
+                //                    }
+                //                    .padding(.vertical, 8)
+                //                }
+                //            }
+                
+                // Notifications
                 SettingsToggleRow(
                     title: "Rappels de repas",
                     icon: "fork.knife",
                     iconColor: .orange,
-                    isEnabled: .constant(true)
+                    isEnabled: $mealRemindersEnabled,
+                    action: {
+                        if mealRemindersEnabled {
+                            NotificationManager.shared.scheduleNotification(
+                                title: "C’est l’heure du repas",
+                                body: "N'oublie pas de manger pour tenir ton objectif !",
+                                hour: 12,
+                                minute: 30,
+                                identifier: "mealReminder"
+                            )
+                        } else {
+                            NotificationManager.shared.cancelNotification(identifier: "mealReminder")
+                        }
+                    }
                 )
                 
+                // Eau - 10h00
                 SettingsToggleRow(
                     title: "Rappels d'eau",
                     icon: "drop.fill",
                     iconColor: .blue,
-                    isEnabled: .constant(true)
+                    isEnabled: $waterRemindersEnabled,
+                    action: {
+                        if waterRemindersEnabled {
+                            NotificationManager.shared.scheduleNotification(
+                                title: "Hydratation",
+                                body: "Bois un verre d'eau 💧",
+                                hour: 10,
+                                minute: 0,
+                                identifier: "waterReminder"
+                            )
+                        } else {
+                            NotificationManager.shared.cancelNotification(identifier: "waterReminder")
+                        }
+                    }
                 )
                 
+                // Mise à jour hebdo - Dimanche 18h
                 SettingsToggleRow(
                     title: "Mise à jour hebdomadaire",
                     icon: "calendar",
                     iconColor: .purple,
-                    isEnabled: .constant(true)
+                    isEnabled: $weeklyUpdateEnabled,
+                    action: {
+                        if weeklyUpdateEnabled {
+                            NotificationManager.shared.scheduleNotification(
+                                title: "Fais le point sur ta semaine",
+                                body: "Ajoute ton poids et consulte tes progrès.",
+                                hour: 18,
+                                minute: 0,
+                                identifier: "weeklyUpdate"
+                            )
+                        } else {
+                            NotificationManager.shared.cancelNotification(identifier: "weeklyUpdate")
+                        }
+                    }
                 )
             }
-            
-            // Préférences de l'application
+
+            // Préférences
             ProfileCardView(title: "Préférences", icon: "gearshape.fill") {
                 VStack(spacing: 0) {
-                    SettingsLinkRow(
-                        title: "Unités de mesure",
-                        icon: "ruler",
-                        iconColor: .gray,
-                        value: "Métrique"
-                    )
-                    
-                    SettingsLinkRow(
+                    SettingsStaticRow(
                         title: "Thème",
                         icon: "paintpalette.fill",
                         iconColor: .purple,
                         value: "Clair"
                     )
                     
-                    SettingsLinkRow(
+                    SettingsStaticRow(
                         title: "Langue",
                         icon: "globe",
                         iconColor: .blue,
@@ -589,8 +635,23 @@ struct ProfileView: View {
                     )
                 }
             }
-            
-            // Version de l'application
+
+            // Suggestion
+            ProfileCardView(title: "Suggestion", icon: "lightbulb.fill") {
+                NavigationLink(destination: SuggestionView()) {
+                    HStack {
+                        Text("Suggérer une amélioration")
+                            .font(.subheadline)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                    .padding(.vertical, 8)
+                }
+            }
+
+            // À propos
             ProfileCardView(title: "À propos", icon: "info.circle.fill") {
                 VStack(alignment: .center, spacing: 8) {
                     Image("Icon-scan")
@@ -610,11 +671,11 @@ struct ProfileView: View {
                     Button(action: {
                         // Action rate app
                     }) {
-                        Text("Noter l'application")
+                        Text("⭐ Noter l'application")
                             .font(.subheadline)
                             .foregroundColor(AppTheme.accent)
+                            .padding(.top, 8)
                     }
-                    .padding(.top, 8)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
@@ -622,6 +683,7 @@ struct ProfileView: View {
         }
         .padding()
     }
+
     
     // Helpers
     private func calculateBMI(profile: UserProfile) -> Double {
@@ -937,6 +999,32 @@ struct SettingsLinkRow: View {
     }
 }
 
+struct SettingsStaticRow: View {
+    let title: String
+    let icon: String
+    let iconColor: Color
+    let value: String
+
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .foregroundColor(iconColor)
+                .frame(width: 24, height: 24)
+
+            Text(title)
+                .font(.subheadline)
+
+            Spacer()
+
+            Text(value)
+                .font(.subheadline)
+                .foregroundColor(.gray)
+        }
+        .padding(.vertical, 8)
+    }
+}
+
+
 // Vue pour la configuration Apple Santé
 struct HealthKitPermissionsView: View {
     @Environment(\.dismiss) private var dismiss
@@ -1043,16 +1131,3 @@ struct PermissionRow: View {
 
 // Extensions et thèmes
 
-extension AppTheme {
-    static let actionButtonProgressGradient = LinearGradient(
-        gradient: Gradient(colors: [accent, accent.opacity(0.8)]),
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
-    
-    static let progressGradient = LinearGradient(
-        gradient: Gradient(colors: [.green, accent]),
-        startPoint: .leading,
-        endPoint: .trailing
-    )
-}

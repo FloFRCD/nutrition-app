@@ -51,6 +51,7 @@ struct AddWeightTodayView: View {
         guard let value = Double(weight.replacingOccurrences(of: ",", with: ".")) else { return }
         LocalDataManager.shared.saveWeight(value)
         dismiss()
+        NotificationCenter.default.post(name: .weightDataDidChange, object: nil)
     }
 }
 

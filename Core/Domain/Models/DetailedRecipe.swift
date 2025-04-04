@@ -62,12 +62,13 @@ struct DetailedRecipesResponse: Codable {
     let detailed_recipes: [DetailedRecipe]
 }
 
-enum IngredientCategory: String, CaseIterable {
+enum IngredientCategory: String, CaseIterable, Codable {
     case fruitsAndVegetables = "Fruits & Légumes"
     case proteins = "Protéines"
     case starches = "Féculents"
     case condimentsAndSpices = "Condiments & Épices"
     case grocery = "Épicerie"
+    case other = "Autres"
 }
 
 

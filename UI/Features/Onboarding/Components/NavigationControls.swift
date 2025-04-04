@@ -34,6 +34,7 @@ struct NavigationControls: View {
                 .disabled(!canProceed)
             } else {
                 Button("Suivant") {
+                    hideKeyboard()
                     withAnimation {
                         currentPage += 1
                     }

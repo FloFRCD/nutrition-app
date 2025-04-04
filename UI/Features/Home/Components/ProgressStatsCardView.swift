@@ -90,6 +90,11 @@ struct ProgressStatsCardView: View {
                     .multilineTextAlignment(.trailing)
                     .frame(width: 60)
                     .textFieldStyle(.roundedBorder)
+                    .keyboardToolbar {
+                            Button("Fermer") {
+                                hideKeyboard()
+                            }
+                        }
                 }
 
                 Text(String(format: "%.1f %% %@", abs(progress * 100), isNegative ? "en trop" : "atteint"))

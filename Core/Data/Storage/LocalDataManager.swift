@@ -178,6 +178,27 @@ extension LocalDataManager {
         try? context.save()
     }
     
+    func addWeightRecordIfNeeded(for weight: Double, on date: Date = Date()) {
+        let context = PersistenceController.shared.container.viewContext
+        let today = Calendar.current.startOfDay(for: date)
+
+        let fetchRequest: NSFetchRequest<WeightRecord> = WeightRecord.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "date == %@", today as NSDate)
+
+        do {
+            let existing = try context.fetch(fetchRequest)
+            if existing.isEmpty {
+                let newRecord = WeightRecord(context: context)
+                newRecord.date = today
+                newRecord.weight = weight
+                try context.save()
+                NotificationCenter.default.post(name: .weightDataDidChange, object: nil)
+            }
+        } catch {
+            print("❌ Erreur en ajoutant l'entrée de poids :", error)
+        }
+    }
+
     func syncWeightWithLatestRecord() async {
         let request: NSFetchRequest<WeightRecord> = WeightRecord.fetchRequest()
         request.sortDescriptors = [NSSortDescriptor(keyPath: \WeightRecord.date, ascending: false)]

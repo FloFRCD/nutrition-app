@@ -19,7 +19,8 @@ struct DetailedActivityPage: View {
     var body: some View {
         VStack(spacing: 20) {
             Text("Votre activité physique")
-                .font(.title)
+                .font(.title2)
+                .bold()
                 .padding(.bottom)
             
             // Jours d'exercice par semaine

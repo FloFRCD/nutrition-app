@@ -23,6 +23,10 @@ struct PersonalInfoPage: View {
             VStack(spacing: 16) {
                 TextField("Nom complet", text: $name)
                     .textFieldStyle(.roundedBorder)
+                        .submitLabel(.done)
+                        .onSubmit {
+                            hideKeyboard()
+                        }
                 
                 DatePicker("Date de naissance",
                           selection: $birthDate,
@@ -41,3 +45,5 @@ struct PersonalInfoPage: View {
         .padding()
     }
 }
+
+

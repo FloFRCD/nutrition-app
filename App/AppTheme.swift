@@ -10,56 +10,62 @@ import SwiftUI
 
 // MARK: - Theme Colors
 struct AppTheme {
-    
+
+    // Couleurs inspirées du logo NutrIA
+    static let logoYellow = Color(hex: "FFD54F")
+    static let logoPurple = Color(hex: "B39DDB")
+    static let logoBlue = Color(hex: "81D4FA")
+    static let logoGreen = Color(hex: "66BB6A")
+
     // Couleurs primaires
     static let background = Color.black
     static let cardBackground = Color(hex: "121212")
     static let secondaryBackground = Color(hex: "1E1E1E")
-    
-    // Couleurs principales basées sur l'image
-    static let primaryPurple = Color(hex: "9933FF") // Violet plus vif du logo/UI
-    static let primaryBlue = Color(hex: "3366FF")   // Bleu plus vif
-    static let lightPink = Color(hex: "E666CC")     // Rose pour les accents
-    static let vibrantGreen = Color(hex: "44CC44")  // Vert pour les boutons d'action
-    
+
+    // Couleurs principales basées sur le logo
+    static let primaryPurple = logoPurple
+    static let primaryBlue = logoBlue
+    static let lightYellow = logoYellow
+    static let vibrantGreen = logoGreen
+
     // Couleurs d'accent mises à jour
     static let accent = vibrantGreen
     static let secondaryAccent = primaryBlue
     static let actionAccent = vibrantGreen
-    
+
     // Couleurs de texte
     static let primaryText = Color.white
     static let secondaryText = Color(hex: "BBBBBB")
     static let tertiaryText = Color(hex: "777777")
-    
+
     // Styles de carte
     static let cardBorderRadius: CGFloat = 16
     static let cardPadding: CGFloat = 16
-    
+
     // Propriétés pour la TabBar
     static let tabBarBackground = Color.black.opacity(0.7)
     static let tabBarActiveBlur = Color.white.opacity(0.15)
     static let tabBarUnselectedItemColor = Color.gray
-    
+
     // Couleurs pour les boutons
     static let primaryButtonBackground = primaryPurple
     static let secondaryButtonBackground = Color(hex: "333333")
     static let actionButtonBackground = vibrantGreen
-    
+
     // Couleurs pour les blobs d'arrière-plan
     static let backgroundBlob1 = primaryPurple.opacity(0.30)
     static let backgroundBlob2 = primaryBlue.opacity(0.30)
-    static let backgroundBlob3 = lightPink.opacity(0.15)
-    
+    static let backgroundBlob3 = lightYellow.opacity(0.15)
+
     // Gradient pour les boutons
     static var primaryButtonGradient: LinearGradient {
         LinearGradient(
-            gradient: Gradient(colors: [vibrantGreen, secondaryAccent]), // vert → bleu
+            gradient: Gradient(colors: [vibrantGreen, secondaryAccent]),
             startPoint: .leading,
             endPoint: .trailing
         )
     }
-    
+
     // Gradient pour le bouton d'action (comme le bouton Scanner vert)
     static var tabBarGradient: LinearGradient {
         LinearGradient(
@@ -68,7 +74,7 @@ struct AppTheme {
             endPoint: .bottom
         )
     }
-    
+
     static var actionButtonGradient: LinearGradient {
         LinearGradient(
             gradient: Gradient(colors: [vibrantGreen, vibrantGreen.opacity(0.8)]),
@@ -76,7 +82,7 @@ struct AppTheme {
             endPoint: .bottom
         )
     }
-    
+
     // Gradient pour l'arrière-plan de la tabBar sélectionnée
     static var selectedTabGradient: LinearGradient {
         LinearGradient(
@@ -85,6 +91,18 @@ struct AppTheme {
             endPoint: .bottomTrailing
         )
     }
+
+    static let actionButtonProgressGradient = LinearGradient(
+        gradient: Gradient(colors: [accent, accent.opacity(0.8)]),
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
+    static let progressGradient = LinearGradient(
+        gradient: Gradient(colors: [logoGreen, accent]),
+        startPoint: .leading,
+        endPoint: .trailing
+    )
 }
 
 // MARK: - Extension utilitaire pour les codes couleur hex
@@ -113,5 +131,4 @@ extension Color {
         )
     }
 }
-
 

@@ -56,7 +56,7 @@ struct HomeView: View {
                                 .frame(width: 40, height: 40)
                                 .clipShape(RoundedRectangle(cornerRadius: 6))
                             
-                            Text("NutrIA")
+                            Text("Nutria")
                                 .font(.title2)
                                 .fontWeight(.bold)
                                 .foregroundColor(.black)

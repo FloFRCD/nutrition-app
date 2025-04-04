@@ -14,6 +14,7 @@ class JournalViewModel: ObservableObject {
     @Published var foodEntries: [FoodEntry] = []
     @Published var _activeSheet: JournalSheet?
     @Published var selectedDate: Date = Date()
+    @Published var burnedCaloriesPerDay: [Date: Double] = [:]
     
     // Services
     private let nutritionCalculator = NutritionCalculator.shared
@@ -24,7 +25,11 @@ class JournalViewModel: ObservableObject {
     // MARK: - Initialization
     
     init() {
-        loadFoodEntries()
+        
+        Task {
+            await loadFoodEntries()
+            await loadBurnedCalories()
+            }
         NutritionService.shared.setJournalViewModel(self)
     }
     
@@ -351,6 +356,44 @@ class JournalViewModel: ObservableObject {
         }
     func showBarcodeScanner(for mealType: MealType) {
         activeSheet = .barcodeScanner(mealType: mealType)
+    }
+    
+    func setBurnedCalories(_ calories: Double, for date: Date) {
+        let cleanDate = Calendar.current.startOfDay(for: date)
+        burnedCaloriesPerDay[cleanDate] = calories
+        Task {
+            await saveBurnedCalories()
+        }
+    }
+    
+    func showBurnedCaloriesEntry() {
+        activeSheet = .burnedCaloriesEntry
+    }
+
+
+    func getBurnedCalories(for date: Date) -> Double {
+        let cleanDate = Calendar.current.startOfDay(for: date)
+        return burnedCaloriesPerDay[cleanDate] ?? 0
+    }
+    
+    func caloriesConsumed(on date: Date) -> Double {
+        let entriesForDate = foodEntries.filter {
+            Calendar.current.isDate($0.date, inSameDayAs: date)
+        }
+        return entriesForDate.reduce(0) { $0 + $1.nutritionValues.calories }
+    }
+
+
+    // Sauvegarde/chargement (via LocalDataManager)
+    func saveBurnedCalories() async {
+        try? await localDataManager.save(burnedCaloriesPerDay, forKey: "burnedCaloriesPerDay")
+    }
+
+    func loadBurnedCalories() async {
+        let loaded: [Date: Double] = (try? await localDataManager.load(forKey: "burnedCaloriesPerDay")) ?? [:]
+        await MainActor.run {
+            burnedCaloriesPerDay = loaded
+        }
     }
 }
 

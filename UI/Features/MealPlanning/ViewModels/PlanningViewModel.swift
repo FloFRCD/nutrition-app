@@ -174,6 +174,7 @@ class PlanningViewModel: ObservableObject {
         }
         return nil
     }
+
     
     private func determineMealType(from type: String) -> MealType {
         switch type {

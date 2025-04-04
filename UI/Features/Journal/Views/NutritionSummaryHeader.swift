@@ -156,7 +156,7 @@ struct NutritionSummaryHeader: View {
         }
         
         private var burnedCalories: Double {
-            return 0
+            return viewModel.getBurnedCalories(for: viewModel.selectedDate)
         }
         
         private var remainingCalories: Int {

@@ -10,83 +10,86 @@ import SwiftUI
 
 struct PlanningView: View {
     @EnvironmentObject private var localDataManager: LocalDataManager
-    @StateObject private var viewModel: PlanningViewModel
+    @StateObject private var viewModel = PlanningViewModel()
+    
     @State private var showingConfigSheet = false
     @State private var currentPreferences: MealPreferences?
     @State private var selectedMealTypes: Set<MealType> = [.breakfast, .lunch, .dinner, .snack]
-    @State private var selectedMealIDs: Set<UUID> = [] // Stocke les IDs au lieu des objets
+    @State private var selectedMealIDs: Set<UUID> = []
     @State private var isGeneratingDetails = false
-    @State private var forceRefresh = UUID()
-    
-    // État pour le sélecteur de vues
     @State private var selectedTab: Int = 0
-    
-    init() {
-        _viewModel = StateObject(wrappedValue: PlanningViewModel())
-    }
-    
-    var groupedSuggestions: [String: [AIMeal]] {
-        Dictionary(grouping: viewModel.mealSuggestions) { $0.type }
-    }
-    
-    // Calcule les repas sélectionnés à partir des IDs
-    var selectedMealSuggestions: [AIMeal] {
-        return viewModel.mealSuggestions.filter { selectedMealIDs.contains($0.id) }
-    }
+    @State private var forceRefresh = UUID()
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // Sélecteur d'onglets
-                ConsistentTabView(
-                    selection: $selectedTab,
-                    titles: ["Suggestions", "Recettes", "Sélection", "Liste des courses"]
-                )
-                
-                // TabView qui permet le swipe
-                TabView(selection: $selectedTab) {
-                    // Onglet 1: Suggestions avec bouton fixé en bas
-                    ZStack(alignment: .bottom) {
-                        suggestionsContent
-                            .padding(.bottom, 60) // Espace pour le bouton fixe
-                        
-                        // Bouton fixé en bas
-                            detailsButton
-                                .padding(.horizontal)
-                                .padding(.bottom, 10)
-                                .background(
-                                    Rectangle()
-                                        .fill(Color(.systemBackground))
-                                        .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: -2)
-                                )
+            ZStack {
+                AnimatedBackground()
+                VStack(spacing: 0) {
+                    Image("Icon-scan")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 80, height: 80)
+                        .padding(.top, 70)
+                    
+                    // Espacement minimal pour remonter le contenu
+                    Spacer(minLength: 0)
+                    VStack(spacing: 0) {
+                        VStack(spacing: 0) {
+                            ConsistentTabView(
+                                selection: $selectedTab,
+                                titles: ["Suggestions", "Recettes", "Sélection", "Liste des courses"]
+                            )
+                            .padding(.top, 8)
+                            
+                            TabView(selection: $selectedTab) {
+                                ZStack(alignment: .bottom) {
+                                    suggestionsContent
+                                        .padding(.bottom, 100)
+                                    
+                                    detailsButton
+                                        .padding(.horizontal)
+                                        .padding(.bottom, 20)
+                                }
+                                .tag(0)
+                                
+                                SavedRecipesView()
+                                    .environmentObject(localDataManager)
+                                    .tag(1)
+                                
+                                SelectedRecipesView()
+                                    .environmentObject(localDataManager)
+                                    .tag(2)
+                                
+                                ShoppingListWrapper(isActive: selectedTab == 3)
+                                    .environmentObject(localDataManager)
+                                    .tag(3)
+                            }
+                            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                        }
                     }
-                    .tag(0)
-                    
-                    // Onglet 2: Recettes
-                    SavedRecipesView()
-                        .environmentObject(localDataManager)
-                        .tag(1)
-                    
-                    // Onglet 3: Sélection
-                    SelectedRecipesView()
-                        .environmentObject(localDataManager)
-                        .tag(2)
-                    
-                    //Onglet 4: Courses
-                    ShoppingListWrapper(isActive: selectedTab == 3)
-                            .environmentObject(localDataManager)
-                            .tag(3)
-                    }
-                    .onChange(of: selectedTab) { oldValue, newValue in
-                        print("📱 Changement d'onglet: \(oldValue) -> \(newValue)")
                 }
-                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                .ignoresSafeArea(.container, edges: .top)
+                if isGeneratingDetails {
+                    Color.black.opacity(0.3)
+                        .edgesIgnoringSafeArea(.all)
+                    VStack(spacing: 15) {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        Text("Génération des détails...")
+                            .foregroundColor(.white)
+                            .font(.headline)
+                        Text("Veuillez patienter")
+                            .foregroundColor(.white.opacity(0.8))
+                            .font(.subheadline)
+                    }
+                    .padding()
+                    .background(Color(.systemGray5).opacity(0.9))
+                    .cornerRadius(12)
+                }
             }
-            .navigationTitle("Planning repas")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
-                        // Initialiser les préférences avec les données utilisateur si nécessaire
                         if currentPreferences == nil {
                             currentPreferences = createDefaultPreferences()
                         }
@@ -97,74 +100,38 @@ struct PlanningView: View {
                 }
             }
             .sheet(isPresented: $showingConfigSheet) {
-                if let unwrappedPreferences = currentPreferences {
-                    MealConfigurationSheet(
-                        preferences: Binding(
-                            get: { unwrappedPreferences },
-                            set: { self.currentPreferences = $0 }
-                        ),
-                        onGenerate: { preferences in
-                            // Reset selected suggestions
-                            selectedMealIDs = []
-                            
-                            Task {
-                                await viewModel.generateMealSuggestions(with: preferences)
-                            }
+                MealConfigurationSheet(
+                    preferences: currentPreferencesBinding,
+                    onGenerate: { preferences in
+                        selectedMealIDs = []
+                        Task {
+                            await viewModel.generateMealSuggestions(with: preferences)
                         }
-                    )
-                } else {
-                    // Créer des préférences par défaut si elles n'existent pas
-                    let defaultPrefs = createDefaultPreferences()
-                    MealConfigurationSheet(
-                        preferences: Binding(
-                            get: { defaultPrefs },
-                            set: { self.currentPreferences = $0 }
-                        ),
-                        onGenerate: { preferences in
-                            // Reset selected suggestions
-                            selectedMealIDs = []
-                            
-                            Task {
-                                await viewModel.generateMealSuggestions(with: preferences)
-                            }
-                        }
-                    )
-                }
-            }
-            
-            // Overlay de génération des détails
-            .overlay(
-                ZStack {
-                    if isGeneratingDetails {
-                        Color.black.opacity(0.3)
-                            .edgesIgnoringSafeArea(.all)
-                        
-                        VStack(spacing: 15) {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            Text("Génération des détails...")
-                                .foregroundColor(.white)
-                                .font(.headline)
-                            Text("Veuillez patienter")
-                                .foregroundColor(.white.opacity(0.8))
-                                .font(.subheadline)
-                        }
-                        .padding()
-                        .background(Color(.systemGray5).opacity(0.8))
-                        .cornerRadius(10)
                     }
-                }
-            )
-        }
-        .onAppear {
-            viewModel.setDependencies(localDataManager: localDataManager, aiService: AIService.shared)
-            // Forcer le rafraîchissement à chaque apparition
-            forceRefresh = UUID()
+                )
+            }
+            .onAppear {
+                viewModel.setDependencies(localDataManager: localDataManager, aiService: AIService.shared)
+                forceRefresh = UUID()
+            }
         }
     }
     
-    // Contenu des suggestions de repas (sans le bouton)
-    var suggestionsContent: some View {
+    private var groupedSuggestions: [String: [AIMeal]] {
+        Dictionary(grouping: viewModel.mealSuggestions) { $0.type }
+    }
+    
+    private var selectedMealSuggestions: [AIMeal] {
+        viewModel.mealSuggestions.filter { selectedMealIDs.contains($0.id) }
+    }
+    private var currentPreferencesBinding: Binding<MealPreferences> {
+        Binding(
+            get: { currentPreferences ?? createDefaultPreferences() },
+            set: { self.currentPreferences = $0 }
+        )
+    }
+
+    private var suggestionsContent: some View {
         ScrollView {
             if viewModel.isLoading {
                 ProgressView()
@@ -177,150 +144,101 @@ struct PlanningView: View {
                 )
             } else {
                 VStack(spacing: 20) {
-                    // Afficher les suggestions de repas par type
-                    ForEach(Array(groupedSuggestions.keys.sorted()), id: \.self) { mealType in
+                    ForEach(groupedSuggestions.keys.sorted(), id: \.self) { mealType in
                         if let suggestions = groupedSuggestions[mealType], !suggestions.isEmpty {
                             MealSuggestionSection(
                                 mealType: mealType,
                                 suggestions: suggestions,
-                                selectedIDs: $selectedMealIDs // Passer les IDs au lieu des objets
+                                selectedIDs: $selectedMealIDs
                             )
-                            .id("\(mealType)_\(forceRefresh.uuidString)") // Forcer le rafraîchissement
+                            .id("\(mealType)_\(forceRefresh.uuidString)")
                         }
                     }
                     
-                    // Ajouter un espace vide en bas pour éviter que le contenu ne soit caché par le bouton fixe
-                    Color.clear
-                        .frame(height: 20)
+                    Spacer().frame(height: 40)
                 }
-                .padding()
+                .padding(.horizontal)
+                .padding(.top, 16)
+                .padding(.bottom, 80) // pour laisser de l’espace à la tabbar
+
             }
         }
     }
     
-    // Bouton "Obtenir les détails" extrait en propriété séparée
-    var detailsButton: some View {
-        Button(action: {
+    private var detailsButton: some View {
+        Button {
             generateAndSaveDetails()
-        }) {
+        } label: {
             Text("Obtenir les détails (\(selectedMealSuggestions.count)/4)")
-                .bold()
+                .font(.system(size: 16, weight: .semibold))
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(
                     Group {
                         if selectedMealSuggestions.isEmpty || selectedMealSuggestions.count > 4 {
-                            Color.gray // Grisé si vide ou trop de sélections
+                            AnyView(Color.gray.opacity(0.4))
                         } else {
-                            AppTheme.actionButtonGradient // Gradient si sélection valide
+                            AnyView(AppTheme.primaryButtonGradient)
                         }
                     }
                 )
+
                 .foregroundColor(.white)
-                .cornerRadius(10)
+                .cornerRadius(12)
+                .shadow(radius: 3)
         }
         .disabled(selectedMealSuggestions.isEmpty || selectedMealSuggestions.count > 4)
+        .padding(.horizontal)
+        .padding(.bottom, 80)
     }
     
-//    private var buttonBackgroundColor: Color {
-//        if selectedMealSuggestions.isEmpty || selectedMealSuggestions.count > 4 {
-//            return Color.gray // Grisé si vide ou trop de sélections
-//        } else {
-//            return AppTheme.buttonGradient // Bleu si le nombre de sélections est valide (1-4)
-//        }
-//    }
-    
-    // Fonction qui génère les détails et bascule directement vers l'onglet des recettes sauvegardées
     private func generateAndSaveDetails() {
         Task {
-            // Activer l'indicateur de chargement
-            await MainActor.run {
-                isGeneratingDetails = true
+            await MainActor.run { isGeneratingDetails = true }
+            
+            let profile = localDataManager.userProfile ?? .default
+            let detailsVM = DetailedRecipesViewModel()
+            await detailsVM.fetchRecipeDetails(for: selectedMealSuggestions, userProfile: profile)
+            
+            if !detailsVM.detailedRecipes.isEmpty {
+                await saveGeneratedRecipes(detailsVM.detailedRecipes)
             }
             
-            // 1. Générer les détails des recettes
-            if let userProfile = localDataManager.userProfile {
-                await generateRecipeDetails(userProfile: userProfile)
-            } else {
-                await generateRecipeDetails(userProfile: UserProfile.default)
-            }
-            
-            // 2. Désactiver l'indicateur de chargement et basculer vers l'onglet "Recettes"
             await MainActor.run {
                 isGeneratingDetails = false
-                
-                // Basculer vers l'onglet "Recettes"
-                withAnimation {
-                    selectedTab = 1
-                }
+                withAnimation { selectedTab = 1 }
             }
         }
     }
     
-    // Fonction qui génère les détails des recettes et les sauvegarde directement
-    private func generateRecipeDetails(userProfile: UserProfile) async {
-        // Créer un ViewModel temporaire pour générer les détails
-        let detailsViewModel = DetailedRecipesViewModel()
-        
-        // Générer les détails
-        await detailsViewModel.fetchRecipeDetails(
-            for: selectedMealSuggestions,
-            userProfile: userProfile
-        )
-        
-        // Si des recettes ont été générées, les sauvegarder
-        if !detailsViewModel.detailedRecipes.isEmpty {
-            await saveGeneratedRecipes(detailsViewModel.detailedRecipes)
-        }
-    }
-    
-    // Fonction qui sauvegarde les recettes générées
     private func saveGeneratedRecipes(_ recipes: [DetailedRecipe]) async {
         do {
-            // Récupérer les recettes existantes
-            var existingRecipes: [DetailedRecipe] = []
-            if let savedRecipes: [DetailedRecipe] = try? await localDataManager.load(forKey: "saved_detailed_recipes") {
-                existingRecipes = savedRecipes
+            var existing: [DetailedRecipe] = (try? await localDataManager.load(forKey: "saved_detailed_recipes")) ?? []
+            let newRecipes = recipes.filter { new in
+                !existing.contains(where: { $0.name == new.name })
             }
-            
-            // Ajouter les nouvelles recettes en évitant les doublons
-            var updatedRecipes = existingRecipes
-            var newRecipesCount = 0
-            
-            for recipe in recipes {
-                // Vérifier si la recette n'existe pas déjà par son nom
-                if !updatedRecipes.contains(where: { $0.name == recipe.name }) {
-                    updatedRecipes.append(recipe)
-                    newRecipesCount += 1
-                }
-            }
-            
-            // Sauvegarder la liste mise à jour
-            try await localDataManager.save(updatedRecipes, forKey: "saved_detailed_recipes")
-            print("✅ Sauvegarde directe: \(newRecipesCount) nouvelles recettes sauvegardées (total: \(updatedRecipes.count))")
-            
-            // Notifier que des recettes ont été ajoutées
-            NotificationCenter.default.post(name: NSNotification.Name("RecipeDeleted"), object: nil)
-            
+            existing.append(contentsOf: newRecipes)
+            try await localDataManager.save(existing, forKey: "saved_detailed_recipes")
+            NotificationCenter.default.post(name: .init("RecipeDeleted"), object: nil)
         } catch {
-            print("❌ Erreur lors de la sauvegarde directe: \(error)")
+            print("❌ Erreur de sauvegarde des recettes: \(error)")
         }
     }
     
     private func createDefaultPreferences() -> MealPreferences {
-        let userProfile = localDataManager.userProfile ?? UserProfile.default
-        let prefs = MealPreferences(
+        let profile = localDataManager.userProfile ?? .default
+        return MealPreferences(
             bannedIngredients: [],
             preferredIngredients: [],
             defaultServings: 1,
             dietaryRestrictions: [],
             mealTypes: Array(selectedMealTypes),
-            recipesPerType: 12 / max(selectedMealTypes.count, 1), // Calcul dynamique
-            userProfile: userProfile
+            recipesPerType: 12 / max(selectedMealTypes.count, 1),
+            userProfile: profile
         )
-        return prefs
     }
 }
+
 
 // Définir les onglets disponibles
 enum PlanningTab {
@@ -387,59 +305,67 @@ struct TabButton: View {
 struct MealSuggestionSection: View {
     let mealType: String
     let suggestions: [AIMeal]
-    @Binding var selectedIDs: Set<UUID> // Modifier pour utiliser des IDs
-    
+    @Binding var selectedIDs: Set<UUID>
+
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 8) {
             Text(mealType)
                 .font(.headline)
                 .padding(.horizontal)
-            
-            ForEach(suggestions) { suggestion in
-                MealSuggestionCard(
-                    suggestion: suggestion,
-                    isSelected: selectedIDs.contains(suggestion.id), // Vérifier avec l'ID
-                    onToggle: { selected in
-                        if selected {
-                            selectedIDs.insert(suggestion.id) // Insérer l'ID
-                        } else {
-                            selectedIDs.remove(suggestion.id) // Supprimer l'ID
+
+            VStack(spacing: 12) {
+                ForEach(suggestions) { suggestion in
+                    MealSuggestionCard(
+                        suggestion: suggestion,
+                        isSelected: selectedIDs.contains(suggestion.id),
+                        onToggle: { selected in
+                            if selected {
+                                selectedIDs.insert(suggestion.id)
+                            } else {
+                                selectedIDs.remove(suggestion.id)
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
+            .padding(.horizontal) // ⬅️ important : marge cohérente
         }
+        .frame(maxWidth: .infinity) // ⬅️ crucial : permet à tout de s'étirer correctement
     }
 }
+
 
 // Carte pour une suggestion de repas individuelle
 struct MealSuggestionCard: View {
     let suggestion: AIMeal
     let isSelected: Bool
     let onToggle: (Bool) -> Void
-    
-    // État local pour gérer l'affichage
+
     @State private var localIsSelected: Bool = false
-    
+
     var body: some View {
-        VStack(alignment: .leading) {
-            HStack {
-                VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(suggestion.name)
-                        .font(.title3)
-                        .bold()
-                    
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(.primary)
+                        .lineLimit(2)
+                        .truncationMode(.tail)
+
                     Text(suggestion.description)
-                        .font(.body)
+                        .font(.subheadline)
                         .foregroundColor(.secondary)
+                        .lineLimit(2)
+                        .truncationMode(.tail)
                 }
-                
+
                 Spacer()
-                
-                // Checkbox pour sélectionner cette recette
+
+                // Bouton de sélection (checkbox)
                 Button(action: {
-                    localIsSelected.toggle() // Changer l'état local immédiatement
-                    onToggle(!isSelected)    // Propager le changement
+                    localIsSelected.toggle()
+                    onToggle(!isSelected)
                 }) {
                     Image(systemName: localIsSelected ? "checkmark.circle.fill" : "circle")
                         .foregroundColor(localIsSelected ? .blue : .gray)
@@ -449,24 +375,24 @@ struct MealSuggestionCard: View {
         }
         .padding()
         .background(
-            RoundedRectangle(cornerRadius: 10)
+            RoundedRectangle(cornerRadius: 12)
                 .fill(Color(.secondarySystemBackground))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 10)
+            RoundedRectangle(cornerRadius: 12)
                 .stroke(localIsSelected ? Color.blue : Color.clear, lineWidth: 2)
         )
         .padding(.horizontal)
         .onAppear {
-            // Synchroniser l'état local avec l'état reçu lors de l'apparition
             localIsSelected = isSelected
         }
         .onChange(of: isSelected) { newValue in
-            // Mettre à jour l'état local quand l'état externe change
             localIsSelected = newValue
         }
     }
 }
+
+
 
 // Extension pour créer un profil utilisateur par défaut
 extension UserProfile {

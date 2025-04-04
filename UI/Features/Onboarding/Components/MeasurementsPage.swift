@@ -86,6 +86,11 @@ struct MeasurementsPage: View {
             }
             .padding()
         }
+        
+        .onDisappear {
+            hideKeyboard()
+        }
+
         .padding()
     }
 }

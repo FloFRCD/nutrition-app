@@ -13,6 +13,8 @@ struct JournalView: View {
     @EnvironmentObject var localDataManager: LocalDataManager
     @EnvironmentObject var nutritionService: NutritionService
     @State private var hasAppeared = false
+    @State private var showCaloriesAlert = false
+    @State private var caloriesInput: String = ""
     
     var body: some View {
         ZStack {
@@ -37,6 +39,22 @@ struct JournalView: View {
                     .padding(.horizontal)
                     .padding(.top, 12)
                 
+                
+                Button(action: {
+                    viewModel.showBurnedCaloriesEntry()
+                }) {
+                    Label("Ajouter calories brûlées", systemImage: "flame.fill")
+                        .font(.callout)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .background(Color.orange.opacity(0.1))
+                        .foregroundColor(.orange)
+                        .cornerRadius(12)
+                }
+                .padding(.top, 10)
+
+                
+                                
                 // Liste des repas de la journée
                 ScrollView {
                     VStack(spacing: 15) {
@@ -147,10 +165,18 @@ struct JournalView: View {
             case .barcodeScanner(let mealType):
                     BarcodeScannerView(mealType: mealType)
                         .environmentObject(viewModel)
+                
+            case .burnedCaloriesEntry:
+                        BurnedCaloriesEntryView(viewModel: viewModel)
                 }
             }
         .navigationTitle("Journal Alimentaire")
         .navigationBarTitleDisplayMode(.inline)
+    }
+    
+    private func showBurnedCaloriesAlert() {
+        caloriesInput = "\(Int(viewModel.getBurnedCalories(for: viewModel.selectedDate)))"
+        showCaloriesAlert = true
     }
     
 }

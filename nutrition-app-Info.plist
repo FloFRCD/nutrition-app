@@ -10,5 +10,13 @@
 	<string>NutrIA nécessite l&apos;accès à vos photos pour analyser vos repas et calculer les valeurs nutritionnelles.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>Pour animer l&apos;arrière-plan en fonction du mouvement</string>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
 </dict>
 </plist>

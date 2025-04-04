@@ -20,16 +20,16 @@ struct SavedRecipesView: View {
  
     
     var body: some View {
-        ZStack {
+        ScrollView {
             if isLoading {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if savedRecipes.isEmpty {
-                ContentUnavailableView(
-                    "Aucune recette sauvegardée",
-                    systemImage: "bookmark",
-                    description: Text("Sélectionnez des suggestions et sauvegardez-les pour les voir ici")
-                )
+                    ContentUnavailableView(
+                        "Aucune recette sauvegardée",
+                        systemImage: "bookmark",
+                        description: Text("Sélectionnez des suggestions et sauvegardez-les pour les voir ici")
+                    )
             } else {
                 VStack(spacing: 0) {
                     // Barre de recherche
@@ -38,58 +38,48 @@ struct SavedRecipesView: View {
                         .padding(.top, 8)
                         .padding(.bottom, 8)
                         .background(Color(.systemBackground))
-                    
-                    // Indicateur de la dernière mise à jour (pour le débogage)
+
+                    // Dernière mise à jour
                     Text("Dernière mise à jour: \(formattedDate(lastUpdated))")
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                         .padding(.trailing)
-                    
-                    // Liste des recettes
-                    ScrollView {
-                        LazyVStack(spacing: 16) {
-                            // Si une recherche est active, afficher les résultats sans tenir compte du type
-                            if !searchText.isEmpty {
-                                let filteredRecipes = filteredRecipesBySearch
-                                if filteredRecipes.isEmpty {
-                                    Text("Aucun résultat pour '\(searchText)'")
-                                        .foregroundColor(.secondary)
-                                        .padding(.top, 20)
-                                } else {
-                                    // Section des résultats de recherche
-                                    recipesSection(recipes: filteredRecipes)
-                                }
+
+                    LazyVStack(spacing: 16) {
+                        if !searchText.isEmpty {
+                            let filteredRecipes = filteredRecipesBySearch
+                            if filteredRecipes.isEmpty {
+                                Text("Aucun résultat pour '\(searchText)'")
+                                    .foregroundColor(.secondary)
+                                    .padding(.top, 20)
                             } else {
-                                // Affichage normal groupé par type de repas
-                                ForEach(groupedRecipesByMealType.keys.sorted(), id: \.self) { mealType in
-                                    let displayName = getMealTypeDisplayName(type: mealType)
-                                    
-                                    if let recipes = groupedRecipesByMealType[mealType], !recipes.isEmpty {
-                                        VStack(alignment: .leading, spacing: 12) {
-                                            // En-tête de section
-                                            Text(displayName)
-                                                .font(.headline)
-                                                .padding(.horizontal)
-                                                .padding(.top, 8)
-                                            
-                                            // Recettes de ce type
-                                            recipesSection(recipes: recipes)
-                                        }
+                                recipesSection(recipes: filteredRecipes)
+                            }
+                        } else {
+                            ForEach(groupedRecipesByMealType.keys.sorted(), id: \.self) { mealType in
+                                let displayName = getMealTypeDisplayName(type: mealType)
+                                if let recipes = groupedRecipesByMealType[mealType], !recipes.isEmpty {
+                                    VStack(alignment: .leading, spacing: 12) {
+                                        Text(displayName)
+                                            .font(.headline)
+                                            .padding(.horizontal)
+                                            .padding(.top, 8)
+
+                                        recipesSection(recipes: recipes)
                                     }
                                 }
                             }
                         }
-                        .padding(.vertical)
-                        .id(refreshID) // Force refresh quand refreshID change
                     }
+                    .padding(.vertical)
+                    .padding(.bottom, 100) // Pour ne pas être caché par la TabBar
+                    .id(refreshID)
                 }
             }
         }
         .onAppear {
-            Task {
-                await loadSavedRecipes()
-            }
+            Task { await loadSavedRecipes() }
         }
         .refreshable {
             await loadSavedRecipes()
@@ -104,21 +94,15 @@ struct SavedRecipesView: View {
         } message: {
             Text("Cette recette sera définitivement supprimée de vos recettes.")
         }
-        // IMPORTANT: Écouter les notifications de suppression de recettes
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("RecipeDeleted"))) { notification in
-            print("🔔 Notification de suppression reçue")
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("RecipeDeleted"))) { _ in
             Task {
-                // Recharger les recettes depuis le stockage
                 await loadSavedRecipes()
-                
-                // Forcer le rafraîchissement visuel
                 refreshID = UUID()
-                
-                // Mettre à jour l'horodatage pour le débogage
                 lastUpdated = Date()
             }
         }
     }
+
     
     // Formater la date pour le débogage
     private func formattedDate(_ date: Date) -> String {
@@ -130,9 +114,13 @@ struct SavedRecipesView: View {
     // Fonction pour afficher une section de recettes
     private func recipesSection(recipes: [DetailedRecipe]) -> some View {
         ForEach(recipes) { recipe in
-            NavigationLink(destination: SingleRecipeDetailView(recipe: recipe)) {
+            NavigationLink {
+                SingleRecipeDetailView(recipe: recipe)
+                    .environmentObject(localDataManager) // ✅ injection ici
+            } label: {
                 SavedRecipeCard(recipe: recipe)
             }
+
             .buttonStyle(PlainButtonStyle())
             .contextMenu {
                 Button(role: .destructive) {

@@ -17,7 +17,7 @@ struct MainTabView: View {
     var body: some View {
         ZStack {
             // Fond blanc avec effets subtils
-            AppBackgroundLight()
+//            AppBackgroundLight()
             
             // Contenu basé sur l'onglet sélectionné
             VStack {
