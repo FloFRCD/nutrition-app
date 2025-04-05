@@ -327,21 +327,7 @@ struct ProfileView: View {
         
 
         return VStack(spacing: 20) {
-            // Graphique de poids
-            // MARK: - Carte Évolution du poids
-            ProfileCardView(title: "Diagrammes", icon: "chart.line.uptrend.xyaxis") {
-                ProfileStatsView(
-                    weightData: localDataManager.fetchWeightsForLast7Days(),
-                    foodEntries: LocalDataManager.shared.loadFoodEntries() ?? [],
-                    userProfile: profile
-                )
-
-                .frame(height: 300)
-                .padding(.horizontal, 8)
-            }
-            
-
-            
+  
             ProfileCardView(title: "Total sur les 7 derniers jours", icon: "chart.pie.fill") {
                 VStack(spacing: 16) {
                     let needs = NutritionCalculator.shared.calculateNeeds(for: profile)
@@ -399,6 +385,7 @@ struct ProfileView: View {
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
                         .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
                         .padding(.top, 8)
 
                 }
@@ -513,6 +500,18 @@ struct ProfileView: View {
                 }
             }
 
+            // Graphique de poids
+            // MARK: - Carte Évolution du poids
+            ProfileCardView(title: "Diagrammes", icon: "chart.line.uptrend.xyaxis") {
+                ProfileStatsView(
+                    weightData: localDataManager.fetchWeightsForLast7Days(),
+                    foodEntries: LocalDataManager.shared.loadFoodEntries() ?? [],
+                    userProfile: profile
+                )
+
+                .frame(height: 300)
+                .padding(.horizontal, 8)
+            }
 
             .sheet(isPresented: $showWeightListView) {
                 WeightListView()

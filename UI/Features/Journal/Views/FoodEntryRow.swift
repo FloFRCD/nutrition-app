@@ -27,7 +27,7 @@ struct FoodEntryRow: View {
                     .font(.body)
                     .foregroundColor(.primary)
                 
-                Text("\(Int(entry.quantity)) \(entry.food.servingUnit.rawValue)")
+                Text("\(Int(entry.quantity * entry.food.servingSize)) \(entry.food.servingUnit.rawValue)")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }

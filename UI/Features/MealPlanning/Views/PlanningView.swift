@@ -11,6 +11,9 @@ import SwiftUI
 struct PlanningView: View {
     @EnvironmentObject private var localDataManager: LocalDataManager
     @StateObject private var viewModel = PlanningViewModel()
+    @StateObject private var storeKitManager = StoreKitManager.shared
+    @State private var showPremiumSheet = false
+    
     
     @State private var showingConfigSheet = false
     @State private var currentPreferences: MealPreferences?
@@ -19,8 +22,17 @@ struct PlanningView: View {
     @State private var isGeneratingDetails = false
     @State private var selectedTab: Int = 0
     @State private var forceRefresh = UUID()
+    @Binding var isTabBarVisible: Bool
+
     
     var body: some View {
+        
+        if storeKitManager.effectiveSubscription != .free {
+                // Vue autorisée
+            } else {
+                lockedPremiumView("Contenu réservé aux utilisateurs premium")
+            }
+        
         NavigationView {
             ZStack {
                 AnimatedBackground()
@@ -42,49 +54,83 @@ struct PlanningView: View {
                             .padding(.top, 8)
                             
                             TabView(selection: $selectedTab) {
+                                // Onglet 0 : Suggestions (toujours accessible)
                                 ZStack(alignment: .bottom) {
                                     suggestionsContent
                                         .padding(.bottom, 100)
-                                    
+
                                     detailsButton
                                         .padding(.horizontal)
                                         .padding(.bottom, 20)
                                 }
                                 .tag(0)
-                                
-                                SavedRecipesView()
-                                    .environmentObject(localDataManager)
-                                    .tag(1)
-                                
-                                SelectedRecipesView()
-                                    .environmentObject(localDataManager)
-                                    .tag(2)
-                                
-                                ShoppingListWrapper(isActive: selectedTab == 3)
-                                    .environmentObject(localDataManager)
-                                    .tag(3)
+
+                                // Onglet 1 : Recettes sauvegardées (Premium)
+                                Group {
+                                    if storeKitManager.effectiveSubscription != .free {
+                                        SavedRecipesView()
+                                            .environmentObject(localDataManager)
+                                    } else {
+                                        lockedPremiumView("Recettes sauvegardées réservées aux utilisateurs Premium")
+                                    }
+                                }
+                                .tag(1)
+
+                                // Onglet 2 : Sélection (Premium)
+                                Group {
+                                    if storeKitManager.effectiveSubscription != .free {
+                                        SelectedRecipesView()
+                                            .environmentObject(localDataManager)
+                                    } else {
+                                        lockedPremiumView("Recettes sélectionnées réservées aux utilisateurs Premium")
+                                    }
+                                }
+                                .tag(2)
+
+                                // Onglet 3 : Liste des courses (Premium)
+                                Group {
+                                    if storeKitManager.effectiveSubscription != .free {
+                                        ShoppingListWrapper(isActive: selectedTab == 3)
+                                            .environmentObject(localDataManager)
+                                    } else {
+                                        lockedPremiumView("Liste de courses réservée aux utilisateurs Premium")
+                                    }
+                                }
+                                .tag(3)
                             }
+                            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+
                             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                         }
                     }
                 }
                 .ignoresSafeArea(.container, edges: .top)
                 if isGeneratingDetails {
-                    Color.black.opacity(0.3)
-                        .edgesIgnoringSafeArea(.all)
-                    VStack(spacing: 15) {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        Text("Génération des détails...")
-                            .foregroundColor(.white)
-                            .font(.headline)
-                        Text("Veuillez patienter")
-                            .foregroundColor(.white.opacity(0.8))
-                            .font(.subheadline)
+                    ZStack {
+                        // Blur ou semi-transparence
+                        Color.black.opacity(0.3).ignoresSafeArea()
+
+                        VStack(spacing: 16) {
+                            ProgressView()
+                                .scaleEffect(1.5)
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            
+                            Text("Notre IA génère les recettes")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .multilineTextAlignment(.center)
+                            
+                            Text("Nous personnalisons tes repas en fonction de ton profil…")
+                                .font(.subheadline)
+                                .foregroundColor(.white.opacity(0.8))
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding()
+                        .background(Color.black.opacity(0.5))
+                        .cornerRadius(16)
+                        .shadow(radius: 10)
                     }
-                    .padding()
-                    .background(Color(.systemGray5).opacity(0.9))
-                    .cornerRadius(12)
+                    .transition(.opacity)
                 }
             }
             .toolbar {
@@ -113,6 +159,17 @@ struct PlanningView: View {
             .onAppear {
                 viewModel.setDependencies(localDataManager: localDataManager, aiService: AIService.shared)
                 forceRefresh = UUID()
+                
+                let key = "planning_view_appearance_count"
+                let count = UserDefaults.standard.integer(forKey: key) + 1
+                UserDefaults.standard.set(count, forKey: key)
+
+                if count % 3 == 0 && storeKitManager.currentSubscription == .free {
+                    showPremiumSheet = true
+                }
+            }
+            .sheet(isPresented: $showPremiumSheet) {
+                PremiumView()
             }
         }
     }
@@ -167,7 +224,11 @@ struct PlanningView: View {
     
     private var detailsButton: some View {
         Button {
-            generateAndSaveDetails()
+            if storeKitManager.effectiveSubscription != .free {
+                generateAndSaveDetails()
+            } else {
+                showPremiumSheet = true
+            }
         } label: {
             Text("Obtenir les détails (\(selectedMealSuggestions.count)/4)")
                 .font(.system(size: 16, weight: .semibold))
@@ -182,7 +243,6 @@ struct PlanningView: View {
                         }
                     }
                 )
-
                 .foregroundColor(.white)
                 .cornerRadius(12)
                 .shadow(radius: 3)
@@ -191,10 +251,14 @@ struct PlanningView: View {
         .padding(.horizontal)
         .padding(.bottom, 80)
     }
+
     
     private func generateAndSaveDetails() {
         Task {
-            await MainActor.run { isGeneratingDetails = true }
+            await MainActor.run {
+                isGeneratingDetails = true
+                isTabBarVisible = false // ⬅️ Masque la tabBar (ou baisse opacité)
+            }
             
             let profile = localDataManager.userProfile ?? .default
             let detailsVM = DetailedRecipesViewModel()
@@ -206,10 +270,14 @@ struct PlanningView: View {
             
             await MainActor.run {
                 isGeneratingDetails = false
-                withAnimation { selectedTab = 1 }
+                isTabBarVisible = true // ⬅️ Réaffiche la tabBar
+                withAnimation {
+                    selectedTab = 1
+                }
             }
         }
     }
+
     
     private func saveGeneratedRecipes(_ recipes: [DetailedRecipe]) async {
         do {
@@ -237,6 +305,73 @@ struct PlanningView: View {
             userProfile: profile
         )
     }
+    private func lockedPremiumView(_ message: String) -> some View {
+        VStack(spacing: 16) {
+            Spacer()
+            Image(systemName: "lock.fill")
+                .font(.system(size: 40))
+                .foregroundColor(.orange)
+
+            Text(message)
+                .font(.headline)
+                .multilineTextAlignment(.center)
+                .foregroundColor(.primary)
+                .padding(.horizontal, 24)
+
+            Button(action: {
+                showPremiumSheet = true
+            }) {
+                Text("Découvrir Premium")
+                    .font(.headline)
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 24)
+                    .background(Color.black)
+                    .mask(RoundedRectangle(cornerRadius: 14))
+                    .overlay(
+                        LinearGradient(
+                            colors: [AppTheme.logoPurple, AppTheme.vibrantGreen],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .mask(
+                            Text("Découvrir Premium")
+                                .font(.headline)
+                                .padding(.vertical, 12)
+                                .padding(.horizontal, 24)
+                        )
+                    )
+            }
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.clear)
+    }
+
+    
+    private func lockedPremiumButton(_ message: String) -> some View {
+        VStack(spacing: 8) {
+            Text(message)
+                .font(.subheadline)
+                .multilineTextAlignment(.center)
+                .foregroundColor(.gray)
+
+            Button("Découvrir Premium") {
+                showPremiumSheet = true
+            }
+            .padding(.vertical, 10)
+            .padding(.horizontal, 20)
+            .background(AppTheme.primaryButtonGradient)
+            .foregroundColor(.white)
+            .cornerRadius(12)
+        }
+        .background(
+            AppBackgroundDark()
+                .cornerRadius(16)
+        )
+    }
+
+
 }
 
 

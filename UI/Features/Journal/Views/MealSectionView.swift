@@ -17,6 +17,9 @@ struct MealSectionView: View {
     var onAddIngredients: () -> Void
     var onAddCustomFood: () -> Void
     var onDeleteEntry: (FoodEntry) -> Void
+    let isPremium: Bool
+    @Binding var showPremiumSheet: Bool
+
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -92,34 +95,49 @@ struct MealSectionView: View {
             
             // Boutons d'ajout avec design amélioré
             HStack(spacing: 0) {
+                // 📸 Photo
                 ActionButton(
-                    icon: "camera",
+                    icon: isPremium ? "camera" : "lock.fill",
                     text: "Photo",
-                    color: AppTheme.primaryPurple,
-                    action: onAddPhoto
+                    color: isPremium ? AppTheme.primaryPurple : .yellow,
+                    action: {
+                        if isPremium {
+                            onAddPhoto()
+                        } else {
+                            showPremiumSheet = true
+                        }
+                    }
                 )
-                
+
+                // 🧾 Code-barres
                 ActionButton(
-                    icon: "barcode.viewfinder",
+                    icon: isPremium ? "barcode.viewfinder" : "lock.fill",
                     text: "Code-barres",
-                    color: AppTheme.vibrantGreen,
-                    action: barcode
+                    color: isPremium ? AppTheme.vibrantGreen : .yellow,
+                    action: {
+                        if isPremium {
+                            barcode()
+                        } else {
+                            showPremiumSheet = true
+                        }
+                    }
                 )
-                
+
+                // Le reste ne change pas
                 ActionButton(
                     icon: "book",
                     text: "Recette",
                     color: AppTheme.primaryBlue,
                     action: onAddRecipe
                 )
-                
+
                 ActionButton(
                     icon: "list.bullet",
                     text: "Ingrédients",
                     color: Color(hex: "D4AF37"),
                     action: onAddIngredients
                 )
-                
+
                 ActionButton(
                     icon: "plus.circle",
                     text: "Personnalisé",
@@ -127,6 +145,7 @@ struct MealSectionView: View {
                     action: onAddCustomFood
                 )
             }
+
             .padding(.vertical, 12)
             .background(Color.gray.opacity(0.05))
             .cornerRadius(16)
@@ -163,6 +182,7 @@ struct ActionButton: View {
     let text: String
     let color: Color
     let action: () -> Void
+    
     
     var body: some View {
         Button(action: action) {

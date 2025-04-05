@@ -33,7 +33,8 @@ struct MainTabView: View {
                     } else if selectedTab == 1 {
                         JournalView()
                     } else if selectedTab == 2 {
-                        PlanningView()
+                        PlanningView(isTabBarVisible: $isTabBarVisible)
+
                     }
                 }
                 .animation(.easeInOut(duration: 0.3), value: selectedTab)

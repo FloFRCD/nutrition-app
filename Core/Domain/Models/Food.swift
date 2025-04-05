@@ -101,17 +101,15 @@ struct FoodEntry: Identifiable, Codable {
     
     // Calcul des valeurs nutritionnelles pour cette entrée
     var nutritionValues: NutritionValues {
-        let ratio = quantity / food.servingSize
-        
         return NutritionValues(
-            calories: Double(food.calories) * ratio,
-            proteins: food.proteins * ratio,
-            carbohydrates: food.carbs * ratio,
-            fats: food.fats * ratio,
-            fiber: food.fiber * ratio
+            calories: Double(Int(Double(food.calories) * quantity)),
+            proteins: food.proteins * quantity,
+            carbohydrates: food.carbs * quantity,
+            fats: food.fats * quantity,
+            fiber: food.fiber * quantity
         )
     }
-    
+
     // Ajoutez ces méthodes pour assurer la compatibilité avec le codage ISO8601 des dates
     enum CodingKeys: String, CodingKey {
         case id, food, quantity, date, mealType, source

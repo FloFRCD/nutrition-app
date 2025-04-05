@@ -10,38 +10,38 @@ import SwiftUI
 import CoreMotion
 
 
-//struct AppBackgroundDark: View {
-//    var body: some View {
-//        ZStack {
-//            // Fond principal noir
-//            Color.black.edgesIgnoringSafeArea(.all)
-//            
-//            // Blob effet 1 - violet avec flou
-//            Circle()
-//                .fill(AppTheme.primaryPurple.opacity(0.15))
-//                .frame(width: 300, height: 300)
-//                .blur(radius: 70)
-//                .offset(x: -100, y: -180)
-//                .blendMode(.lighten)
-//            
-//            // Blob effet 2 - bleu avec flou
-//            Circle()
-//                .fill(AppTheme.primaryBlue.opacity(0.15))
-//                .frame(width: 350, height: 350)
-//                .blur(radius: 80)
-//                .offset(x: 120, y: 200)
-//                .blendMode(.lighten)
-//            
-//            // Effet supplémentaire pour plus de profondeur
-//            Ellipse()
-//                .fill(AppTheme.lightPink.opacity(0.08))
-//                .frame(width: 250, height: 200)
-//                .blur(radius: 60)
-//                .offset(x: 50, y: -50)
-//                .blendMode(.overlay)
-//        }
-//    }
-//}
+struct AppBackgroundDark: View {
+    var body: some View {
+        ZStack {
+            // Fond principal noir
+            Color.black.edgesIgnoringSafeArea(.all)
+            
+            // Blob effet 1 - violet avec flou
+            Circle()
+                .fill(AppTheme.primaryPurple.opacity(0.15))
+                .frame(width: 300, height: 300)
+                .blur(radius: 70)
+                .offset(x: -100, y: -180)
+                .blendMode(.lighten)
+            
+            // Blob effet 2 - bleu avec flou
+            Circle()
+                .fill(AppTheme.logoBlue.opacity(0.15))
+                .frame(width: 350, height: 350)
+                .blur(radius: 80)
+                .offset(x: 120, y: 200)
+                .blendMode(.lighten)
+            
+            // Effet supplémentaire pour plus de profondeur
+            Ellipse()
+                .fill(AppTheme.logoYellow.opacity(0.08))
+                .frame(width: 250, height: 200)
+                .blur(radius: 60)
+                .offset(x: 50, y: -50)
+                .blendMode(.overlay)
+        }
+    }
+}
 
 //struct AppBackgroundLight: View {
 //    var body: some View {
@@ -72,6 +72,46 @@ import CoreMotion
 //        }
 //    }
 //}
+
+struct AnimatedCircleBackground: View {
+    @State private var animate = false
+
+    var body: some View {
+        ZStack {
+            ForEach(0..<10, id: \.self) { i in
+                Circle()
+                    .fill(randomGradient())
+                    .frame(width: CGFloat.random(in: 100...200))
+                    .offset(
+                        x: animate ? CGFloat.random(in: -150...150) : CGFloat.random(in: -200...200),
+                        y: animate ? CGFloat.random(in: -400...400) : CGFloat.random(in: -300...300)
+                    )
+                    .blur(radius: 40)
+                    .animation(
+                        Animation.easeInOut(duration: Double.random(in: 6...10))
+                            .repeatForever(autoreverses: true),
+                        value: animate
+                    )
+            }
+        }
+        .onAppear {
+            animate = true
+        }
+        .ignoresSafeArea()
+    }
+
+    func randomGradient() -> LinearGradient {
+        let colors = [
+            [Color.blue.opacity(0.3), Color.purple.opacity(0.3)],
+            [Color.green.opacity(0.3), Color.yellow.opacity(0.3)],
+            [Color.pink.opacity(0.3), Color.orange.opacity(0.3)]
+        ]
+        let selected = colors.randomElement() ?? [Color.white.opacity(0.2), Color.white.opacity(0.1)]
+        return LinearGradient(gradient: Gradient(colors: selected), startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+}
+
+
 
 struct DynamicBackground: View {
     var profileTab: ProfileTab

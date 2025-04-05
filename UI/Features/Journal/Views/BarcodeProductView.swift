@@ -236,7 +236,7 @@ struct BarcodeProductView: View {
         let entry = FoodEntry(
             id: UUID(),
             food: food,
-            quantity: quantityValue, // Division par 100 car les valeurs sont pour 100g/ml
+            quantity: quantityValue / 100.0,
             date: Date(),
             mealType: mealType,
             source: .barcode

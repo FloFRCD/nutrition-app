@@ -28,3 +28,28 @@ struct ContentView: View {
     }
 }
 
+
+struct MainPagesView: View {
+    @State private var selectedTab = 0
+    @State private var isTabBarVisible = true
+    @ObservedObject private var localDataManager = LocalDataManager.shared
+    @StateObject private var journalViewModel = JournalViewModel()
+
+    var body: some View {
+        TabView(selection: $selectedTab) {
+            HomeView()
+                .tag(0)
+                .environmentObject(journalViewModel)
+                .environmentObject(localDataManager)
+
+            JournalView()
+                .tag(1)
+
+            PlanningView(isTabBarVisible: $isTabBarVisible)
+                .tag(2)
+        }
+        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never)) // swipe horizontal
+        .ignoresSafeArea()
+    }
+}
+

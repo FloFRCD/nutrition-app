@@ -16,6 +16,8 @@ struct NextMealView: View {
     @State private var isExpanded = false
     @State private var currentIndex = 0
     @State private var showingRecipeDetail = false
+    @Binding var isTabBarVisible: Bool
+
     
     var body: some View {
         ZStack {
@@ -194,7 +196,7 @@ struct NextMealView: View {
     
     // Vue vide quand aucune recette n'est sauvegardée
     private var emptyView: some View {
-        NavigationLink(destination: PlanningView()) {
+        NavigationLink(destination: PlanningView(isTabBarVisible: $isTabBarVisible)) {
             HStack {
                 Spacer()
                 VStack(spacing: 8) {

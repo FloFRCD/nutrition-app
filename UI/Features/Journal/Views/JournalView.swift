@@ -15,6 +15,8 @@ struct JournalView: View {
     @State private var hasAppeared = false
     @State private var showCaloriesAlert = false
     @State private var caloriesInput: String = ""
+    @StateObject private var storeKitManager = StoreKitManager.shared
+    @State private var showPremiumSheet = false
     
     var body: some View {
         ZStack {
@@ -63,8 +65,21 @@ struct JournalView: View {
                                 mealType: mealType,
                                 entries: viewModel.entriesForMealType(mealType: mealType, date: viewModel.selectedDate),
                                 targetCalories: viewModel.targetCaloriesFor(mealType: mealType),
-                                onAddPhoto: { viewModel.showFoodPhotoCapture(for: mealType) },
-                                barcode: { viewModel.showBarcodeScanner(for: mealType)},
+                                onAddPhoto: {
+                                    if storeKitManager.effectiveSubscription != .free {
+                                        viewModel.showFoodPhotoCapture(for: mealType)
+                                    } else {
+                                        showPremiumSheet = true
+                                    }
+                                },
+                                barcode: {
+                                    if storeKitManager.effectiveSubscription != .free {
+                                        viewModel.showBarcodeScanner(for: mealType)
+                                    } else {
+                                        showPremiumSheet = true
+                                    }
+                                },
+
                                 onAddRecipe: { viewModel.showRecipeSelection(for: mealType) },
                                 onAddIngredients: { viewModel.showIngredientEntry(for: mealType) },
                                 onAddCustomFood: { viewModel.showCustomFoodEntry(for: mealType) },
@@ -72,7 +87,9 @@ struct JournalView: View {
                                     withAnimation {
                                         viewModel.removeFoodEntry(entry)
                                     }
-                                }
+                                },
+                                isPremium: storeKitManager.effectiveSubscription != .free,
+                                    showPremiumSheet: $showPremiumSheet
                             )
                         }
                         
@@ -172,6 +189,9 @@ struct JournalView: View {
             }
         .navigationTitle("Journal Alimentaire")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showPremiumSheet) {
+            PremiumView()
+        }
     }
     
     private func showBurnedCaloriesAlert() {

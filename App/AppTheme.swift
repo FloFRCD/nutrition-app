@@ -132,3 +132,38 @@ extension Color {
     }
 }
 
+struct PremiumGradientButton: View {
+    let title: String
+    let subtitle: String?
+    let gradient: LinearGradient
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline)
+                    .foregroundColor(.white)
+
+                if let subtitle = subtitle {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(AppTheme.cardBackground)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(gradient, lineWidth: 2)
+                    )
+            )
+            .shadow(color: .black.opacity(0.4), radius: 4, x: 0, y: 4)
+        }
+    }
+}
+
+

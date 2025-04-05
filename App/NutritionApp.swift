@@ -12,6 +12,7 @@ struct NutritionApp: App {
     @StateObject private var localDataManager = LocalDataManager.shared
     @StateObject private var storeKitManager = StoreKitManager.shared
     @StateObject private var nutritionService = NutritionService.shared
+    @State private var showSplash = true
     let persistenceController = PersistenceController.shared
     
     init() {
@@ -28,11 +29,15 @@ struct NutritionApp: App {
     var body: some Scene {
         WindowGroup {
             NavigationStack {
-                ContentView()
-                    .environmentObject(localDataManager)
-                    .environmentObject(storeKitManager)
-                    .environmentObject(nutritionService)
-                    .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                if showSplash {
+                    AnimatedSplashView(isActive: $showSplash)
+                } else {
+                    ContentView()
+                        .environmentObject(localDataManager)
+                        .environmentObject(storeKitManager)
+                        .environmentObject(nutritionService)
+                        .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                }
             }
             .tint(.black)
         }

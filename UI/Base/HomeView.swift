@@ -14,6 +14,8 @@ struct HomeView: View {
     @State private var isNutritionExpanded = false
     @State private var showingScanView = false
     @State private var isTabBarVisible = true
+    @StateObject private var storeKitManager = StoreKitManager.shared
+
     
     //bouton profil annimé
     @State private var playAnimation = false
@@ -114,7 +116,8 @@ struct HomeView: View {
                     ScrollView {
                         VStack(spacing: 15) {
                             // Carte de repas en blanc
-                            NextMealView()
+                            NextMealView(isTabBarVisible: $isTabBarVisible)
+
                                 .environmentObject(localDataManager)
                                 .background(Color.white)
                                 .cornerRadius(AppTheme.cardBorderRadius)
@@ -170,7 +173,12 @@ struct HomeView: View {
                 .toolbarBackground(.hidden, for: .navigationBar)
                 .toolbarColorScheme(.light, for: .navigationBar)
                 .tint(.black)
-            .navigationBarHidden(true)
+#if DEBUG
+.navigationBarHidden(false)
+#else
+.navigationBarHidden(true)
+#endif
+
             .onReceive(timer) { _ in
                 if !isUserInteracting {
                     currentScrollOffset += 0.15
@@ -195,6 +203,19 @@ struct HomeView: View {
             }
         }
         .preferredColorScheme(.light)
+        
+#if DEBUG
+.toolbar {
+    ToolbarItem(placement: .navigationBarLeading) {
+        Button {
+            let current = UserDefaults.standard.bool(forKey: "debug_premium_override")
+            UserDefaults.standard.set(!current, forKey: "debug_premium_override")
+        } label: {
+            Image(systemName: "wand.and.stars")
+        }
+    }
+}
+#endif
     }
 }
 
