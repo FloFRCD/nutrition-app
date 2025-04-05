@@ -140,6 +140,7 @@ class NutritionService: ObservableObject {
         let possibleNames = ["ciqual_data", "ciqual-data", "ciqual"]
         let possibleExtensions = ["json", "JSON"]
         
+        
         var fileLoaded = false
         
         // Essayer toutes les combinaisons
@@ -188,29 +189,31 @@ class NutritionService: ObservableObject {
     }
     
     func createFoodEntryFromCIQUAL(ciqualFood: CIQUALFood, quantity: Double, mealType: MealType) -> FoodEntry {
-        // Créer un objet Food à partir de CIQUALFood
+        let ratio = quantity / 100.0
+
         let food = Food(
             id: UUID(),
             name: ciqualFood.nom,
-            calories: Int(ciqualFood.energie_kcal ?? 0),
-            proteins: ciqualFood.proteines ?? 0,
-            carbs: ciqualFood.glucides ?? 0,
-            fats: ciqualFood.lipides ?? 0,
-            fiber: ciqualFood.fibres ?? 0,  // Vérifiez que cette ligne existe
+            calories: Int((ciqualFood.energie_kcal ?? 0) * ratio),
+            proteins: (ciqualFood.proteines ?? 0) * ratio,
+            carbs: (ciqualFood.glucides ?? 0) * ratio,
+            fats: (ciqualFood.lipides ?? 0) * ratio,
+            fiber: (ciqualFood.fibres ?? 0) * ratio,
             servingSize: 100,
             servingUnit: .gram,
             image: nil
         )
-        // Créer et retourner une FoodEntry
+
         return FoodEntry(
             id: UUID(),
             food: food,
-            quantity: quantity,
+            quantity: 1, // ⚠️ on laisse 1 car les valeurs sont déjà ajustées
             date: Date(),
             mealType: mealType,
-            source: .manual  // ou créer un nouveau type pour CIQUAL
+            source: .manual
         )
     }
+
     
     func addFoodEntry(_ foodEntry: FoodEntry) {
         // Charger les entrées existantes depuis LocalDataManager
