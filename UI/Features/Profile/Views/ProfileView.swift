@@ -639,7 +639,7 @@ struct ProfileView: View {
             ProfileCardView(title: "Suggestion", icon: "lightbulb.fill") {
                 NavigationLink(destination: SuggestionView()) {
                     HStack {
-                        Text("Suggérer une amélioration")
+                        Text("Suggestion d'amélioration ou report de bug")
                             .font(.subheadline)
                         Spacer()
                         Image(systemName: "chevron.right")
@@ -647,6 +647,20 @@ struct ProfileView: View {
                             .foregroundColor(.gray)
                     }
                     .padding(.vertical, 8)
+                    
+                }
+                
+                NavigationLink(destination: ReportingBugView()) {
+                    HStack {
+                        Text("Signaler un bug")
+                            .font(.subheadline)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                    .padding(.vertical, 8)
+                    
                 }
             }
 

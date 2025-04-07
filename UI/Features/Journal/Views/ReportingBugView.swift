@@ -1,24 +1,25 @@
 //
-//  SuggestionView.swift
+//  ReportingBugView.swift
 //  nutrition-app
 //
-//  Created by Florian Fourcade on 04/04/2025.
+//  Created by Florian Fourcade on 07/04/2025.
 //
 
 import Foundation
 import SwiftUI
 import MessageUI
 
-struct SuggestionView: View {
+
+struct ReportingBugView: View {
     @State private var showMail = false
     @State private var showAlert = false
 
     var body: some View {
         
-        Image(systemName: "lightbulb")
+        Image(systemName: "ladybug")
             .resizable()
-            .frame(width: 48, height: 75)
-            .foregroundColor(AppTheme.logoYellow)
+            .frame(width: 75, height: 75)
+            .foregroundColor(Color.red)
             .multilineTextAlignment(.center)
             .padding(.top)
         
@@ -27,7 +28,7 @@ struct SuggestionView: View {
         VStack(alignment: .leading, spacing: 24) {
             
 
-            Text("Tu as une idée ou un retour pour améliorer NutrIA ? Appuie sur le bouton ci-dessous pour nous envoyer un message directement par mail.")
+            Text("Tu rencontre un bug ? Appuie sur le bouton ci-dessous pour nous envoyer un message directement par mail.")
                 .font(.body)
                 .foregroundColor(.secondary)
 
@@ -38,7 +39,7 @@ struct SuggestionView: View {
                     showAlert = true
                 }
             }) {
-                Text("Envoyer une suggestion")
+                Text("Signaler")
                     .font(.headline)
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -50,11 +51,11 @@ struct SuggestionView: View {
             Spacer()
         }
         .padding()
-        .navigationTitle("Suggestion")
+        .navigationTitle("Signaler un bug")
         .sheet(isPresented: $showMail) {
             MailView(
                 recipients: ["Suggestions.Nutria@proton.me"],
-                subject: "Suggestion utilisateur NutrIA iOS",
+                subject: "BUG utilisateur NutrIA iOS",
                 body: ""
             )
         }
@@ -63,4 +64,3 @@ struct SuggestionView: View {
         }
     }
 }
-
