@@ -636,10 +636,10 @@ struct ProfileView: View {
             }
 
             // Suggestion
-            ProfileCardView(title: "Suggestion", icon: "lightbulb.fill") {
+            ProfileCardView(title: "Contact", icon: "envelope.fill") {
                 NavigationLink(destination: SuggestionView()) {
                     HStack {
-                        Text("Suggestion d'amélioration ou report de bug")
+                        Text("Suggestion d'amélioration")
                             .font(.subheadline)
                         Spacer()
                         Image(systemName: "chevron.right")

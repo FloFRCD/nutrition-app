@@ -69,7 +69,7 @@ struct HomeView: View {
                         Button {
                             
                             playAnimation = true
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                                 isTabBarVisible = false
                                 showProfile = true
                             }

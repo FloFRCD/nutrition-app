@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0B29A3952DA5959000AD4920 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 0B29A3942DA5959000AD4920 /* RevenueCat */; };
 		0B538CE72D9D0FF6008F899B /* profile-animation.json in Resources */ = {isa = PBXBuildFile; fileRef = 0B538CE62D9D0FF6008F899B /* profile-animation.json */; };
 		0B538CE92D9D0FFB008F899B /* ProfileIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B538CE82D9D0FFB008F899B /* ProfileIconView.swift */; };
 		0B538CEB2D9D10D5008F899B /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 0B538CEA2D9D10D5008F899B /* Lottie */; };
@@ -85,6 +86,7 @@
 			files = (
 				0B897BA42D9D859100FD6C18 /* DGCharts in Frameworks */,
 				0B538CEB2D9D10D5008F899B /* Lottie in Frameworks */,
+				0B29A3952DA5959000AD4920 /* RevenueCat in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -157,6 +159,7 @@
 			packageProductDependencies = (
 				0B538CEA2D9D10D5008F899B /* Lottie */,
 				0B897BA32D9D859100FD6C18 /* DGCharts */,
+				0B29A3942DA5959000AD4920 /* RevenueCat */,
 			);
 			productName = "nutrition-app";
 			productReference = 0B2F71852D65FB1D0025DC01 /* nutrition-app.app */;
@@ -237,6 +240,7 @@
 			packageReferences = (
 				0B538CE52D9D0F96008F899B /* XCRemoteSwiftPackageReference "lottie-ios" */,
 				0B897BA22D9D859100FD6C18 /* XCRemoteSwiftPackageReference "Charts" */,
+				0B29A3932DA594E100AD4920 /* XCRemoteSwiftPackageReference "purchases-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F187FF3D2D64C41A0040996A;
@@ -445,6 +449,9 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Nutria;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "NutrIA nécessite l'accès à l'appareil photo pour analyser vos repas et calculer les valeurs nutritionnelles.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "Pour animer l'arrière-plan en fonction du mouvement";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "NutrIA nécessite l'accès à vos photos pour analyser vos repas et calculer les valeurs nutritionnelles.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -453,7 +460,8 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
@@ -487,6 +495,9 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Nutria;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "NutrIA nécessite l'accès à l'appareil photo pour analyser vos repas et calculer les valeurs nutritionnelles.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "Pour animer l'arrière-plan en fonction du mouvement";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "NutrIA nécessite l'accès à vos photos pour analyser vos repas et calculer les valeurs nutritionnelles.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -495,7 +506,8 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
@@ -641,6 +653,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		0B29A3932DA594E100AD4920 /* XCRemoteSwiftPackageReference "purchases-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.21.0;
+			};
+		};
 		0B538CE52D9D0F96008F899B /* XCRemoteSwiftPackageReference "lottie-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/airbnb/lottie-ios.git";
@@ -660,6 +680,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		0B29A3942DA5959000AD4920 /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B29A3932DA594E100AD4920 /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCat;
+		};
 		0B538CEA2D9D10D5008F899B /* Lottie */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 0B538CE52D9D0F96008F899B /* XCRemoteSwiftPackageReference "lottie-ios" */;

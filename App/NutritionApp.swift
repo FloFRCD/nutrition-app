@@ -5,6 +5,7 @@
 //  Created by Florian Fourcade on 18/02/2025.
 //
 import SwiftUI
+import RevenueCat
 
 @main
 struct NutritionApp: App {
@@ -24,6 +25,9 @@ struct NutritionApp: App {
             UINavigationBar.appearance().standardAppearance = appearance
             UINavigationBar.appearance().scrollEdgeAppearance = appearance
             UINavigationBar.appearance().tintColor = UIColor.black
+        
+        Purchases.logLevel = .debug // facultatif
+        Purchases.configure(withAPIKey: "appl_eUkrIamUmldMUFfhqIGDCEQOGvk")
         }
     
     var body: some Scene {

@@ -7,40 +7,31 @@
 
 import Foundation
 import StoreKit
+import RevenueCat
 
 @MainActor
 class PremiumViewModel: ObservableObject {
-    @Published var products: [Product] = []
-
+    @Published var offerings: Offerings?
+    
     func loadProducts() async {
         do {
-            let ids = PremiumProductID.allCases.map { $0.rawValue }
-            products = try await Product.products(for: ids)
+            offerings = try await Purchases.shared.offerings()
         } catch {
-            print("❌ Erreur de chargement des produits : \(error)")
+            print("❌ Erreur chargement offerings RevenueCat : \(error)")
         }
     }
 
-    func purchase(product: Product) async {
+    func purchase(package: Package) async {
         do {
-            let result = try await product.purchase()
-            switch result {
-            case .success(let verification):
-                if case .verified(_) = verification {
-                    print("✅ Achat vérifié")
-                    await SubscriptionManager.shared.refreshSubscriptionStatus()
-                } else {
-                    print("❌ Achat non vérifié")
-                }
-            case .userCancelled:
-                print("❌ Achat annulé")
-            case .pending:
-                print("⏳ Achat en attente")
-            default:
-                break
+            let result = try await Purchases.shared.purchase(package: package)
+            if result.customerInfo.entitlements.all["premium"]?.isActive == true {
+                print("✅ Abonnement actif via RevenueCat")
+                // Met à jour ton app en conséquence
+            } else {
+                print("❌ Abonnement non actif")
             }
         } catch {
-            print("❌ Erreur d'achat : \(error)")
+            print("❌ Erreur d’achat RevenueCat : \(error)")
         }
     }
 }

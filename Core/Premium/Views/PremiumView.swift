@@ -11,6 +11,7 @@ struct PremiumView: View {
     
     @Environment(\.dismiss) var dismiss
     @StateObject private var viewModel = PremiumViewModel()
+    
 
     
     var body: some View {
@@ -41,7 +42,7 @@ struct PremiumView: View {
                     .padding(.top, 8)
                 
                 // Accroche
-                Text("L’expérience ultime pour ceux qui veulent le meilleur.")
+                Text("Pour ceux qui veulent le meilleur")
                     .font(.body)
                     .foregroundColor(AppTheme.secondaryText)
                     .multilineTextAlignment(.center)
@@ -54,7 +55,7 @@ struct PremiumView: View {
                 // Boutons d’abonnement
                 VStack(spacing: 16) {
                     PremiumGradientButton(
-                        title: "1,50€ / semaine",
+                        title: "1,49€ / semaine",
                         subtitle: "Abonnement flexible, sans engagement",
                         gradient: LinearGradient(
                             gradient: Gradient(colors: [AppTheme.logoPurple, AppTheme.primaryBlue]),
@@ -62,8 +63,8 @@ struct PremiumView: View {
                         ),
                         action: {
                             Task {
-                                if let product = viewModel.products.first(where: { $0.id == PremiumProductID.weekly.rawValue }) {
-                                    await viewModel.purchase(product: product)
+                                if let package = viewModel.offerings?.current?.weekly {
+                                    await viewModel.purchase(package: package)
                                 }
                             }
                         }
@@ -79,8 +80,8 @@ struct PremiumView: View {
                         ),
                         action: {
                             Task {
-                                if let product = viewModel.products.first(where: { $0.id == PremiumProductID.monthly.rawValue }) {
-                                    await viewModel.purchase(product: product)
+                                if let package = viewModel.offerings?.current?.monthly {
+                                    await viewModel.purchase(package: package)
                                 }
                             }
                         }
@@ -88,16 +89,16 @@ struct PremiumView: View {
                     )
                     
                     PremiumGradientButton(
-                        title: "40€ / an",
-                        subtitle: "Économisez 33% (au lieu de 59,88€)",
+                        title: "44,99€ / an",
+                        subtitle: "Économisez 25% (au lieu de 59,88€)",
                         gradient: LinearGradient(
                             gradient: Gradient(colors: [AppTheme.vibrantGreen, AppTheme.lightYellow]),
                             startPoint: .leading, endPoint: .trailing
                         ),
                         action: {
                             Task {
-                                if let product = viewModel.products.first(where: { $0.id == PremiumProductID.yearly.rawValue }) {
-                                    await viewModel.purchase(product: product)
+                                if let package = viewModel.offerings?.current?.annual {
+                                    await viewModel.purchase(package: package)
                                 }
                             }
                         }
