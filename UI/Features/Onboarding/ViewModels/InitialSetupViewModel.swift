@@ -75,7 +75,7 @@ class InitialSetupViewModel: ObservableObject {
             bodyFatPercentage: self.bodyFatPercentage,
             fitnessGoal: self.fitnessGoal,
             activityLevel: self.calculatedActivityLevel,
-            dietaryRestrictions: self.dietaryRestriction.map { $0.rawValue },
+            dietaryRestrictions: self.dietaryRestriction.map { $0.displayName },
             activityDetails: ActivityDetails(
                 exerciseDaysPerWeek: self.exerciseDaysPerWeek,
                 exerciseDuration: self.exerciseDuration,

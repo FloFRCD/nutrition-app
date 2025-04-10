@@ -10,6 +10,10 @@
 	<string>NutrIA nécessite l&apos;accès à vos photos pour analyser vos repas et calculer les valeurs nutritionnelles.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>Pour animer l&apos;arrière-plan en fonction du mouvement</string>
+	<key>CFBundleIdentifier</key>
+	<string></string>
+	<key>OPENAI_API_KEY</key>
+	<string>$(OPENAI_API_KEY)</string>
 	<key>CFBundleIconName</key>
 	<string>AppIcon</string>
 	<key>UISupportedInterfaceOrientations~ipad</key>

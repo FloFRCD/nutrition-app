@@ -11,7 +11,14 @@ import StoreKit
 
 class AIService {
     static let shared = AIService()
-    private let apiKey = "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"
+    private var apiKey: String {
+        guard let key = Bundle.main.infoDictionary?["OPENAI_API_KEY"] as? String else {
+            fatalError("❌ Clé API OpenAI non trouvée dans Info.plist.")
+        }
+        return key
+    }
+
+
     private let cacheKey = "nutrition_cache"
     
     private func callChatGPT(prompt: String, model: String = "gpt-3.5-turbo") async throws -> String {

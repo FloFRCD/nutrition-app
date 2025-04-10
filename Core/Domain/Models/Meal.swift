@@ -48,12 +48,103 @@ struct Meal: Identifiable, Codable {
 }
 
 // Enum pour les restrictions alimentaires
-enum DietaryRestriction: String, Codable, CaseIterable {
-    case vegetarian = "Végétarien"
-    case vegan = "Végétalien"
-    case glutenFree = "Sans gluten"
-    case lactoseFree = "Sans lactose"
+enum DietaryRestriction: Codable, Hashable {
+    case vegetarian
+    case vegan
+    case glutenFree
+    case lactoseFree
+    case sugarFree
+    case diabete1
+    case diabete2
+    case other(String)
+
+    var displayName: String {
+        switch self {
+        case .vegetarian: return "Végétarien"
+        case .vegan: return "Végétalien"
+        case .glutenFree: return "Sans gluten"
+        case .lactoseFree: return "Sans lactose"
+        case .sugarFree: return "Sans sucre"
+        case .diabete1: return "Diabète de type 1"
+        case .diabete2: return "Diabète de type 2"
+        case .other(let value): return value.isEmpty ? "Autre" : value
+        }
+    }
+
+    // Simule CaseIterable (pour un Picker ou liste fixe)
+    static var predefinedCases: [DietaryRestriction] {
+        [.vegetarian, .vegan, .glutenFree, .lactoseFree, .diabete1, .diabete2]
+    }
 }
+
+extension DietaryRestriction {
+    enum CodingKeys: String, CodingKey {
+        case type
+        case value
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(String.self, forKey: .type)
+
+        switch type {
+        case "vegetarian": self = .vegetarian
+        case "vegan": self = .vegan
+        case "glutenFree": self = .glutenFree
+        case "lactoseFree": self = .lactoseFree
+        case "sugarFree": self = .sugarFree
+        case "diabete1": self = .diabete1
+        case "diabete2": self = .diabete2
+        case "other":
+            let value = try container.decode(String.self, forKey: .value)
+            self = .other(value)
+        default:
+            self = .other(type)
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        switch self {
+        case .vegetarian:
+            try container.encode("vegetarian", forKey: .type)
+        case .vegan:
+            try container.encode("vegan", forKey: .type)
+        case .glutenFree:
+            try container.encode("glutenFree", forKey: .type)
+        case .lactoseFree:
+            try container.encode("lactoseFree", forKey: .type)
+        case .sugarFree:
+            try container.encode("sugarFree", forKey: .type)
+        case .diabete1:
+            try container.encode("diabete1", forKey: .type)
+        case .diabete2:
+            try container.encode("diabete2", forKey: .type)
+        case .other(let value):
+            try container.encode("other", forKey: .type)
+            try container.encode(value, forKey: .value)
+        }
+    }
+}
+
+extension DietaryRestriction {
+    static func from(string: String) -> DietaryRestriction {
+        switch string.lowercased() {
+        case "végétarien", "vegetarian": return .vegetarian
+        case "végétalien", "vegan": return .vegan
+        case "sans gluten", "glutenfree": return .glutenFree
+        case "sans lactose", "lactosefree": return .lactoseFree
+        case "sans sucre", "sugarfree": return .sugarFree
+        case "diabète de type 1", "diabete1": return .diabete1
+        case "diabète de type 2", "diabete2": return .diabete2
+        default: return .other(string)
+        }
+    }
+}
+
+
+
 
 struct MealPreferences: Codable {
     var bannedIngredients: [String]
@@ -63,6 +154,9 @@ struct MealPreferences: Codable {
     var mealTypes: [MealType]
     var recipesPerType: Int
     var userProfile: UserProfile
+    var otherRestriction: String?
+
+    
     
     init(bannedIngredients: [String] = [],
          preferredIngredients: [String] = [],
@@ -70,7 +164,8 @@ struct MealPreferences: Codable {
          dietaryRestrictions: [DietaryRestriction] = [],
          mealTypes: [MealType] = [],
          recipesPerType: Int = 2,
-         userProfile: UserProfile) {
+         userProfile: UserProfile,
+         otherRestriction: String = "") {
         
         self.bannedIngredients = bannedIngredients
         self.preferredIngredients = preferredIngredients
@@ -79,25 +174,30 @@ struct MealPreferences: Codable {
         self.mealTypes = mealTypes
         self.recipesPerType = recipesPerType
         self.userProfile = userProfile
-        
+
+        // Intégration des restrictions utilisateur au bon format
         if !userProfile.dietaryRestrictions.isEmpty {
             var updatedRestrictions = self.dietaryRestrictions
-            
+
             for restriction in userProfile.dietaryRestrictions {
-                if let dietaryrestrictions = DietaryRestriction(rawValue: restriction) {
-                    if !updatedRestrictions.contains(dietaryrestrictions) {
-                        updatedRestrictions.append(dietaryrestrictions)
+                let parsed = DietaryRestriction.from(string: restriction)
+                
+                if case .other(let value) = parsed, DietaryRestriction.predefinedCases.contains(where: { $0.displayName == value }) == false {
+                    // S'assurer qu'on n'ajoute pas une valeur déjà dans les restrictions prédéfinies
+                    if !self.bannedIngredients.contains(value) {
+                        self.bannedIngredients.append(value)
                     }
                 } else {
-                    if !self.bannedIngredients.contains(restriction) {
-                        self.bannedIngredients.append(restriction)
+                    if !updatedRestrictions.contains(parsed) {
+                        updatedRestrictions.append(parsed)
                     }
                 }
             }
-            
+
             self.dietaryRestrictions = updatedRestrictions
         }
     }
+
     
     var aiPromptFormat: String {
         let recipesPerType = self.recipesPerType
@@ -106,6 +206,14 @@ struct MealPreferences: Codable {
             bulletPoints += "- \(recipesPerType) plats de \(mealType.rawValue)\n"
         }
         
+        let restrictionList = dietaryRestrictions.map { $0.displayName }
+        var fullRestrictions = restrictionList
+
+        if let other = otherRestriction, !other.trimmingCharacters(in: .whitespaces).isEmpty {
+            fullRestrictions.append(other)
+        }
+        let restrictionsText = fullRestrictions.joined(separator: ", ")
+
         // Utilisation du NutritionCalculator pour obtenir le texte nutritionnel cohérent
         let nutritionalText = NutritionCalculator.shared.generateNutritionalPromptText(for: userProfile)
         
@@ -118,18 +226,19 @@ struct MealPreferences: Codable {
         Verifie qu'il y a bien 12 plats au total.
         
         
-        PROFIL UTILISATEUR:
-        - Age: \(userProfile.age) ans
-        - Sexe: \(userProfile.gender.rawValue)
-        - Poids actuel: \(userProfile.weight) kg
-        - Taille: \(userProfile.height) cm
-        - Objectif: \(userProfile.fitnessGoal.rawValue)
-        - Niveau d'activité: \(userProfile.activityLevel.rawValue)
+        //        PROFIL UTILISATEUR:
+        //        - Age: \(userProfile.age) ans
+        //        - Sexe: \(userProfile.gender.rawValue)
+        //        - Poids actuel: \(userProfile.weight) kg
+        //        - Taille: \(userProfile.height) cm
+        //        - Objectif: \(userProfile.fitnessGoal.rawValue)
+        //        - Niveau d'activité: \(userProfile.activityLevel.rawValue)
+        //        
         
         CONTRAINTES SUPPLÉMENTAIRES:
-        - Restrictions alimentaires: \(dietaryRestrictions.map { $0.rawValue }.joined(separator: ", "))
-        - Ingrédients à éviter: \(bannedIngredients.joined(separator: ", "))
-        - Ingrédients préférés: \(preferredIngredients.joined(separator: ", "))
+        - Restrictions alimentaires: \(restrictionsText)
+        - Ingrédients à ne surtout pas utiliser : \(bannedIngredients.joined(separator: ", "))
+        - Ingrédients à utiliser en priorité : \(preferredIngredients.joined(separator: ", "))
         
         \(nutritionalText)
         
@@ -303,3 +412,5 @@ struct PlannedMeal: Codable, Identifiable {
         self.guests = guests
     }
 }
+
+

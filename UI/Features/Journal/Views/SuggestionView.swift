@@ -14,42 +14,45 @@ struct SuggestionView: View {
     @State private var showAlert = false
 
     var body: some View {
-        
-        Image(systemName: "lightbulb")
-            .resizable()
-            .frame(width: 48, height: 75)
-            .foregroundColor(AppTheme.logoYellow)
-            .multilineTextAlignment(.center)
-            .padding(.top)
-        
-        Spacer()
-        
-        VStack(alignment: .leading, spacing: 24) {
-            
+        VStack {
+            Image(systemName: "lightbulb")
+                .resizable()
+                .frame(width: 48, height: 75)
+                .foregroundColor(AppTheme.logoYellow)
+                .padding(.top)
 
-            Text("Tu as une idée ou un retour pour améliorer NutrIA ? Appuie sur le bouton ci-dessous pour nous envoyer un message directement par mail.")
-                .font(.body)
-                .foregroundColor(.secondary)
-
-            Button(action: {
-                if MFMailComposeViewController.canSendMail() {
-                    showMail = true
-                } else {
-                    showAlert = true
-                }
-            }) {
-                Text("Envoyer une suggestion")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(AppTheme.accent)
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
-            }
+            Text("Une idée pour améliorer NutrIA ? 💡")
+                .font(.title3)
+                .bold()
+                .padding(.top, 8)
 
             Spacer()
+
+            VStack(alignment: .leading, spacing: 24) {
+                Text("Tu as une idée ou un retour pour améliorer NutrIA ? Appuie sur le bouton ci-dessous pour nous envoyer un message directement par mail.")
+                    .font(.body)
+                    .foregroundColor(.secondary)
+
+                Button(action: {
+                    if MFMailComposeViewController.canSendMail() {
+                        showMail = true
+                    } else {
+                        showAlert = true
+                    }
+                }) {
+                    Text("Envoyer une suggestion")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(AppTheme.accent)
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
+                }
+
+                Spacer()
+            }
+            .padding()
         }
-        .padding()
         .navigationTitle("Suggestion")
         .sheet(isPresented: $showMail) {
             MailView(
@@ -63,4 +66,5 @@ struct SuggestionView: View {
         }
     }
 }
+
 

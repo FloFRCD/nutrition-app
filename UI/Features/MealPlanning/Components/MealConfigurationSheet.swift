@@ -15,6 +15,17 @@ struct MealConfigurationSheet: View {
     @State private var newBannedIngredient = ""
     @State private var newPreferredIngredient = ""
     @State private var selectedMealTypes: Set<MealType>
+    @State private var otherRestriction: String = ""
+    
+    @EnvironmentObject var storeKit: StoreKitManager
+
+    var isPremiumUser: Bool {
+        storeKit.effectiveSubscription != .free
+    }
+
+
+
+
 
     private let totalSuggestions = 12
     let onGenerate: (MealPreferences) -> Void
@@ -32,7 +43,6 @@ struct MealConfigurationSheet: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Top bar
             HStack {
                 Button("Annuler") { dismiss() }
                 Spacer()
@@ -49,43 +59,14 @@ struct MealConfigurationSheet: View {
 
             ScrollView {
                 VStack(spacing: 20) {
-                    sectionCard(title: "Repas à générer") {
-                        ForEach(MealType.allCases, id: \.self) { mealType in
-                            Toggle(mealType.rawValue, isOn: Binding(
-                                get: { selectedMealTypes.contains(mealType) },
-                                set: { isOn in
-                                    if isOn {
-                                        selectedMealTypes.insert(mealType)
-                                    } else {
-                                        selectedMealTypes.remove(mealType)
-                                    }
-                                    preferences.mealTypes = Array(selectedMealTypes)
-                                }
-                            ))
-                        }
-
-                        if !selectedMealTypes.isEmpty {
-                            Text("Recettes par type: \(recipesPerType)")
-                                .font(.footnote)
-                                .foregroundColor(.secondary)
-                                .padding(.top, 4)
-                        }
-                    }
-
-                    sectionCard(title: "Restrictions alimentaires") {
-                        ForEach(DietaryRestriction.allCases, id: \.self) { restriction in
-                            Toggle(restriction.rawValue, isOn: Binding(
-                                get: { preferences.dietaryRestrictions.contains(restriction) },
-                                set: { isOn in
-                                    if isOn {
-                                        preferences.dietaryRestrictions.append(restriction)
-                                    } else {
-                                        preferences.dietaryRestrictions.removeAll { $0 == restriction }
-                                    }
-                                }
-                            ))
-                        }
-                    }
+                    mealTypeSection()
+                    restrictionSection(isPremiumUser: storeKit.effectiveSubscription != .free)
+                    
+                    IngredientListSection(
+                        title: "Ingrédients à utiliser",
+                        text: $newPreferredIngredient,
+                        list: $preferences.preferredIngredients
+                    )
 
                     IngredientListSection(
                         title: "Ingrédients bannis",
@@ -93,11 +74,6 @@ struct MealConfigurationSheet: View {
                         list: $preferences.bannedIngredients
                     )
 
-                    IngredientListSection(
-                        title: "Ingrédients préférés",
-                        text: $newPreferredIngredient,
-                        list: $preferences.preferredIngredients
-                    )
                 }
                 .padding()
             }
@@ -105,6 +81,7 @@ struct MealConfigurationSheet: View {
         }
         .presentationDetents([.large])
     }
+
 
     @ViewBuilder
     private func sectionCard<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
@@ -117,7 +94,87 @@ struct MealConfigurationSheet: View {
         }
         .padding()
         .background(RoundedRectangle(cornerRadius: 16).fill(Color.white))
-        .shadow(color: AppTheme.logoGreen.opacity(0.2), radius: 6, x: 0, y: 4)
+        .shadow(color: Color.black.opacity(0.2), radius: 6, x: 0, y: 4)
+    }
+    @ViewBuilder
+    private func mealTypeSection() -> some View {
+        sectionCard(title: "Repas à générer") {
+            ForEach(MealType.allCases, id: \.self) { mealType in
+                Toggle(mealType.rawValue, isOn: Binding(
+                    get: { selectedMealTypes.contains(mealType) },
+                    set: { isOn in
+                        if isOn {
+                            selectedMealTypes.insert(mealType)
+                        } else {
+                            selectedMealTypes.remove(mealType)
+                        }
+                        preferences.mealTypes = Array(selectedMealTypes)
+                    }
+                ))
+            }
+
+            if !selectedMealTypes.isEmpty {
+                Text("Recettes par type: \(recipesPerType)")
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+                    .padding(.top, 4)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func restrictionSection(isPremiumUser: Bool) -> some View {
+        sectionCard(title: "Restrictions alimentaires") {
+            
+            ForEach(DietaryRestriction.predefinedCases, id: \.self) { restriction in
+                Toggle(restriction.displayName, isOn: Binding(
+                    get: { preferences.dietaryRestrictions.contains(restriction) },
+                    set: { isOn in
+                        if isOn {
+                            preferences.dietaryRestrictions.append(restriction)
+                        } else {
+                            preferences.dietaryRestrictions.removeAll { $0 == restriction }
+                        }
+                    }
+                ))
+            }
+            Text(isPremiumUser ? "Autres" : "Autres (Premium)")
+                .font(.headline)
+            
+            if isPremiumUser {
+                TextField("Ex: Allergie aux arachides", text: Binding(
+                    get: { preferences.otherRestriction ?? "" },
+                    set: { preferences.otherRestriction = $0 }
+                ))
+                .padding(10)
+                .background(Color(.systemGray6))
+                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.gray.opacity(0.4), lineWidth: 1)
+                )
+            } else {
+                HStack {
+                    Image(systemName: "lock.fill")
+                        .foregroundColor(.gray)
+                    Text("Exclusif Premium")
+                        .foregroundColor(.gray)
+                    Spacer()
+                }
+                .padding(.horizontal, 12)
+                .frame(height: 40)
+                .background(Color(UIColor.systemGray6))
+                .cornerRadius(8)
+            }
+            
+            if !isPremiumUser {
+                Text("🔒 Disponible uniquement pour les membres Premium")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                    .padding(.top, 4)
+            }
+            
+        }
     }
 }
 
@@ -153,6 +210,6 @@ struct IngredientListSection: View {
         }
         .padding()
         .background(RoundedRectangle(cornerRadius: 16).fill(Color.white))
-        .shadow(color: AppTheme.logoGreen.opacity(0.2), radius: 6, x: 0, y: 4)
+        .shadow(color: Color.black.opacity(0.1), radius: 6, x: 0, y: 4)
     }
 }

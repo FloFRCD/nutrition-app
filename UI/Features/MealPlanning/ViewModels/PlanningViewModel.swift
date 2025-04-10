@@ -73,8 +73,13 @@ class PlanningViewModel: ObservableObject {
             }
             
             // Appel à l'API avec les préférences modifiées
+            let isPremium = StoreKitManager.shared.effectiveSubscription != .free
+
+            let model = isPremium ? "gpt-4o-mini" : "gpt-3.5-turbo"
+
             let jsonString = try await aiService.generateMealPlan(
-                prompt: modifiedPreferences.aiPromptFormat
+                prompt: modifiedPreferences.aiPromptFormat,
+                model: model
             )
                
                print("\n=== DÉBUT DU DEBUG ===")

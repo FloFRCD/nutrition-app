@@ -17,36 +17,44 @@ struct LifestylePage: View {
             Text("Votre mode de vie")
                 .font(.title2)
                 .bold()
-            
+
             VStack(alignment: .leading, spacing: 20) {
                 Text("Niveau d'activité")
                     .font(.headline)
-                
+
                 Picker("Niveau d'activité", selection: $activityLevel) {
                     ForEach(ActivityLevel.allCases, id: \.self) { level in
                         Text(level.rawValue).tag(level)
                     }
                 }
                 .pickerStyle(.segmented)
-                
-                Text("Préférences alimentaires")
-                    .font(.headline)
-                
-                ForEach(DietaryRestriction.allCases, id: \.self) { preference in
-                    Toggle(preference.rawValue, isOn: Binding(
-                        get: { dietaryRestriction.contains(preference) },
-                        set: { isOn in
-                            if isOn {
-                                dietaryRestriction.append(preference)
-                            } else {
-                                dietaryRestriction.removeAll { $0 == preference }
-                            }
-                        }
-                    ))
-                }
+
+                dietaryRestrictionSection()
             }
             .padding()
         }
         .padding()
     }
+    
+    @ViewBuilder
+    private func dietaryRestrictionSection() -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Préférences alimentaires")
+                .font(.headline)
+
+            ForEach(DietaryRestriction.predefinedCases, id: \.self) { preference in
+                Toggle(preference.displayName, isOn: Binding(
+                    get: { dietaryRestriction.contains(preference) },
+                    set: { isOn in
+                        if isOn {
+                            dietaryRestriction.append(preference)
+                        } else {
+                            dietaryRestriction.removeAll { $0 == preference }
+                        }
+                    }
+                ))
+            }
+        }
+    }
+
 }
