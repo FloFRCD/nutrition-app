@@ -18,7 +18,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         return true
     }
 
-    // 💥 Ajoute cette méthode pour bloquer l'orientation
+    // méthode pour bloquer l'orientation
     func application(_ application: UIApplication,
                      supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
         return .portrait
@@ -32,7 +32,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // Configuration des notifications
     }
 }
-
 
 
 

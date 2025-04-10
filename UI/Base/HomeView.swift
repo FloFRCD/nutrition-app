@@ -15,11 +15,14 @@ struct HomeView: View {
     @State private var showingScanView = false
     @State private var isTabBarVisible = true
     @StateObject private var storeKitManager = StoreKitManager.shared
+    
+    @State private var selectedTab = 0
 
     
     //bouton profil annimé
     @State private var playAnimation = false
     @State private var showProfile = false
+    
 
     
     // États pour le défilement automatique
@@ -145,11 +148,11 @@ struct HomeView: View {
                         Color.black.opacity(0.7)
                             .ignoresSafeArea()
                             .onTapGesture {
-                                withAnimation {
+                                withAnimation(.easeInOut(duration: 0.3)) {
                                     isNutritionExpanded = false
                                 }
                             }
-                        
+
                         ExpandedView(
                             needs: NutritionCalculator.shared.calculateNeeds(for: profile),
                             isExpanded: $isNutritionExpanded
@@ -160,10 +163,12 @@ struct HomeView: View {
                         .shadow(color: Color.black.opacity(0.1), radius: 15)
                         .padding(.horizontal)
                         .foregroundColor(.black)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .zIndex(10)
                     }
-                    .transition(.opacity)
-                    .zIndex(1)
+                    .animation(.easeInOut(duration: 0.3), value: isNutritionExpanded)
                 }
+
             }
             .navigationDestination(isPresented: $showProfile) {
                 ProfileView(isTabBarVisible: $isTabBarVisible)

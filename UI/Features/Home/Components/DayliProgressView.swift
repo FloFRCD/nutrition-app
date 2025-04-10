@@ -435,6 +435,7 @@ struct ExpandedView: View {
     
     
     
+    
     var body: some View {
         let consumedNutrition = journalViewModel.totalNutritionForDate(selectedDate)
         
@@ -442,7 +443,7 @@ struct ExpandedView: View {
         return VStack(spacing: 20) {
             // Header
             HStack {
-                Text("Nutrition")
+                Text("Objectifs nutritionnels")
                     .font(.title2)
                     .bold()
                 Spacer()
@@ -520,8 +521,10 @@ struct ExpandedView: View {
                         maintenance: "\(Int(needs.fiber.rounded()))g",
                         color: .green
                     )
+                    Spacer().frame(height: 90)
                 }
             }
+        
         }
         .padding()
         .scrollIndicators(.hidden)

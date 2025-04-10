@@ -11,7 +11,14 @@ import RevenueCat
 
 @MainActor
 class PremiumViewModel: ObservableObject {
-    @Published var offerings: Offerings?
+//    @Published var offerings: Offerings?
+    @Published var offerings: Offerings? {
+        didSet {
+            print("🎁 Offres reçues : \(String(describing: offerings))")
+        }
+    }
+
+    
     
     func loadProducts() async {
         do {

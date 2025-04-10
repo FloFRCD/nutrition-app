@@ -27,7 +27,10 @@ class StoreKitManager: ObservableObject {
                 PremiumProductID.yearly.rawValue
             ]
             let storeProducts = try await Product.products(for: productIDs)
-            self.products = storeProducts
+            await MainActor.run {
+                self.products = storeProducts
+            }
+
         } catch {
             print("❌ Erreur de chargement des produits : \(error)")
         }

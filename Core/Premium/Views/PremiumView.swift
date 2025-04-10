@@ -11,6 +11,7 @@ struct PremiumView: View {
     
     @Environment(\.dismiss) var dismiss
     @StateObject private var viewModel = PremiumViewModel()
+    @State private var showFeaturesSheet = false
     
 
     
@@ -50,10 +51,21 @@ struct PremiumView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 32)
                 
+                Button(action: {
+                                showFeaturesSheet.toggle()
+                            }) {
+                                Text("Voir les fonctionnalités débloquées")
+                                    .font(.subheadline)
+                                    .underline()
+                                    .foregroundColor(.white.opacity(0.8))
+                                    .padding(.top, 4)
+                            }
+                
                 Spacer()
                 
                 // Boutons d’abonnement
                 VStack(spacing: 16) {
+                    Text(viewModel.offerings?.current?.weekly?.storeProduct.localizedTitle ?? "Pas chargé")
                     PremiumGradientButton(
                         title: "1,49€ / semaine",
                         subtitle: "Abonnement flexible, sans engagement",
@@ -62,14 +74,16 @@ struct PremiumView: View {
                             startPoint: .leading, endPoint: .trailing
                         ),
                         action: {
-                            Task {
-                                if let package = viewModel.offerings?.current?.weekly {
-                                    await viewModel.purchase(package: package)
+                                Task {
+                                    guard let package = viewModel.offerings?.current?.weekly else {
+                                        print("❌ Package weekly non trouvé")
+                                        return
+                                    }
+                                    try? await viewModel.purchase(package: package)
                                 }
                             }
-                        }
-
-                    )
+                        )
+                        .disabled(viewModel.offerings?.current?.weekly == nil)
                     
                     PremiumGradientButton(
                         title: "4,99€ / mois",
@@ -80,8 +94,14 @@ struct PremiumView: View {
                         ),
                         action: {
                             Task {
-                                if let package = viewModel.offerings?.current?.monthly {
-                                    await viewModel.purchase(package: package)
+                                do {
+                                    if let package = viewModel.offerings?.current?.weekly {
+                                        try await viewModel.purchase(package: package)
+                                    } else {
+                                        print("❌ Package non trouvé")
+                                    }
+                                } catch {
+                                    print("❌ Erreur d'achat : \(error)")
                                 }
                             }
                         }
@@ -129,6 +149,9 @@ struct PremiumView: View {
         .task {
             await viewModel.loadProducts()
         }
+        .sheet(isPresented: $showFeaturesSheet) {
+                   PremiumFeaturesSheet()
+               }
     }
 }
 

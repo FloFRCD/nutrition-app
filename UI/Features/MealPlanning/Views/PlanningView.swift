@@ -164,7 +164,7 @@ struct PlanningView: View {
                 let count = UserDefaults.standard.integer(forKey: key) + 1
                 UserDefaults.standard.set(count, forKey: key)
 
-                if count % 3 == 0 && storeKitManager.currentSubscription == .free {
+                if count % 3 == 0 && storeKitManager.effectiveSubscription == .free {
                     showPremiumSheet = true
                 }
             }
@@ -257,7 +257,7 @@ struct PlanningView: View {
         Task {
             await MainActor.run {
                 isGeneratingDetails = true
-                isTabBarVisible = false // ⬅️ Masque la tabBar (ou baisse opacité)
+                isTabBarVisible = false
             }
             
             let profile = localDataManager.userProfile ?? .default

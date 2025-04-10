@@ -342,8 +342,12 @@ class JournalViewModel: ObservableObject {
     // MARK: - Persistence
     
     func loadFoodEntries() {
-        foodEntries = localDataManager.loadFoodEntries() ?? []
+        let entries = localDataManager.loadFoodEntries() ?? []
+        Task { @MainActor in
+            self.foodEntries = entries
+        }
     }
+
     
     func saveFoodEntries() {
         localDataManager.saveFoodEntries(foodEntries)
