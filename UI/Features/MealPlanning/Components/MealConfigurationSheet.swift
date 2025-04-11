@@ -20,7 +20,7 @@ struct MealConfigurationSheet: View {
     @EnvironmentObject var storeKit: StoreKitManager
 
     var isPremiumUser: Bool {
-        storeKit.effectiveSubscription != .free
+        storeKit.isPremiumUser
     }
 
 
@@ -60,7 +60,7 @@ struct MealConfigurationSheet: View {
             ScrollView {
                 VStack(spacing: 20) {
                     mealTypeSection()
-                    restrictionSection(isPremiumUser: storeKit.effectiveSubscription != .free)
+                    restrictionSection(isPremiumUser: storeKit.isPremiumUser)
                     
                     IngredientListSection(
                         title: "Ingrédients à utiliser",

@@ -12,8 +12,10 @@ struct PremiumView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var viewModel = PremiumViewModel()
     @State private var showFeaturesSheet = false
+    @EnvironmentObject private var storeKitManager: StoreKitManager
     
 
+    
     
     var body: some View {
         ZStack {
@@ -95,7 +97,7 @@ struct PremiumView: View {
                         action: {
                             Task {
                                 do {
-                                    if let package = viewModel.offerings?.current?.weekly {
+                                    if let package = viewModel.offerings?.current?.monthly {
                                         try await viewModel.purchase(package: package)
                                     } else {
                                         print("❌ Package non trouvé")
@@ -118,7 +120,7 @@ struct PremiumView: View {
                         action: {
                             Task {
                                 if let package = viewModel.offerings?.current?.annual {
-                                    await viewModel.purchase(package: package)
+                                    try await viewModel.purchase(package: package)
                                 }
                             }
                         }
@@ -148,11 +150,19 @@ struct PremiumView: View {
         }
         .task {
             await viewModel.loadProducts()
+            print("📦 Offres chargées : \(String(describing: viewModel.offerings))")
         }
         .sheet(isPresented: $showFeaturesSheet) {
                    PremiumFeaturesSheet()
                }
+        
+        .onChange(of: storeKitManager.currentSubscription) { newValue in
+            if newValue != .free {
+                dismiss()
+            }
+        }
     }
+    
 }
 
 

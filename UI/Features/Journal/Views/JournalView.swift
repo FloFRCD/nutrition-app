@@ -19,20 +19,21 @@ struct JournalView: View {
     @State private var showPremiumSheet = false
     
     var body: some View {
+        journalContent
+    }
+
+    private var journalContent: some View {
         ZStack {
-            // Fond animé
             AnimatedBackground()
-            
+
             VStack(spacing: 0) {
-                // En-tête avec résumé nutritionnel modernisé
                 NutritionSummaryHeader(viewModel: viewModel)
                     .background(Color.white)
                     .cornerRadius(20)
                     .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
                     .padding(.horizontal)
                     .padding(.top, 16)
-                
-                // Sélecteur de date avec design amélioré
+
                 DateSelectorView(selectedDate: $viewModel.selectedDate)
                     .padding(.vertical, 16)
                     .background(Color.white)
@@ -40,8 +41,7 @@ struct JournalView: View {
                     .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
                     .padding(.horizontal)
                     .padding(.top, 12)
-                
-                
+
                 Button(action: {
                     viewModel.showBurnedCaloriesEntry()
                 }) {
@@ -54,59 +54,15 @@ struct JournalView: View {
                         .cornerRadius(12)
                 }
                 .padding(.top, 10)
-
                 
-                                
-                // Liste des repas de la journée
-                ScrollView {
-                    VStack(spacing: 15) {
-                        ForEach(MealType.allCases, id: \.self) { mealType in
-                            MealSectionView(
-                                mealType: mealType,
-                                entries: viewModel.entriesForMealType(mealType: mealType, date: viewModel.selectedDate),
-                                targetCalories: viewModel.targetCaloriesFor(mealType: mealType),
-                                onAddPhoto: {
-                                    if storeKitManager.effectiveSubscription != .free {
-                                        viewModel.showFoodPhotoCapture(for: mealType)
-                                    } else {
-                                        showPremiumSheet = true
-                                    }
-                                },
-                                barcode: {
-                                    if storeKitManager.effectiveSubscription != .free {
-                                        viewModel.showBarcodeScanner(for: mealType)
-                                    } else {
-                                        showPremiumSheet = true
-                                    }
-                                },
-
-                                onAddRecipe: { viewModel.showRecipeSelection(for: mealType) },
-                                onAddIngredients: { viewModel.showIngredientEntry(for: mealType) },
-                                onAddCustomFood: { viewModel.showCustomFoodEntry(for: mealType) },
-                                onDeleteEntry: { entry in
-                                    withAnimation {
-                                        viewModel.removeFoodEntry(entry)
-                                    }
-                                },
-                                isPremium: storeKitManager.effectiveSubscription != .free,
-                                    showPremiumSheet: $showPremiumSheet
-                            )
-                        }
-                        
-                        // Espace au bas de la page pour la TabBar
-                        Spacer().frame(height: 100)
-                    }
-                    .padding(.horizontal)
-                    .padding(.top, 12)
-                }
+                mealList
             }
         }
         .onAppear {
             if !hasAppeared {
                 hasAppeared = true
             }
-            
-            // Notification observer
+
             NotificationCenter.default.addObserver(
                 forName: .dismissAllSheets,
                 object: nil,
@@ -124,75 +80,108 @@ struct JournalView: View {
                 object: nil
             )
         }
-        
         .sheet(item: $viewModel.activeSheet) { sheet in
-            // Switch case inchangé
             switch sheet {
-            // Vos cas existants...
             case .photoCapture(let mealType):
                 FoodPhotoCaptureView(mealType: mealType)
-                
+
             case .recipeSelection(let mealType):
                 RecipeSelectionForJournalView(mealType: mealType) { recipe, servings in
                     viewModel.addDetailedRecipeToJournal(recipe, servings: servings, mealType: mealType)
                 }
                 .environmentObject(localDataManager)
-                
+
             case .ingredientEntry(let mealType):
                 IngredientEntryView(mealType: mealType) { ingredients in
-                    // Ne traitez les ingrédients que s'ils ne sont pas vides
                     if !ingredients.isEmpty {
                         Task {
                             await viewModel.processAndAddIngredients(ingredients, mealType: mealType, date: viewModel.selectedDate)
                         }
                     }
                 }
-                
+
             case .customFoodEntry(let mealType):
                 CustomFoodEntryView(mealType: mealType)
-                    .environmentObject(localDataManager)
-                    .environmentObject(nutritionService)
                     .environmentObject(viewModel)
-            
-            case .customFoodEntry(let mealType):
-                    CustomFoodEntryView(mealType: mealType)
-                        .environmentObject(viewModel)
-                        .environmentObject(nutritionService)
-                        
+                    .environmentObject(nutritionService)
+
             case .myFoodsSelector(let mealType):
-                    NavigationView {
-                        CustomFoodSelectorView { customFood, quantity in
-                            // Créer une entrée alimentaire à partir de l'aliment personnalisé
-                            let food = customFood.toFood()
-                            let entry = FoodEntry(
-                                id: UUID(),
-                                food: food,
-                                quantity: quantity / food.servingSize,
-                                date: viewModel.selectedDate,
-                                mealType: mealType,
-                                source: .favorite
-                            )
-                            
-                            // Ajouter au journal et fermer la feuille
-                            viewModel.addFoodEntry(entry)
-                            viewModel.activeSheet = nil
-                        }
-                        .environmentObject(nutritionService)
+                NavigationView {
+                    CustomFoodSelectorView { customFood, quantity in
+                        let food = customFood.toFood()
+                        let entry = FoodEntry(
+                            id: UUID(),
+                            food: food,
+                            quantity: quantity / food.servingSize,
+                            date: viewModel.selectedDate,
+                            mealType: mealType,
+                            source: .favorite
+                        )
+                        viewModel.addFoodEntry(entry)
+                        viewModel.activeSheet = nil
                     }
-            case .barcodeScanner(let mealType):
-                    BarcodeScannerView(mealType: mealType)
-                        .environmentObject(viewModel)
-                
-            case .burnedCaloriesEntry:
-                        BurnedCaloriesEntryView(viewModel: viewModel)
+                    .environmentObject(nutritionService)
                 }
+
+            case .barcodeScanner(let mealType):
+                BarcodeScannerView(mealType: mealType)
+                    .environmentObject(viewModel)
+
+            case .burnedCaloriesEntry:
+                BurnedCaloriesEntryView(viewModel: viewModel)
             }
+        }
         .navigationTitle("Journal Alimentaire")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showPremiumSheet) {
             PremiumView()
         }
     }
+    
+    @ViewBuilder
+    private var mealList: some View {
+        ScrollView {
+            VStack(spacing: 15) {
+                ForEach(MealType.allCases, id: \.self) { mealType in
+                    MealSectionView(
+                        mealType: mealType,
+                        entries: viewModel.entriesForMealType(mealType: mealType, date: viewModel.selectedDate),
+                        targetCalories: viewModel.targetCaloriesFor(mealType: mealType),
+                        onAddPhoto: {
+                            if storeKitManager.isPremiumUser {
+                                viewModel.showFoodPhotoCapture(for: mealType)
+                            } else {
+                                showPremiumSheet = true
+                            }
+                        },
+                        barcode: {
+                            if storeKitManager.isPremiumUser {
+                                viewModel.showBarcodeScanner(for: mealType)
+                            } else {
+                                showPremiumSheet = true
+                            }
+                        },
+                        onAddRecipe: { viewModel.showRecipeSelection(for: mealType) },
+                        onAddIngredients: { viewModel.showIngredientEntry(for: mealType) },
+                        onAddCustomFood: { viewModel.showCustomFoodEntry(for: mealType) },
+                        onDeleteEntry: { entry in
+                            withAnimation {
+                                viewModel.removeFoodEntry(entry)
+                            }
+                        },
+                        isPremium: storeKitManager.isPremiumUser,
+                        showPremiumSheet: $showPremiumSheet
+                    )
+                }
+
+                Spacer().frame(height: 100)
+            }
+            .padding(.horizontal)
+            .padding(.top, 12)
+        }
+    }
+
+
     
     private func showBurnedCaloriesAlert() {
         caloriesInput = "\(Int(viewModel.getBurnedCalories(for: viewModel.selectedDate)))"

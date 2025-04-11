@@ -1,0 +1,192 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "D5BE7163",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6744371207",
+    "_developerTeamID" : "6Z4H58U62L",
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 765991946.950472,
+    "_locale" : "fr",
+    "_storefront" : "FRA",
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Verification"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Store Sync"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Subscription Status"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Transaction"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Manage Subscriptions Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Refund Request Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Offer Code Redeem Sheet"
+      }
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21664639",
+      "localizations" : [
+
+      ],
+      "name" : "Nutria PREMIUM",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "39.99",
+          "familyShareable" : false,
+          "groupNumber" : 3,
+          "internalID" : "6744371507",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Débloquez toutes les fonctionnalités.",
+              "displayName" : "Nutria Premium",
+              "locale" : "fr"
+            },
+            {
+              "description" : "Unlock all features with Nutria Premium",
+              "displayName" : "All Access",
+              "locale" : "en_GB"
+            }
+          ],
+          "productID" : "FlorianFourcade.nutrition_app.Annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Nutria - Annuel",
+          "subscriptionGroupID" : "21664639",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "0.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6744371505",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlock all features with Nutria Premium",
+              "displayName" : "All Access",
+              "locale" : "en_GB"
+            },
+            {
+              "description" : "Débloquez toutes les fonctionnalités.",
+              "displayName" : "Nutria Premium",
+              "locale" : "fr"
+            }
+          ],
+          "productID" : "FlorianFourcade.nutrition_app.Weekly",
+          "recurringSubscriptionPeriod" : "P1W",
+          "referenceName" : "Nutria - Hebdo",
+          "subscriptionGroupID" : "21664639",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "3.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "6744371695",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlock all features with Nutria Premium",
+              "displayName" : "All Access",
+              "locale" : "en_GB"
+            },
+            {
+              "description" : "Débloquez toutes les fonctionnalités.",
+              "displayName" : "Nutria Premium",
+              "locale" : "fr"
+            }
+          ],
+          "productID" : "FlorianFourcade.nutrition_app.Monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Nutria - Mensuel",
+          "subscriptionGroupID" : "21664639",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "subscriptionOffersKeyPair" : {
+    "id" : "4D7A73F9",
+    "privateKey" : "MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgbiC2JbRky6x6WzOSid9nvRoEwdWDrNeeFb4ldaNhOTigCgYIKoZIzj0DAQehRANCAASnUh3F1Xc4EJd8hIEaqfn2db9RmMc1Cb2GDGE22XrAehFtl0pIHk2goWk3j758MkiYdxz1/eVuXozfNRPbQQQZ"
+  },
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

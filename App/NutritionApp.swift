@@ -10,26 +10,31 @@ import RevenueCat
 @main
 struct NutritionApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
     @StateObject private var localDataManager = LocalDataManager.shared
     @StateObject private var storeKitManager = StoreKitManager.shared
     @StateObject private var nutritionService = NutritionService.shared
+    
     @State private var showSplash = true
+    
     let persistenceController = PersistenceController.shared
-    
-    init() {
-            let appearance = UINavigationBarAppearance()
-            appearance.configureWithTransparentBackground()
-            appearance.titleTextAttributes = [.foregroundColor: UIColor.clear]
-            appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.clear]
 
-            UINavigationBar.appearance().standardAppearance = appearance
-            UINavigationBar.appearance().scrollEdgeAppearance = appearance
-            UINavigationBar.appearance().tintColor = UIColor.black
+    init() {
+        // Apparence de la navigation
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithTransparentBackground()
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.clear]
+        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.clear]
         
-        Purchases.logLevel = .debug // facultatif
+        UINavigationBar.appearance().standardAppearance = appearance
+        UINavigationBar.appearance().scrollEdgeAppearance = appearance
+        UINavigationBar.appearance().tintColor = .black
+
+        // RevenueCat
+        Purchases.logLevel = .debug
         Purchases.configure(withAPIKey: "appl_eUkrIamUmldMUFfhqIGDCEQOGvk")
-        }
-    
+    }
+
     var body: some Scene {
         WindowGroup {
             NavigationStack {
@@ -44,6 +49,14 @@ struct NutritionApp: App {
                 }
             }
             .tint(.black)
+            .onAppear {
+                Task {
+                    await storeKitManager.checkActiveSubscription()
+                    await storeKitManager.loadProducts()
+                }
+            }
         }
     }
 }
+
+

@@ -6,13 +6,20 @@
 	<dict>
 		<key>Nutria debug.xcscheme_^#shared#^_</key>
 		<dict>
+			<key>isShown</key>
+			<false/>
 			<key>orderHint</key>
-			<integer>1</integer>
+			<integer>2</integer>
 		</dict>
 		<key>PlaygroundChart (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>2</integer>
+			<integer>7</integer>
+		</dict>
+		<key>Test Abonnements.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
 		</dict>
 		<key>nutrition-app.xcscheme_^#shared#^_</key>
 		<dict>

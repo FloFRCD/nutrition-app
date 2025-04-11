@@ -7,10 +7,10 @@
 
 import Foundation
 
-enum PremiumProductID: String, CaseIterable {
-    case weekly = "nutria.premium.weekly"
-    case monthly = "nutria.premium.monthly"
-    case yearly = "nutria.premium.yearly"
+enum PremiumProductID: String {
+    case weekly = "FlorianFourcade.nutrition_app.Weekly"
+    case monthly = "FlorianFourcade.nutrition_app.Monthly"
+    case yearly = "FlorianFourcade.nutrition_app.Annual"
 }
 
 

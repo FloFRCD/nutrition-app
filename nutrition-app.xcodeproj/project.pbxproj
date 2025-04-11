@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0B29A3952DA5959000AD4920 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 0B29A3942DA5959000AD4920 /* RevenueCat */; };
 		0B29A4C72DA7CE9D00AD4920 /* Secrets.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 0B29A4C62DA7CE9D00AD4920 /* Secrets.xcconfig */; };
+		0B29A4C92DA81C0400AD4920 /* Nutria.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 0B29A4C82DA81C0400AD4920 /* Nutria.storekit */; };
 		0B538CE72D9D0FF6008F899B /* profile-animation.json in Resources */ = {isa = PBXBuildFile; fileRef = 0B538CE62D9D0FF6008F899B /* profile-animation.json */; };
 		0B538CEB2D9D10D5008F899B /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 0B538CEA2D9D10D5008F899B /* Lottie */; };
 		0B897BA42D9D859100FD6C18 /* DGCharts in Frameworks */ = {isa = PBXBuildFile; productRef = 0B897BA32D9D859100FD6C18 /* DGCharts */; };
@@ -47,6 +48,7 @@
 
 /* Begin PBXFileReference section */
 		0B29A4C62DA7CE9D00AD4920 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		0B29A4C82DA81C0400AD4920 /* Nutria.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Nutria.storekit; sourceTree = "<group>"; };
 		0B2F71852D65FB1D0025DC01 /* nutrition-app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "nutrition-app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0B2F73242D6603D80025DC01 /* nutrition_app.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = nutrition_app.entitlements; sourceTree = "<group>"; };
 		0B4D48432D903AB30096125D /* nutrition-app-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "nutrition-app-Info.plist"; sourceTree = "<group>"; };
@@ -117,6 +119,7 @@
 		F187FF3D2D64C41A0040996A = {
 			isa = PBXGroup;
 			children = (
+				0B29A4C82DA81C0400AD4920 /* Nutria.storekit */,
 				0B29A4C62DA7CE9D00AD4920 /* Secrets.xcconfig */,
 				F187FF792D64C7A30040996A /* App */,
 				0B538CA92D98A5BA008F899B /* Core */,
@@ -261,6 +264,7 @@
 			files = (
 				0B29A4C72DA7CE9D00AD4920 /* Secrets.xcconfig in Resources */,
 				0B538CE72D9D0FF6008F899B /* profile-animation.json in Resources */,
+				0B29A4C92DA81C0400AD4920 /* Nutria.storekit in Resources */,
 				0BF405192D8D75910039E25D /* Previews Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

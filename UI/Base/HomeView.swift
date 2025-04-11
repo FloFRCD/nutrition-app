@@ -7,6 +7,9 @@
 
 import Foundation
 import SwiftUI
+import RevenueCat
+import StoreKit
+
 
 @available(iOS 18.0, *)
 struct HomeView: View {
@@ -213,14 +216,26 @@ struct HomeView: View {
 .toolbar {
     ToolbarItem(placement: .navigationBarLeading) {
         Button {
-            let current = UserDefaults.standard.bool(forKey: "debug_premium_override")
-            UserDefaults.standard.set(!current, forKey: "debug_premium_override")
+            Task {
+                try? await Purchases.shared.logOut()
+                print("🔄 Déconnecté de RevenueCat")
+                
+                for await result in StoreKit.Transaction.currentEntitlements {
+                    switch result {
+                    case .verified(let transaction):
+                        print("✅ Abonnement actif : \(transaction.productID)")
+                    default:
+                        print("❌ Aucun abonnement actif")
+                    }
+                }
+            }
         } label: {
             Image(systemName: "wand.and.stars")
         }
     }
 }
 #endif
+
     }
 }
 

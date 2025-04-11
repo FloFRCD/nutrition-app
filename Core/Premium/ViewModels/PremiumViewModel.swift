@@ -31,7 +31,7 @@ class PremiumViewModel: ObservableObject {
     func purchase(package: Package) async {
         do {
             let result = try await Purchases.shared.purchase(package: package)
-            if result.customerInfo.entitlements.all["premium"]?.isActive == true {
+            if result.customerInfo.entitlements.all["PREMIUM"]?.isActive == true {
                 print("✅ Abonnement actif via RevenueCat")
                 // Met à jour ton app en conséquence
             } else {

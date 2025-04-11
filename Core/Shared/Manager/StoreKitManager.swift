@@ -5,97 +5,97 @@
 //  Created by Florian Fourcade on 18/02/2025.
 //
 
+import Foundation
 import StoreKit
+import RevenueCat
 
+@MainActor
 class StoreKitManager: ObservableObject {
     static let shared = StoreKitManager()
     
     @Published var currentSubscription: SubscriptionTier = .free
     @Published var products: [Product] = []
-    
-    private init() {
-        Task {
-            await loadProducts()
-        }
+
+    enum SubscriptionTier {
+        case free, weekly, monthly, yearly
     }
-    
+
+    private init() {}
+
+    var isPremiumUser: Bool {
+        currentSubscription != .free
+    }
+
     func loadProducts() async {
         do {
-            let productIDs = [
-                PremiumProductID.weekly.rawValue,
-                PremiumProductID.monthly.rawValue,
-                PremiumProductID.yearly.rawValue
+            let ids = [
+                "FlorianFourcade.nutrition_app.Weekly",
+                "FlorianFourcade.nutrition_app.Monthly",
+                "FlorianFourcade.nutrition_app.Annual"
             ]
-            let storeProducts = try await Product.products(for: productIDs)
-            await MainActor.run {
-                self.products = storeProducts
-            }
-
+            products = try await Product.products(for: ids)
         } catch {
-            print("❌ Erreur de chargement des produits : \(error)")
+            print("❌ Erreur chargement produits : \(error)")
         }
     }
-
     
-    func purchase(_ product: Product) async throws {
-        let result = try await product.purchase()
+    @MainActor
+    func handleSuccessfulPurchase(for productID: String) {
+        updateSubscriptionTier(for: productID)
+        objectWillChange.send()
+    }
 
-        switch result {
-        case .success(let verificationResult):
-            if case .verified(_) = verificationResult {
-                print("✅ Achat vérifié : \(product.id)")
-                updateSubscriptionTier(for: product.id)
-            } else {
-                print("❌ Achat non vérifié")
+
+    func checkActiveSubscription() async {
+        for await result in Transaction.currentEntitlements {
+            switch result {
+            case .verified(let transaction):
+                print("✅ Abonnement actif : \(transaction.productID)")
+                updateSubscriptionTier(for: transaction.productID)
+                return
+            default:
+                continue
             }
-
-        case .userCancelled:
-            print("⛔️ Annulé par l'utilisateur")
-        case .pending:
-            print("⏳ Paiement en attente")
-        default:
-            break
         }
+        print("❌ Aucun abonnement actif")
+        currentSubscription = .free
     }
 
-    
     private func updateSubscriptionTier(for productID: String) {
         switch productID {
-        case PremiumProductID.weekly.rawValue:
+        case "FlorianFourcade.nutrition_app.Weekly":
             currentSubscription = .weekly
-        case PremiumProductID.monthly.rawValue:
+        case "FlorianFourcade.nutrition_app.Monthly":
             currentSubscription = .monthly
-        case PremiumProductID.yearly.rawValue:
+        case "FlorianFourcade.nutrition_app.Annual":
             currentSubscription = .yearly
         default:
             currentSubscription = .free
         }
     }
-    
-    func restorePurchases() async throws {
-        for await result in Transaction.currentEntitlements {
-            switch result {
-            case .verified(let transaction):
-                updateSubscriptionTier(for: transaction.productID)
-            default:
-                continue
-            }
+    @MainActor
+    func updatePremiumStatus(with info: CustomerInfo) {
+        if info.entitlements.all["premium"]?.isActive == true {
+            currentSubscription != .free
+        } else {
+            currentSubscription = .free
         }
     }
 
+    
 #if DEBUG
 var overridePremium: Bool {
     UserDefaults.standard.bool(forKey: "debug_premium_override")
 }
 
 var effectiveSubscription: SubscriptionTier {
-    overridePremium ? .monthly : currentSubscription
+    overridePremium ? .monthly : .free
 }
 #else
 var effectiveSubscription: SubscriptionTier {
     currentSubscription
 }
 #endif
-
-
 }
+
+

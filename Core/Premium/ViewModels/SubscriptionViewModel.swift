@@ -38,16 +38,20 @@ class SubscriptionViewModel: ObservableObject {
         }
     }
 
+    @MainActor
     func purchase(_ package: Package) async {
         do {
             let result = try await Purchases.shared.purchase(package: package)
-            customerInfo = result.customerInfo
+            let customerInfo = result.customerInfo
+
+            await StoreKitManager.shared.updatePremiumStatus(with: customerInfo)
         } catch {
             print("Erreur d'achat : \(error)")
         }
     }
 
+
     func isPremiumUser() -> Bool {
-        return customerInfo?.entitlements["premium"]?.isActive == true
+        return customerInfo?.entitlements["PREMIUM"]?.isActive == true
     }
 }

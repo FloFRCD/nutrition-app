@@ -73,7 +73,7 @@ class PlanningViewModel: ObservableObject {
             }
             
             // Appel à l'API avec les préférences modifiées
-            let isPremium = StoreKitManager.shared.effectiveSubscription != .free
+            let isPremium = StoreKitManager.shared.isPremiumUser
 
             let model = isPremium ? "gpt-4o-mini" : "gpt-3.5-turbo"
 
