@@ -97,7 +97,7 @@ struct ProgressStatsCardView: View {
                         }
                 }
 
-                Text(String(format: "%.1f %% %@", abs(progress * 100), isNegative ? "en trop" : "atteint"))
+                Text(String(format: "%.1f %% %@", abs(progress * 100), isNegative ? "de régression" : "atteint"))
                     .font(.subheadline)
                     .fontWeight(.bold)
                     .foregroundColor(isNegative ? .red : AppTheme.accent)

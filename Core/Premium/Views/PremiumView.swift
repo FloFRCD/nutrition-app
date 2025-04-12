@@ -161,6 +161,13 @@ struct PremiumView: View {
                 dismiss()
             }
         }
+        .onChange(of: storeKitManager.currentSubscription) {
+            if storeKitManager.isPremiumUser {
+                dismiss()
+            }
+        }
+
+
     }
     
 }

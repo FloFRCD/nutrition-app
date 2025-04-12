@@ -8,10 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		0B29A3952DA5959000AD4920 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 0B29A3942DA5959000AD4920 /* RevenueCat */; };
-		0B29A4C72DA7CE9D00AD4920 /* Secrets.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 0B29A4C62DA7CE9D00AD4920 /* Secrets.xcconfig */; };
 		0B29A4C92DA81C0400AD4920 /* Nutria.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 0B29A4C82DA81C0400AD4920 /* Nutria.storekit */; };
 		0B538CE72D9D0FF6008F899B /* profile-animation.json in Resources */ = {isa = PBXBuildFile; fileRef = 0B538CE62D9D0FF6008F899B /* profile-animation.json */; };
 		0B538CEB2D9D10D5008F899B /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 0B538CEA2D9D10D5008F899B /* Lottie */; };
+		0B56541D2DA9017000A80FA1 /* secrets.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 0B56541C2DA9017000A80FA1 /* secrets.xcconfig */; };
 		0B897BA42D9D859100FD6C18 /* DGCharts in Frameworks */ = {isa = PBXBuildFile; productRef = 0B897BA32D9D859100FD6C18 /* DGCharts */; };
 		0BF405192D8D75910039E25D /* Previews Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0BF405182D8D75910039E25D /* Previews Assets.xcassets */; };
 /* End PBXBuildFile section */
@@ -47,12 +47,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		0B29A4C62DA7CE9D00AD4920 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 		0B29A4C82DA81C0400AD4920 /* Nutria.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Nutria.storekit; sourceTree = "<group>"; };
 		0B2F71852D65FB1D0025DC01 /* nutrition-app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "nutrition-app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0B2F73242D6603D80025DC01 /* nutrition_app.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = nutrition_app.entitlements; sourceTree = "<group>"; };
 		0B4D48432D903AB30096125D /* nutrition-app-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "nutrition-app-Info.plist"; sourceTree = "<group>"; };
 		0B538CE62D9D0FF6008F899B /* profile-animation.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "profile-animation.json"; sourceTree = "<group>"; };
+		0B56541C2DA9017000A80FA1 /* secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = secrets.xcconfig; sourceTree = "<group>"; };
 		0BB824502D66254600B3A21D /* nutrition-appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "nutrition-appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BB824512D66254600B3A21D /* nutrition-appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "nutrition-appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BF405182D8D75910039E25D /* Previews Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Previews Assets.xcassets"; sourceTree = "<group>"; };
@@ -119,8 +119,8 @@
 		F187FF3D2D64C41A0040996A = {
 			isa = PBXGroup;
 			children = (
+				0B56541C2DA9017000A80FA1 /* secrets.xcconfig */,
 				0B29A4C82DA81C0400AD4920 /* Nutria.storekit */,
-				0B29A4C62DA7CE9D00AD4920 /* Secrets.xcconfig */,
 				F187FF792D64C7A30040996A /* App */,
 				0B538CA92D98A5BA008F899B /* Core */,
 				0B538CAA2D98A5EF008F899B /* Features */,
@@ -262,8 +262,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0B29A4C72DA7CE9D00AD4920 /* Secrets.xcconfig in Resources */,
 				0B538CE72D9D0FF6008F899B /* profile-animation.json in Resources */,
+				0B56541D2DA9017000A80FA1 /* secrets.xcconfig in Resources */,
 				0B29A4C92DA81C0400AD4920 /* Nutria.storekit in Resources */,
 				0BF405192D8D75910039E25D /* Previews Assets.xcassets in Resources */,
 			);
@@ -325,7 +325,6 @@
 /* Begin XCBuildConfiguration section */
 		F187FF692D64C41B0040996A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 0B29A4C62DA7CE9D00AD4920 /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -387,7 +386,6 @@
 		};
 		F187FF6A2D64C41B0040996A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 0B29A4C62DA7CE9D00AD4920 /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -441,7 +439,6 @@
 		};
 		F187FF6C2D64C41B0040996A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 0B29A4C62DA7CE9D00AD4920 /* Secrets.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -467,9 +464,8 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
@@ -479,17 +475,17 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "FlorianFourcade.nutrition-app";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = 1;
 				XROS_DEPLOYMENT_TARGET = 2.2;
 			};
 			name = Debug;
 		};
 		F187FF6D2D64C41B0040996A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 0B29A4C62DA7CE9D00AD4920 /* Secrets.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -515,9 +511,8 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
@@ -528,17 +523,17 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "FlorianFourcade.nutrition-app";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = 1;
 				XROS_DEPLOYMENT_TARGET = 2.2;
 			};
 			name = Release;
 		};
 		F187FF6F2D64C41B0040996A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 0B29A4C62DA7CE9D00AD4920 /* Secrets.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -561,7 +556,6 @@
 		};
 		F187FF702D64C41B0040996A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 0B29A4C62DA7CE9D00AD4920 /* Secrets.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -584,7 +578,6 @@
 		};
 		F187FF722D64C41B0040996A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 0B29A4C62DA7CE9D00AD4920 /* Secrets.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -606,7 +599,6 @@
 		};
 		F187FF732D64C41B0040996A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 0B29A4C62DA7CE9D00AD4920 /* Secrets.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;

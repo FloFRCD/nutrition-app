@@ -90,44 +90,6 @@ struct ShoppingListView: View {
     }
 }
 
-
-//struct ShoppingItemCard: View {
-//    let item: ShoppingItem
-//    let toggle: () -> Void
-//
-//    var body: some View {
-//        HStack {
-//            Button(action: toggle) {
-//                Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
-//                    .foregroundColor(item.isChecked ? .green : .gray)
-//                    .font(.system(size: 20))
-//            }
-//
-//            Text(item.unit.lowercased() == "pièce" ? "\(formatQuantity(item.quantity))" : "\(formatQuantity(item.quantity)) \(item.unit)")
-//                .bold()
-//                .foregroundColor(item.isChecked ? .gray : .primary)
-//                .frame(width: 80, alignment: .leading)
-//
-//            Text(item.name)
-//                .strikethrough(item.isChecked)
-//                .foregroundColor(item.isChecked ? .gray : .primary)
-//
-//            Spacer()
-//        }
-//        .padding(.vertical, 8)
-//        .contentShape(Rectangle())
-//        .onTapGesture(perform: toggle)
-//    }
-//
-//    private func formatQuantity(_ value: Double) -> String {
-//        if value == 0 { return "" }
-//        return value.truncatingRemainder(dividingBy: 1) == 0 ?
-//            String(format: "%.0f", value) :
-//            String(format: "%.1f", value)
-//    }
-//}
-
-
 struct SectionCard<Content: View>: View {
     let title: String
     let content: () -> Content
@@ -152,33 +114,20 @@ struct SectionCard<Content: View>: View {
 struct ShoppingListWrapper: View {
     var isActive: Bool
     @EnvironmentObject private var localDataManager: LocalDataManager
-    @State private var refreshTrigger = UUID()
-    
+
     var body: some View {
         VStack {
             if isActive {
                 ShoppingListView()
                     .environmentObject(localDataManager)
-                    .id(refreshTrigger)
-                    .onAppear {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            refreshTrigger = UUID()
-                        }
-                    }
             } else {
                 Color.clear
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .onChange(of: isActive) { _, isNowActive in
-            if isNowActive {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    refreshTrigger = UUID()
-                }
-            }
-        }
     }
 }
+
 
 struct ShoppingSectionView: View {
     let title: String

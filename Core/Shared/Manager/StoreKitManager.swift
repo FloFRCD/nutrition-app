@@ -75,12 +75,24 @@ class StoreKitManager: ObservableObject {
     }
     @MainActor
     func updatePremiumStatus(with info: CustomerInfo) {
-        if info.entitlements.all["premium"]?.isActive == true {
-            currentSubscription != .free
+        guard let entitlement = info.entitlements.all["premium"], entitlement.isActive else {
+            currentSubscription = .free
+            return
+        }
+
+        let productId = entitlement.productIdentifier.lowercased()
+
+        if productId.contains("weekly") {
+            currentSubscription = .weekly
+        } else if productId.contains("monthly") {
+            currentSubscription = .monthly
+        } else if productId.contains("yearly") || productId.contains("annual") {
+            currentSubscription = .yearly
         } else {
             currentSubscription = .free
         }
     }
+
 
     
 #if DEBUG

@@ -6,6 +6,9 @@
 //
 
 import Foundation
+import SwiftUI
+
+
 class ShoppingListViewModel: ObservableObject {
     @Published var shoppingItems: [IngredientCategory: [ShoppingItem]] = [:]
     private var localDataManager: LocalDataManager?
@@ -25,16 +28,14 @@ class ShoppingListViewModel: ObservableObject {
     }
     
     // Générer la liste de courses à partir des recettes sélectionnées
+    @MainActor
     func generateShoppingList(from recipes: [DetailedRecipe]) {
-        // Réinitialiser la liste
+        // Nettoyer d'abord
         for category in IngredientCategory.allCases {
             shoppingItems[category] = []
         }
-        
-        // Temporaire: collecter tous les ingrédients sans fusion
+
         var allItems: [ShoppingItem] = []
-        
-        // Extraire tous les ingrédients de toutes les recettes
         for recipe in recipes {
             for ingredient in recipe.ingredients {
                 let category = ingredient.name.ingredientCategory
@@ -47,41 +48,46 @@ class ShoppingListViewModel: ObservableObject {
                 allItems.append(item)
             }
         }
-        
-        // Fusionner les ingrédients similaires
-        let groupedItems = Dictionary(grouping: allItems) { item in
-            return "\(item.name.lowercased())-\(item.unit.lowercased())"
+
+        let groupedItems = Dictionary(grouping: allItems) {
+            "\($0.name.lowercased())-\($0.unit.lowercased())"
         }
-        
-        // Pour chaque groupe, additionner les quantités
+
+        var categorizedMergedItems: [IngredientCategory: [ShoppingItem]] = [:]
+
         for (_, items) in groupedItems {
-            if let firstItem = items.first {
-                var totalQuantity = items.reduce(0) { $0 + $1.quantity }
-                
-                // Arrondir à 1 décimale si nécessaire
-                if totalQuantity.truncatingRemainder(dividingBy: 1) == 0 {
-                    totalQuantity = totalQuantity.rounded()
-                } else {
-                    totalQuantity = (totalQuantity * 10).rounded() / 10
+            guard let first = items.first else { continue }
+            let totalQuantity = items.reduce(0) { $0 + $1.quantity }
+            let rounded = (totalQuantity * 10).rounded() / 10
+
+            let mergedItem = ShoppingItem(
+                name: first.name,
+                quantity: rounded,
+                unit: first.unit,
+                category: first.category
+            )
+
+            categorizedMergedItems[first.category, default: []].append(mergedItem)
+        }
+
+        // Trier chaque catégorie
+        for category in IngredientCategory.allCases {
+            categorizedMergedItems[category]?.sort { $0.name < $1.name }
+        }
+
+        // Injection progressive avec animation
+        Task {
+            for category in IngredientCategory.allCases {
+                if let items = categorizedMergedItems[category] {
+                    try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 sec
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        shoppingItems[category] = items
+                    }
                 }
-                
-                let mergedItem = ShoppingItem(
-                    name: firstItem.name,
-                    quantity: totalQuantity,
-                    unit: firstItem.unit,
-                    category: firstItem.category
-                )
-                
-                // Ajouter à la catégorie appropriée
-                shoppingItems[firstItem.category, default: []].append(mergedItem)
             }
         }
-        
-        // Trier les ingrédients par nom dans chaque catégorie
-        for category in IngredientCategory.allCases {
-            shoppingItems[category]?.sort { $0.name.lowercased() < $1.name.lowercased() }
-        }
     }
+
     
     // Marquer un élément comme coché ou non coché
     func toggleItemCheck(item: ShoppingItem) {
