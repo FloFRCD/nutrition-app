@@ -11,12 +11,14 @@ import StoreKit
 
 class AIService {
     static let shared = AIService()
+    
     private var apiKey: String {
         guard let key = Bundle.main.infoDictionary?["OPENAI_API_KEY"] as? String else {
             fatalError("❌ Clé API OpenAI non trouvée dans Info.plist.")
         }
         return key
     }
+
 
 
     private let cacheKey = "nutrition_cache"

@@ -454,7 +454,7 @@ struct ProfileView: View {
 
                         Text(
                             isRegression
-                                ? String(format: "%.1f %% en trop", displayPercent)
+                                ? String(format: "%.1f %% de régression", displayPercent)
                                 : String(format: "%.1f %% atteint", displayPercent)
                         )
                         .font(.subheadline)
