@@ -663,6 +663,34 @@ struct ProfileView: View {
                     
                 }
             }
+            
+            ProfileCardView(title: "Mentions légales", icon: "doc.text.fill") {
+                Link(destination: URL(string: "https://flofrcd.github.io/politique-confidentialite")!) {
+                    HStack {
+                        Text("Politique de confidentialité")
+                            .font(.subheadline)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                    .padding(.vertical, 8)
+                }
+
+                Link(destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!) {
+                    HStack {
+                        Text("Conditions d'utilisation (EULA)")
+                            .font(.subheadline)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                    .padding(.vertical, 8)
+                }
+            }
+
+
 
             // À propos
             ProfileCardView(title: "À propos", icon: "info.circle.fill") {

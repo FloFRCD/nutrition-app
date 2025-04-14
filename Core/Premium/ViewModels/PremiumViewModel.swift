@@ -33,7 +33,7 @@ class PremiumViewModel: ObservableObject {
             let result = try await Purchases.shared.purchase(package: package)
             if result.customerInfo.entitlements.all["PREMIUM"]?.isActive == true {
                 print("✅ Abonnement actif via RevenueCat")
-                // Met à jour ton app en conséquence
+                StoreKitManager.shared.updatePremiumStatus(with: result.customerInfo)
             } else {
                 print("❌ Abonnement non actif")
             }
@@ -41,4 +41,5 @@ class PremiumViewModel: ObservableObject {
             print("❌ Erreur d’achat RevenueCat : \(error)")
         }
     }
+
 }

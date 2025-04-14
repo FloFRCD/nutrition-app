@@ -23,8 +23,20 @@ class StoreKitManager: ObservableObject {
     private init() {}
 
     var isPremiumUser: Bool {
-        currentSubscription != .free
+        if isReviewOrSandbox {
+            return true
+        }
+        return currentSubscription != .free
     }
+    
+    var isReviewOrSandbox: Bool {
+        #if DEBUG
+        return true // Build Xcode local
+        #else
+        return Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
+        #endif
+    }
+
 
     func loadProducts() async {
         do {
