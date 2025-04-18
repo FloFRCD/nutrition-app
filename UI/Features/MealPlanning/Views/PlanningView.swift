@@ -13,8 +13,7 @@ struct PlanningView: View {
     @StateObject private var viewModel = PlanningViewModel()
     @StateObject private var storeKitManager = StoreKitManager.shared
     @State private var showPremiumSheet = false
-    
-    
+
     @State private var showingConfigSheet = false
     @State private var currentPreferences: MealPreferences?
     @State private var selectedMealTypes: Set<MealType> = [.breakfast, .lunch, .dinner, .snack]
@@ -24,24 +23,26 @@ struct PlanningView: View {
     @State private var forceRefresh = UUID()
     @Binding var isTabBarVisible: Bool
 
-    
     var body: some View {
         premiumView
+            .frame(maxWidth: isIpad ? 600 : .infinity) // centrer sur iPad
+            .frame(maxWidth: .infinity) // pour centrer dans l'écran
     }
-    
-    
+
     private var premiumView: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 AnimatedBackground()
+
                 VStack(spacing: 0) {
                     Image("Icon-scan")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 80, height: 80)
                         .padding(.top, 70)
-                    
+
                     Spacer(minLength: 0)
+
                     VStack(spacing: 0) {
                         ConsistentTabView(
                             selection: $selectedTab,
@@ -50,13 +51,11 @@ struct PlanningView: View {
                         .padding(.top, 8)
 
                         TabView(selection: $selectedTab) {
-                            suggestionsTab
-                                .tag(0)
+                            suggestionsTab.tag(0)
 
                             Group {
                                 if storeKitManager.isPremiumUser {
-                                    SavedRecipesView()
-                                        .environmentObject(localDataManager)
+                                    SavedRecipesView().environmentObject(localDataManager)
                                 } else {
                                     lockedPremiumView("Recettes sauvegardées réservées aux utilisateurs Premium")
                                 }
@@ -65,8 +64,7 @@ struct PlanningView: View {
 
                             Group {
                                 if storeKitManager.isPremiumUser {
-                                    SelectedRecipesView()
-                                        .environmentObject(localDataManager)
+                                    SelectedRecipesView().environmentObject(localDataManager)
                                 } else {
                                     lockedPremiumView("Recettes sélectionnées réservées aux utilisateurs Premium")
                                 }
@@ -75,8 +73,7 @@ struct PlanningView: View {
 
                             Group {
                                 if storeKitManager.isPremiumUser {
-                                    ShoppingListWrapper(isActive: selectedTab == 3)
-                                        .environmentObject(localDataManager)
+                                    ShoppingListWrapper(isActive: selectedTab == 3).environmentObject(localDataManager)
                                 } else {
                                     lockedPremiumView("Liste de courses réservée aux utilisateurs Premium")
                                 }
@@ -132,11 +129,10 @@ struct PlanningView: View {
             }
         }
     }
-    
+
     private var suggestionsTab: some View {
         ZStack(alignment: .bottom) {
-            suggestionsContent
-                .padding(.bottom, 100)
+            suggestionsContent.padding(.bottom, 100)
             detailsButton
                 .padding(.horizontal)
                 .padding(.bottom, 20)
@@ -169,14 +165,14 @@ struct PlanningView: View {
         .transition(.opacity)
     }
 
-
     private var groupedSuggestions: [String: [AIMeal]] {
         Dictionary(grouping: viewModel.mealSuggestions) { $0.type }
     }
-    
+
     private var selectedMealSuggestions: [AIMeal] {
         viewModel.mealSuggestions.filter { selectedMealIDs.contains($0.id) }
     }
+
     private var currentPreferencesBinding: Binding<MealPreferences> {
         Binding(
             get: { currentPreferences ?? createDefaultPreferences() },
@@ -207,17 +203,15 @@ struct PlanningView: View {
                             .id("\(mealType)_\(forceRefresh.uuidString)")
                         }
                     }
-                    
                     Spacer().frame(height: 40)
                 }
                 .padding(.horizontal)
                 .padding(.top, 16)
-                .padding(.bottom, 80) // pour laisser de l’espace à la tabbar
-
+                .padding(.bottom, 80)
             }
         }
     }
-    
+
     private var detailsButton: some View {
         Button {
             if storeKitManager.isPremiumUser {
@@ -248,25 +242,24 @@ struct PlanningView: View {
         .padding(.bottom, 80)
     }
 
-    
     private func generateAndSaveDetails() {
         Task {
             await MainActor.run {
                 isGeneratingDetails = true
                 isTabBarVisible = false
             }
-            
+
             let profile = localDataManager.userProfile ?? .default
             let detailsVM = DetailedRecipesViewModel()
             await detailsVM.fetchRecipeDetails(for: selectedMealSuggestions, userProfile: profile)
-            
+
             if !detailsVM.detailedRecipes.isEmpty {
                 await saveGeneratedRecipes(detailsVM.detailedRecipes)
             }
-            
+
             await MainActor.run {
                 isGeneratingDetails = false
-                isTabBarVisible = true // ⬅️ Réaffiche la tabBar
+                isTabBarVisible = true
                 withAnimation {
                     selectedTab = 1
                 }
@@ -274,7 +267,6 @@ struct PlanningView: View {
         }
     }
 
-    
     private func saveGeneratedRecipes(_ recipes: [DetailedRecipe]) async {
         do {
             var existing: [DetailedRecipe] = (try? await localDataManager.load(forKey: "saved_detailed_recipes")) ?? []
@@ -288,7 +280,7 @@ struct PlanningView: View {
             print("❌ Erreur de sauvegarde des recettes: \(error)")
         }
     }
-    
+
     private func createDefaultPreferences() -> MealPreferences {
         let profile = localDataManager.userProfile ?? .default
         return MealPreferences(
@@ -301,6 +293,11 @@ struct PlanningView: View {
             userProfile: profile
         )
     }
+
+    private var isIpad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
+
     private func lockedPremiumView(_ message: String) -> some View {
         VStack(spacing: 16) {
             Spacer()

@@ -446,7 +446,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "/Users/flofrcd/Desktop/Applications/nutrition-app/nutrition_app.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "\"/Users/flofrcd/Desktop/Applications/nutrition-app/Preview Content\"";
 				DEVELOPMENT_TEAM = 6Z4H58U62L;
 				ENABLE_PREVIEWS = YES;
@@ -481,7 +481,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 2.2;
 			};
 			name = Debug;
@@ -493,7 +493,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "/Users/flofrcd/Desktop/Applications/nutrition-app/nutrition_app.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "\"/Users/flofrcd/Desktop/Applications/nutrition-app/Preview Content\"";
 				DEVELOPMENT_TEAM = 6Z4H58U62L;
 				ENABLE_PREVIEWS = YES;
@@ -529,7 +529,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 2.2;
 			};
 			name = Release;

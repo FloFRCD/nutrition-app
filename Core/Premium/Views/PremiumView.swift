@@ -18,122 +18,117 @@ struct PremiumView: View {
         ZStack {
             AppBackgroundDark().ignoresSafeArea()
             
-            ScrollView {
-                VStack(spacing: 24) {
-                    Spacer().frame(height: 40)
-                    
-                    // Image encadrée
-                    RoundedRectangle(cornerRadius: 24)
-                        .stroke(AppTheme.primaryButtonGradient, lineWidth: 3)
-                        .frame(width: 220, height: 220)
-                        .overlay(
-                            Image("premiumbackground")
-                                .resizable()
-                                .scaledToFit()
-                                .clipShape(RoundedRectangle(cornerRadius: 20))
-                                .padding(8)
-                        )
-                        .shadow(color: AppTheme.vibrantGreen.opacity(0.2), radius: 10, x: 0, y: 5)
-                    
-                    // Titre
-                    Text("Nutria PREMIUM")
-                        .font(.title)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                        .padding(.top, 8)
-                    
-                    // Accroche
-                    Text("Pour ceux qui veulent le meilleur")
-                        .font(.body)
-                        .foregroundColor(AppTheme.secondaryText)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 32)
-                    
-                    // Bouton voir fonctionnalités
-                    Button(action: {
-                        showFeaturesSheet.toggle()
-                    }) {
-                        Text("Voir les fonctionnalités débloquées")
-                            .font(.subheadline)
-                            .underline()
-                            .foregroundColor(.white.opacity(0.8))
-                            .padding(.top, 4)
-                    }
-                    
-                    // Abonnements
-                    VStack(spacing: 16) {
-                        PremiumGradientButton(
-                            title: "1,49€ / semaine",
-                            subtitle: "Abonnement flexible, sans engagement",
-                            gradient: LinearGradient(
-                                gradient: Gradient(colors: [AppTheme.logoPurple, AppTheme.primaryBlue]),
-                                startPoint: .leading, endPoint: .trailing
-                            ),
-                            action: {
-                                Task {
-                                    guard let package = viewModel.offerings?.current?.weekly else {
-                                        print("❌ Package weekly non trouvé")
-                                        return
-                                    }
+            VStack(spacing: 20) {
+                Spacer().frame(height: 20)
+                
+                // Image encadrée
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(AppTheme.primaryButtonGradient, lineWidth: 3)
+                    .frame(width: 180, height: 180)
+                    .overlay(
+                        Image("premiumbackground")
+                            .resizable()
+                            .scaledToFit()
+                            .clipShape(RoundedRectangle(cornerRadius: 18))
+                            .padding(8)
+                    )
+                    .shadow(color: AppTheme.vibrantGreen.opacity(0.2), radius: 10, x: 0, y: 5)
+                
+                Text("Nutria PREMIUM")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                
+                Text("Pour ceux qui veulent le meilleur")
+                    .font(.body)
+                    .foregroundColor(AppTheme.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+                
+                Button(action: {
+                    showFeaturesSheet.toggle()
+                }) {
+                    Text("Voir les fonctionnalités débloquées")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundColor(AppTheme.accent)
+                        .underline()
+                        .padding(.top, 4)
+                }
+                
+                VStack(spacing: 16) {
+                    PremiumGradientButton(
+                        title: "1,49€ / semaine",
+                        subtitle: "Abonnement flexible, sans engagement",
+                        gradient: LinearGradient(
+                            gradient: Gradient(colors: [AppTheme.logoPurple, AppTheme.primaryBlue]),
+                            startPoint: .leading, endPoint: .trailing
+                        ),
+                        action: {
+                            Task {
+                                if let package = viewModel.offerings?.current?.weekly {
                                     await viewModel.purchase(package: package)
                                 }
                             }
-                        )
-                        .disabled(viewModel.offerings?.current?.weekly == nil)
-                        
-                        PremiumGradientButton(
-                            title: "4,99€ / mois",
-                            subtitle: "Moins de 0,17€ par jour pour atteindre tes objectifs",
-                            gradient: LinearGradient(
-                                gradient: Gradient(colors: [AppTheme.primaryBlue, AppTheme.vibrantGreen]),
-                                startPoint: .leading, endPoint: .trailing
-                            ),
-                            action: {
-                                Task {
-                                    if let package = viewModel.offerings?.current?.monthly {
-                                        await viewModel.purchase(package: package)
-                                    } else {
-                                        print("❌ Package mensuel non trouvé")
-                                    }
-                                }
-                            }
-                        )
-                        
-                        PremiumGradientButton(
-                            title: "44,99€ / an",
-                            subtitle: "Économisez 25% (au lieu de 59,88€)",
-                            gradient: LinearGradient(
-                                gradient: Gradient(colors: [AppTheme.vibrantGreen, AppTheme.lightYellow]),
-                                startPoint: .leading, endPoint: .trailing
-                            ),
-                            action: {
-                                Task {
-                                    if let package = viewModel.offerings?.current?.annual {
-                                        await viewModel.purchase(package: package)
-                                    }
-                                }
-                            }
-                        )
-                    }
-                    .padding(.horizontal)
-                    .padding(.top, 8)
+                        }
+                    )
                     
-                    // Liens obligatoires (Apple)
+                    PremiumGradientButton(
+                        title: "4,99€ / mois",
+                        subtitle: "Moins de 0,17€ par jour pour atteindre tes objectifs",
+                        gradient: LinearGradient(
+                            gradient: Gradient(colors: [AppTheme.primaryBlue, AppTheme.vibrantGreen]),
+                            startPoint: .leading, endPoint: .trailing
+                        ),
+                        action: {
+                            Task {
+                                if let package = viewModel.offerings?.current?.monthly {
+                                    await viewModel.purchase(package: package)
+                                }
+                            }
+                        }
+                    )
+                    
+                    PremiumGradientButton(
+                        title: "44,99€ / an",
+                        subtitle: "Économisez 25% (au lieu de 59,88€)",
+                        gradient: LinearGradient(
+                            gradient: Gradient(colors: [AppTheme.vibrantGreen, AppTheme.lightYellow]),
+                            startPoint: .leading, endPoint: .trailing
+                        ),
+                        action: {
+                            Task {
+                                if let package = viewModel.offerings?.current?.annual {
+                                    await viewModel.purchase(package: package)
+                                }
+                            }
+                        }
+                    )
+                }
+                .padding(.horizontal)
+                
+                Spacer()
+                
+                VStack(spacing: 4) {
                     HStack {
                         Link("Confidentialité", destination: URL(string: "https://flofrcd.github.io/politique-confidentialite")!)
-                            .foregroundColor(.gray)
-                            .font(.footnote)
-                        
+                            .foregroundColor(AppTheme.accent)
+                            .font(.footnote.weight(.semibold))
+
                         Spacer()
-                        
+
                         Link("Conditions d'utilisation", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
-                            .foregroundColor(.gray)
-                            .font(.footnote)
+                            .foregroundColor(AppTheme.accent)
+                            .font(.footnote.weight(.semibold))
                     }
-                    .padding(.horizontal)
-                    .padding(.top, 16)
-                    .padding(.bottom, 40)
+                    
+                    Text("Abonnement à renouvellement automatique. Annulable à tout moment via les réglages de l’App Store.")
+                        .font(.footnote)
+                        .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+                .padding(.horizontal)
+                .padding(.bottom, 20)
             }
             
             // Bouton de fermeture
@@ -154,7 +149,6 @@ struct PremiumView: View {
         }
         .task {
             await viewModel.loadProducts()
-            print("📦 Offres chargées : \(String(describing: viewModel.offerings))")
         }
         .sheet(isPresented: $showFeaturesSheet) {
             PremiumFeaturesSheet()
@@ -167,8 +161,3 @@ struct PremiumView: View {
     }
 }
 
-
-
-#Preview {
-    PremiumView()
-}
