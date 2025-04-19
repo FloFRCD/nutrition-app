@@ -177,10 +177,11 @@ class NutritionService: ObservableObject {
         loadCIQUALDatabase()
         
         return ciqualFoods.filter {
-            // Filtrer par nom ET s'assurer que l'aliment a des calories > 0
-            $0.nom.lowercased().contains(query.lowercased()) &&
-            ($0.energie_kcal ?? 0) > 0
+            let food = Food(from: $0)
+            return $0.nom.lowercased().contains(query.lowercased()) &&
+                   food.calories > 0 // après complétion
         }
+
     }
     
     func getCIQUALFood(byId id: String) -> CIQUALFood? {
@@ -191,14 +192,15 @@ class NutritionService: ObservableObject {
     func createFoodEntryFromCIQUAL(ciqualFood: CIQUALFood, quantity: Double, mealType: MealType) -> FoodEntry {
         let ratio = quantity / 100.0
 
+        let baseFood = Food(from: ciqualFood)
         let food = Food(
             id: UUID(),
-            name: ciqualFood.nom,
-            calories: Int((ciqualFood.energie_kcal ?? 0) * ratio),
-            proteins: (ciqualFood.proteines ?? 0) * ratio,
-            carbs: (ciqualFood.glucides ?? 0) * ratio,
-            fats: (ciqualFood.lipides ?? 0) * ratio,
-            fiber: (ciqualFood.fibres ?? 0) * ratio,
+            name: baseFood.name,
+            calories: Int(Double(baseFood.calories) * ratio),
+            proteins: baseFood.proteins * ratio,
+            carbs: baseFood.carbs * ratio,
+            fats: baseFood.fats * ratio,
+            fiber: baseFood.fiber * ratio,
             servingSize: 100,
             servingUnit: .gram,
             image: nil

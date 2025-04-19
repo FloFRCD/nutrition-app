@@ -39,13 +39,6 @@ struct SavedRecipesView: View {
                         .padding(.bottom, 8)
                         .background(Color(.clear))
 
-//                    // Dernière mise à jour
-//                    Text("Dernière mise à jour: \(formattedDate(lastUpdated))")
-//                        .font(.caption)
-//                        .foregroundColor(.secondary)
-//                        .frame(maxWidth: .infinity, alignment: .trailing)
-//                        .padding(.trailing)
-
                     LazyVStack(spacing: 16) {
                         if !searchText.isEmpty {
                             let filteredRecipes = filteredRecipesBySearch

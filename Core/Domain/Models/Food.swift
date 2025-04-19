@@ -224,3 +224,49 @@ struct CustomFood: Codable, Identifiable {
         )
     }
 }
+
+extension Food {
+    init(from ciqual: CIQUALFood) {
+        let id = UUID()
+        let name = ciqual.nom
+
+        var calories = ciqual.energie_kcal ?? 0
+        var proteins = ciqual.proteines ?? 0
+        var carbs = ciqual.glucides ?? 0
+        var fats = ciqual.lipides ?? 0
+        let fiber = ciqual.fibres ?? 0
+
+        let knownCalories = calories > 0
+        let knownProteins = proteins > 0
+        let knownCarbs = carbs > 0
+        let knownFats = fats > 0
+
+        // Complétion intelligente + logs
+        if !knownCalories && knownProteins && knownCarbs && knownFats {
+            calories = (proteins * 4 + carbs * 4 + fats * 9).rounded()
+            print("✅ [CIQUAL] Calories complétées automatiquement pour '\(name)': \(Int(calories)) kcal")
+        } else if knownCalories && !knownFats && knownProteins && knownCarbs {
+            fats = max(0, (calories - (proteins * 4) - (carbs * 4)) / 9)
+            print("✅ [CIQUAL] Lipides complétés automatiquement pour '\(name)': \(String(format: "%.2f", fats)) g")
+        } else if knownCalories && knownFats && !knownCarbs && knownProteins {
+            carbs = max(0, (calories - (proteins * 4) - (fats * 9)) / 4)
+            print("✅ [CIQUAL] Glucides complétés automatiquement pour '\(name)': \(String(format: "%.2f", carbs)) g")
+        } else if knownCalories && knownFats && knownCarbs && !knownProteins {
+            proteins = max(0, (calories - (carbs * 4) - (fats * 9)) / 4)
+            print("✅ [CIQUAL] Protéines complétées automatiquement pour '\(name)': \(String(format: "%.2f", proteins)) g")
+        }
+
+        self.init(
+            id: id,
+            name: name,
+            calories: Int(calories.rounded()),
+            proteins: proteins,
+            carbs: carbs,
+            fats: fats,
+            fiber: fiber,
+            servingSize: 100,
+            servingUnit: .gram,
+            image: nil
+        )
+    }
+}

@@ -143,8 +143,39 @@ extension DietaryRestriction {
     }
 }
 
+enum MealGoal: String, Codable, CaseIterable, Identifiable {
+    case weightLossFast = "Perte de poids rapide"
+    case weightLossModerate = "Perte de poids modérée"
+    case muscleGain = "Prise de masse"
+    case maintenance = "Maintien du poids"
+    case detox = "Détox"
+    case energyBoost = "Énergisant"
 
+    var id: String { rawValue }
+}
 
+enum CuisineType: String, Codable, CaseIterable, Identifiable {
+    case italian = "Italienne"
+    case japanese = "Japonaise"
+    case lebanese = "Libanaise"
+    case mexican = "Mexicaine"
+    case indian = "Indienne"
+    case french = "Française"
+    case other = "Autre"
+
+    var id: String { rawValue }
+}
+
+enum MealFormat: String, Codable, CaseIterable, Identifiable {
+    case salad = "Salade"
+    case bowl = "Bowl"
+    case soup = "Soupe"
+    case wrap = "Wrap"
+    case plate = "Assiette"
+    case dessert = "Dessert"
+
+    var id: String { rawValue }
+}
 
 struct MealPreferences: Codable {
     var bannedIngredients: [String]
@@ -155,18 +186,27 @@ struct MealPreferences: Codable {
     var recipesPerType: Int
     var userProfile: UserProfile
     var otherRestriction: String?
+    var mealGoal: MealGoal?
+    var cuisineTypes: [CuisineType]?
+    var mealFormats: [MealFormat]?
+    var promptOverride: String?
+    var isPromptOverrideEnabled: Bool = false
 
-    
-    
-    init(bannedIngredients: [String] = [],
-         preferredIngredients: [String] = [],
-         defaultServings: Int = 1,
-         dietaryRestrictions: [DietaryRestriction] = [],
-         mealTypes: [MealType] = [],
-         recipesPerType: Int = 2,
-         userProfile: UserProfile,
-         otherRestriction: String = "") {
-        
+    init(
+        bannedIngredients: [String] = [],
+        preferredIngredients: [String] = [],
+        defaultServings: Int = 1,
+        dietaryRestrictions: [DietaryRestriction] = [],
+        mealTypes: [MealType] = [],
+        recipesPerType: Int = 2,
+        userProfile: UserProfile,
+        otherRestriction: String = "",
+        mealGoal: MealGoal? = nil,
+        cuisineTypes: [CuisineType]? = nil,
+        mealFormats: [MealFormat]? = nil,
+        promptOverride: String? = nil,
+        isPromptOverrideEnabled: Bool = false
+    ) {
         self.bannedIngredients = bannedIngredients
         self.preferredIngredients = preferredIngredients
         self.defaultServings = defaultServings
@@ -174,16 +214,21 @@ struct MealPreferences: Codable {
         self.mealTypes = mealTypes
         self.recipesPerType = recipesPerType
         self.userProfile = userProfile
+        self.otherRestriction = otherRestriction
+        self.mealGoal = mealGoal
+        self.cuisineTypes = cuisineTypes
+        self.mealFormats = mealFormats
+        self.promptOverride = promptOverride
+        self.isPromptOverrideEnabled = isPromptOverrideEnabled
 
-        // Intégration des restrictions utilisateur au bon format
         if !userProfile.dietaryRestrictions.isEmpty {
             var updatedRestrictions = self.dietaryRestrictions
 
             for restriction in userProfile.dietaryRestrictions {
                 let parsed = DietaryRestriction.from(string: restriction)
-                
-                if case .other(let value) = parsed, DietaryRestriction.predefinedCases.contains(where: { $0.displayName == value }) == false {
-                    // S'assurer qu'on n'ajoute pas une valeur déjà dans les restrictions prédéfinies
+
+                if case .other(let value) = parsed,
+                   DietaryRestriction.predefinedCases.contains(where: { $0.displayName == value }) == false {
                     if !self.bannedIngredients.contains(value) {
                         self.bannedIngredients.append(value)
                     }
@@ -198,82 +243,91 @@ struct MealPreferences: Codable {
         }
     }
 
-    
     var aiPromptFormat: String {
-        let recipesPerType = self.recipesPerType
-        var bulletPoints = ""
-        for mealType in mealTypes {
-            bulletPoints += "- \(recipesPerType) plats de \(mealType.rawValue)\n"
-        }
-        
-        let restrictionList = dietaryRestrictions.map { $0.displayName }
-        var fullRestrictions = restrictionList
+            let bulletPoints = mealTypes.map { "- \(recipesPerType) plats de \($0.rawValue)" }.joined(separator: "\n")
+            let mealTypesList = mealTypes.map { $0.rawValue }.joined(separator: ", ")
 
-        if let other = otherRestriction, !other.trimmingCharacters(in: .whitespaces).isEmpty {
-            fullRestrictions.append(other)
-        }
-        let restrictionsText = fullRestrictions.joined(separator: ", ")
+            let restrictionList = dietaryRestrictions.map { $0.displayName }
+            var fullRestrictions = restrictionList
+            if let other = otherRestriction, !other.trimmingCharacters(in: .whitespaces).isEmpty {
+                fullRestrictions.append(other)
+            }
+            let restrictionsText = fullRestrictions.joined(separator: ", ")
 
-        // Utilisation du NutritionCalculator pour obtenir le texte nutritionnel cohérent
-        let nutritionalText = NutritionCalculator.shared.generateNutritionalPromptText(for: userProfile)
-        
-        let promptText = """
-        Tu es un chef cuisinier renommé spécialisé en nutrition.
-        
-        Génère-moi exactement:
-        \(bulletPoints)
-        
-        Verifie qu'il y a bien 12 plats au total.
-        
-        
-        //        PROFIL UTILISATEUR:
-        //        - Age: \(userProfile.age) ans
-        //        - Sexe: \(userProfile.gender.rawValue)
-        //        - Poids actuel: \(userProfile.weight) kg
-        //        - Taille: \(userProfile.height) cm
-        //        - Objectif: \(userProfile.fitnessGoal.rawValue)
-        //        - Niveau d'activité: \(userProfile.activityLevel.rawValue)
-        //        
-        
-        CONTRAINTES SUPPLÉMENTAIRES:
-        - Restrictions alimentaires: \(restrictionsText)
-        - Ingrédients à ne surtout pas utiliser : \(bannedIngredients.joined(separator: ", "))
-        - Ingrédients à utiliser en priorité : \(preferredIngredients.joined(separator: ", "))
-        
-        \(nutritionalText)
-        
-        Format requis pour chaque suggestion:
-        1. Nom du repas (max 10 mots)
-        2. Description brève (max 15 mots)
-        3. Type de repas (un des types mentionnés ci-dessus)
-        
-        RÉPONDS UNIQUEMENT AU FORMAT JSON SUIVANT (pas de texte avant ou après):
-        {
-            "meal_suggestions": [
+            let nutritionalText = NutritionCalculator.shared.generateNutritionalPromptText(for: userProfile)
+
+            var promptText = """
+            Tu es un chef cuisinier renommé spécialisé en nutrition.
+
+            Génère-moi exactement :
+            \(bulletPoints)
+
+            Vérifie qu'il y a bien \(recipesPerType * mealTypes.count) plats au total.
+
+            Les types de repas à générer sont : \(mealTypesList).
+
+            CONTRAINTES SUPPLÉMENTAIRES :
+            """
+
+            if isPromptOverrideEnabled,
+               let override = promptOverride,
+               !override.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                promptText += "\n\(override.trimmingCharacters(in: .whitespacesAndNewlines))"
+            } else {
+                promptText += """
+                \n- Restrictions alimentaires : \(restrictionsText)
+                - Ingrédients à ne surtout pas utiliser : \(bannedIngredients.joined(separator: ", "))
+                - Ingrédients à utiliser en priorité : \(preferredIngredients.joined(separator: ", "))
+                """
+
+                if let mealGoal {
+                    promptText += "\n- Objectif spécifique des repas : \(mealGoal.rawValue)"
+                }
+
+                if let cuisineTypes, !cuisineTypes.isEmpty {
+                    promptText += "\n- Origine culinaire souhaitée : \(cuisineTypes.map { $0.rawValue }.joined(separator: ", "))"
+                }
+
+                if let mealFormats, !mealFormats.isEmpty {
+                    promptText += "\n- Format des plats : \(mealFormats.map { $0.rawValue }.joined(separator: ", "))"
+                }
+            }
+
+            promptText += "\n\n\(nutritionalText)\n"
+
+            promptText += """
+            Format requis pour chaque suggestion :
+            1. Nom du repas (max 10 mots)
+            2. Description brève (max 15 mots)
+            3. Type de repas (un des types mentionnés ci-dessus)
+
+            RÉPONDS UNIQUEMENT AU FORMAT JSON SUIVANT (pas de texte avant ou après) :
+            {
+              "meal_suggestions": [
                 {
-                    "name": "Nom du repas",
-                    "description": "Brève description",
-                    "type": "Type de repas" 
-                },
-            ]
+                  "name": "Nom du repas",
+                  "description": "Brève description",
+                  "type": "Type de repas"
+                }
+              ]
+            }
+            """
+
+            print("===== DÉBUT DU PROMPT ENVOYÉ À L'API =====")
+            print(promptText)
+            print("===== FIN DU PROMPT ENVOYÉ À L'API =====")
+
+            return promptText
         }
-        """
-        
-        print("===== DÉBUT DU PROMPT ENVOYÉ À L'API =====")
-        print(promptText)
-        print("===== FIN DU PROMPT ENVOYÉ À L'API =====")
-        
-        return promptText
-    }
-    
+
+
     func printDebugPrompt() {
         print("------- DEBUT DU PROMPT ---------")
         print(aiPromptFormat)
         print("------- FIN DU PROMPT ---------")
     }
-    
+
     func validateMeal(_ meal: Meal) -> Bool {
-        // Vérifier que les ingrédients bannis ne sont pas présents
         for food in meal.foods {
             for banned in bannedIngredients {
                 if food.name.lowercased().contains(banned.lowercased()) {
@@ -285,6 +339,7 @@ struct MealPreferences: Codable {
         return true
     }
 }
+
 
 extension MealPreferences {
     // Fonction qui calcule les besoins nutritionnels en fonction du profil utilisateur
@@ -371,6 +426,8 @@ extension MealPreferences {
         """
     }
 }
+
+
 struct MealPlan: Codable, Identifiable {
     let id: UUID
     var weekNumber: Int

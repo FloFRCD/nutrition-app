@@ -56,6 +56,22 @@ class LocalDataManager: ObservableObject {
             }
         }
     }
+    
+    @MainActor
+    func updateRecipe(_ name: String, with transform: (DetailedRecipe) -> DetailedRecipe) async {
+        var savedRecipes: [DetailedRecipe] = (try? await load(forKey: "saved_detailed_recipes")) ?? []
+
+        if let index = savedRecipes.firstIndex(where: { $0.name == name }) {
+            let updatedRecipe = transform(savedRecipes[index])
+            savedRecipes[index] = updatedRecipe
+            try? await save(savedRecipes, forKey: "saved_detailed_recipes")
+        }
+    }
+    
+    func save<T: Codable>(_ value: T, forKey key: String) async throws {
+        let data = try JSONEncoder().encode(value)
+        UserDefaults.standard.set(data, forKey: key)
+    }
 
 
     func save<T: Encodable>(_ object: T, forKey key: String) async throws {

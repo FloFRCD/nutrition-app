@@ -11,14 +11,16 @@ struct DetailedRecipe: Codable, Identifiable, Equatable {
     let name: String
     let description: String
     let type: String
-    let ingredients: [Ingredient]
+    var ingredients: [Ingredient]
     let nutritionFacts: NutritionFacts
     let instructions: [String]
+    var numberOfServings: Int = 1
+
     
     struct Ingredient: Codable, Identifiable, Equatable {
         var id = UUID()
         let name: String
-        let quantity: Double
+        var quantity: Double
         let unit: String
         
         // CodingKeys pour exclure id lors du décodage
@@ -44,8 +46,31 @@ struct DetailedRecipe: Codable, Identifiable, Equatable {
     
     // CodingKeys pour exclure id lors du décodage
     enum CodingKeys: String, CodingKey {
-        case name, description, type, ingredients, nutritionFacts, instructions
+        case name, description, type, ingredients, nutritionFacts, instructions, numberOfServings
     }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        name = try container.decode(String.self, forKey: .name)
+        description = try container.decode(String.self, forKey: .description)
+        type = try container.decode(String.self, forKey: .type)
+        ingredients = try container.decode([Ingredient].self, forKey: .ingredients)
+        nutritionFacts = try container.decode(NutritionFacts.self, forKey: .nutritionFacts)
+        instructions = try container.decode([String].self, forKey: .instructions)
+        numberOfServings = try container.decodeIfPresent(Int.self, forKey: .numberOfServings) ?? 1
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(name, forKey: .name)
+        try container.encode(description, forKey: .description)
+        try container.encode(type, forKey: .type)
+        try container.encode(ingredients, forKey: .ingredients)
+        try container.encode(nutritionFacts, forKey: .nutritionFacts)
+        try container.encode(instructions, forKey: .instructions)
+        try container.encode(numberOfServings, forKey: .numberOfServings)
+    }
+
     
     // Implémentation manuelle de Equatable pour ignorer l'id
     static func == (lhs: DetailedRecipe, rhs: DetailedRecipe) -> Bool {

@@ -16,23 +16,36 @@ struct DetailedRecipesView: View {
     @EnvironmentObject private var localDataManager: LocalDataManager
     @State private var isAutoSaving = false
     @State private var autoSaveComplete = false
+    @State private var numberOfServings: Int = 1
+    let recipe: DetailedRecipe
+
     
     var body: some View {
         NavigationView {
             ZStack {
-                // Contenu principal
                 mainContent
-                
-                // Overlay de sauvegarde automatique
                 if isAutoSaving {
                     savingOverlay
                 }
             }
             .navigationTitle("Détails des recettes")
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Fermer") {
-                        onDismiss()
+                Button("Fermer") {
+                    isAutoSaving = false // 👈 modif d'état
+                    onDismiss()          // 👈 dismiss
+                }
+//                ToolbarItem(placement: .navigationBarTrailing) {
+//                    Button("Enregistrer") {
+//                        saveRecipeWithNewServings()
+//                    }
+//                }
+            }
+            .onChange(of: numberOfServings) {
+                print("🌀 Nombre de personnes modifié : \(numberOfServings)")
+                if !viewModel.detailedRecipes.isEmpty {
+                    Task {
+                        print("🧠 Appel à autoSaveRecipes()")
+                        await autoSaveRecipes()
                     }
                 }
             }
@@ -44,6 +57,7 @@ struct DetailedRecipesView: View {
         }
         // Utilisez onReceive pour surveiller les changements dans detailedRecipes
         .onReceive(viewModel.$detailedRecipes) { newRecipes in
+            print("📥 Nouveaux détails reçus : \(newRecipes.count) recettes")
             if !newRecipes.isEmpty && !autoSaveComplete && !isAutoSaving {
                 Task {
                     await autoSaveRecipes()
@@ -103,7 +117,7 @@ struct DetailedRecipesView: View {
             SavedRecipeCard(recipe: recipe)
         }
     }
-    
+
     // Vue de détail d'une recette
     private func recipeDetailView(for recipe: DetailedRecipe) -> some View {
         SingleRecipeDetailView(recipe: recipe)
@@ -157,57 +171,67 @@ struct DetailedRecipesView: View {
     
     // Fonction pour sauvegarder automatiquement les recettes
     private func autoSaveRecipes() async {
-        // Ne rien faire si les recettes sont vides
         if viewModel.detailedRecipes.isEmpty {
             return
         }
-        
-        // Afficher l'indicateur de sauvegarde
+
         await MainActor.run {
             isAutoSaving = true
         }
-        
+
         do {
-            // Récupérer les recettes existantes
+            // Charger les recettes existantes
             var existingRecipes: [DetailedRecipe] = []
             if let savedRecipes: [DetailedRecipe] = try? await localDataManager.load(forKey: "saved_detailed_recipes") {
                 existingRecipes = savedRecipes
             }
-            
-            // Ajouter les nouvelles recettes en évitant les doublons
+
+            // Créer des copies avec les quantités ajustées
+            let adjustedRecipes = viewModel.detailedRecipes.map { original in
+                var adjusted = original
+                adjusted.numberOfServings = numberOfServings
+                adjusted.ingredients = original.ingredients.map { ingredient in
+                    var adjustedIngredient = ingredient
+                    adjustedIngredient.quantity *= Double(numberOfServings)
+                    return adjustedIngredient
+                }
+                return adjusted
+            }
+
+
+            // Ajouter les nouvelles recettes (sans doublons)
             var updatedRecipes = existingRecipes
             var newRecipesCount = 0
-            
-            for recipe in viewModel.detailedRecipes {
-                // Vérifier si la recette n'existe pas déjà par son nom
+
+            for recipe in adjustedRecipes {
                 if !updatedRecipes.contains(where: { $0.name == recipe.name }) {
                     updatedRecipes.append(recipe)
                     newRecipesCount += 1
                 }
             }
             
-            // Sauvegarder la liste mise à jour
+            // Sauvegarde
             try await localDataManager.save(updatedRecipes, forKey: "saved_detailed_recipes")
-            print("✅ Sauvegarde automatique: \(newRecipesCount) nouvelles recettes sauvegardées (total: \(updatedRecipes.count))")
-            
-            // Notifier que des recettes ont été sauvegardées pour rafraîchir les autres vues
+            print("✅ Sauvegarde : \(newRecipesCount) nouvelles recettes ajustées pour \(numberOfServings) personne(s)")
+
             NotificationCenter.default.post(name: Notification.Name("RecipeDeleted"), object: nil)
-            
-            // Ajouter un petit délai pour que l'utilisateur voit le processus
-            try await Task.sleep(nanoseconds: 800_000_000) // 0.8 seconde
-            
-            // Cacher l'indicateur de sauvegarde et indiquer que la sauvegarde est terminée
+
+            try await Task.sleep(nanoseconds: 800_000_000)
+
             await MainActor.run {
                 isAutoSaving = false
                 autoSaveComplete = true
             }
+
         } catch {
-            print("❌ Erreur lors de la sauvegarde automatique: \(error)")
+            print("❌ Erreur lors de la sauvegarde : \(error)")
             await MainActor.run {
                 isAutoSaving = false
             }
         }
+        
     }
+
 }
 
 struct SingleRecipeDetailView: View {
@@ -217,6 +241,9 @@ struct SingleRecipeDetailView: View {
     @State private var showingDeleteConfirmation = false
     @State private var isDeleting = false
     @State private var isSelected = false
+    @State private var numberOfServings: Int = 1
+
+
     
     var body: some View {
         ScrollView {
@@ -267,17 +294,32 @@ struct SingleRecipeDetailView: View {
                 .background(Color(.secondarySystemBackground))
                 .cornerRadius(10)
                 
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Nombre de parts")
+                        .font(.headline)
+
+                    Stepper(value: $numberOfServings, in: 1...10) {
+                        Text("\(numberOfServings) part\(numberOfServings > 1 ? "s" : "")")
+                    }
+                    .onChange(of: numberOfServings) {
+                        updateRecipeServings()
+                    }
+                }
+                .padding(.vertical)
+
+                
                 // Ingredients
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Ingrédients")
                         .font(.headline)
                     
-                    ForEach(recipe.ingredients) { ingredient in
+                    ForEach(adjustedIngredients) { ingredient in
                         HStack {
                             Text("•")
                             Text("\(formatQuantity(ingredient.quantity)) \(ingredient.unit) \(ingredient.name)")
                         }
                     }
+
                 }
                 
                 // Instructions
@@ -334,7 +376,8 @@ struct SingleRecipeDetailView: View {
             Text("Cette recette sera définitivement supprimée de vos recettes sélectionnées.")
         }
         .onAppear {
-            // Vérifier si la recette est déjà sélectionnée
+            numberOfServings = recipe.numberOfServings
+
             Task {
                 isSelected = await localDataManager.isRecipeSelected(recipe)
             }
@@ -343,6 +386,14 @@ struct SingleRecipeDetailView: View {
     
     func formatQuantity(_ value: Double) -> String {
         return value.truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", value) : String(format: "%.1f", value)
+    }
+    
+    private var adjustedIngredients: [DetailedRecipe.Ingredient] {
+        recipe.ingredients.map { original in
+            var adjusted = original
+            adjusted.quantity = original.quantity / Double(recipe.numberOfServings) * Double(numberOfServings)
+            return adjusted
+        }
     }
     
     // Basculer la sélection de cette recette
@@ -409,6 +460,23 @@ struct SingleRecipeDetailView: View {
             }
         }
     }
+    
+    private func updateRecipeServings() {
+        Task {
+            await localDataManager.updateRecipe(recipe.name) { old in
+                var copy = old
+                copy.numberOfServings = numberOfServings
+                copy.ingredients = old.ingredients.map { ing in
+                    var updated = ing
+                    updated.quantity = ing.quantity / Double(old.numberOfServings) * Double(numberOfServings)
+                    return updated
+                }
+                return copy
+            }
+            print("🔄 Recette '\(recipe.name)' mise à jour pour \(numberOfServings) pers.")
+        }
+    }
+
 }
 
 // Ajoutez cette extension à la fin de votre fichier

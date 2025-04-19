@@ -318,16 +318,17 @@ struct IngredientEntryView: View {
     
     private func addCiqualFood(_ ciqualFood: CIQUALFood, quantity: Double) {
         withAnimation {
+            let food = Food(from: ciqualFood)
             let nutritionValues = NutritionValues(
-                calories: ciqualFood.energie_kcal ?? 0,
-                proteins: ciqualFood.proteines ?? 0,
-                carbohydrates: ciqualFood.glucides ?? 0,
-                fats: ciqualFood.lipides ?? 0,
-                fiber: ciqualFood.fibres ?? 0
+                calories: Double(food.calories),
+                proteins: food.proteins,
+                carbohydrates: food.carbs,
+                fats: food.fats,
+                fiber: food.fiber
             )
             
             ingredients.append(IngredientEntry(
-                name: ciqualFood.nom,
+                name: food.name,
                 quantity: String(format: "%.1f", quantity),
                 ciqualId: ciqualFood.id,
                 nutritionInfo: nutritionValues

@@ -130,7 +130,7 @@ extension AIService {
     func generateRecipeDetails(recipes: [String]) async throws -> String {
         let recipeNames = recipes.joined(separator: ", ")
         let prompt = """
-        Donne-moi les détails complets pour ces recettes: \(recipeNames).
+        Donne-moi les détails complets pour ces recettes: \(recipeNames). Je veux des quantités précises pour 1 personne.
         
         Pour chaque recette, je veux:
         1. La liste précise des ingrédients avec quantités (utilise des nombres décimaux, pas de fractions)
