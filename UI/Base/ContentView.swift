@@ -23,6 +23,7 @@ struct ContentView: View {
             }
         }
         .task {
+//            UserDefaults.standard.removeObject(forKey: "userProfile")
             await localDataManager.loadInitialData()
         }
     }

@@ -128,7 +128,7 @@ struct BarcodeProductView: View {
                  Text("Ajouter au journal")
                      .frame(maxWidth: .infinity) // Étendre le Text pour centrer
                      .padding() // Ajouter le padding au Text
-                     .background(Color.blue) // Mettre le fond sur le Text paddé
+                     .background(AppTheme.actionButtonGradient) 
                      .foregroundColor(.white) // Couleur du texte
                      .cornerRadius(10) // Coins arrondis
              }

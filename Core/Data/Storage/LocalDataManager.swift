@@ -39,23 +39,23 @@ class LocalDataManager: ObservableObject {
     private init() {
     }
     
-    func loadInitialData() {
-        Task { [weak self] in
-            do {
-                if let profile: UserProfile = try await self?.load(forKey: "userProfile") {
-                    print("✅ Profil chargé :", profile)
-                    DispatchQueue.main.async {
-                        self?.userProfile = profile
-                    }
-
-                    // Charger le poids après avoir chargé le profil
-                    await self?.syncWeightWithLatestRecord()
-                }
-            } catch {
-                print("❌ Erreur lors du chargement initial du profil :", error)
+    @MainActor
+    func loadInitialData() async {
+        do {
+            if let data = UserDefaults.standard.data(forKey: "userProfile") {
+                print("📦 JSON chargé :")
+                print(String(data: data, encoding: .utf8) ?? "❌ illisible")
             }
+            if let profile: UserProfile = try await load(forKey: "userProfile") {
+                self.userProfile = profile
+                print("✅ Chargement réussi")
+                print("📅 Date de naissance chargée :", profile.birthDate)
+            }
+        } catch {
+            print("❌ Erreur lors du chargement : \(error)")
         }
     }
+
     
     @MainActor
     func updateRecipe(_ name: String, with transform: (DetailedRecipe) -> DetailedRecipe) async {
@@ -78,10 +78,8 @@ class LocalDataManager: ObservableObject {
         return try await withCheckedThrowingContinuation { continuation in
             queue.async {
                 do {
-                    let encoder = JSONEncoder()
-                    encoder.dateEncodingStrategy = .iso8601
-                    let data = try encoder.encode(object)
-                    UserDefaults.standard.set(data, forKey: key)
+                    let data = try JSONEncoder.iso8601.encode(object)
+                        UserDefaults.standard.set(data, forKey: key)
                     continuation.resume()
                 } catch {
                     continuation.resume(throwing: LocalDataError.saveError(error.localizedDescription))
@@ -97,11 +95,22 @@ class LocalDataManager: ObservableObject {
                     continuation.resume(returning: nil)
                     return
                 }
-                
+
                 do {
                     let decoder = JSONDecoder()
-                    decoder.dateDecodingStrategy = .iso8601
-                    let object = try decoder.decode(T.self, from: data)
+                    decoder.dateDecodingStrategy = .secondsSince1970
+                    var object = try decoder.decode(T.self, from: data)
+
+                    // 🩹 Patch temporaire si on lit un UserProfile
+                    if var profile = object as? UserProfile {
+                        print("🛠 Patch: avant = \(profile.birthDate)")
+                        if let fixedDate = Calendar.current.date(byAdding: .year, value: 31, to: profile.birthDate) {
+                            profile.birthDate = fixedDate
+                            object = profile as! T
+                            print("🛠 Patch: après  = \(profile.birthDate)")
+                        }
+                    }
+
                     continuation.resume(returning: object)
                 } catch {
                     continuation.resume(throwing: LocalDataError.decodingError(error.localizedDescription))
@@ -109,6 +118,8 @@ class LocalDataManager: ObservableObject {
             }
         }
     }
+
+
 }
 
 extension LocalDataManager {

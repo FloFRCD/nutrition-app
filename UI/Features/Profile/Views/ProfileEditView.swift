@@ -205,7 +205,7 @@ struct ProfileEditView: View {
 
     init(userProfile: UserProfile) {
         _name = State(initialValue: userProfile.name)
-        _birthDate = State(initialValue: Calendar.current.date(byAdding: .year, value: -userProfile.age, to: Date()) ?? Date())
+        _birthDate = State(initialValue: userProfile.birthDate)
         _gender = State(initialValue: userProfile.gender)
         _weight = State(initialValue: userProfile.weight)
         _height = State(initialValue: userProfile.height)
@@ -219,7 +219,10 @@ struct ProfileEditView: View {
         _exerciseIntensity = State(initialValue: details.exerciseIntensity)
         _jobActivity = State(initialValue: details.jobActivity)
         _dailyActivity = State(initialValue: details.dailyActivity)
+        
+        print("👀 birthDate injectée :", userProfile.birthDate)
     }
+    
 
     var body: some View {
         NavigationView {
@@ -275,7 +278,6 @@ struct ProfileEditView: View {
             return
         }
 
-        let age = Calendar.current.dateComponents([.year], from: birthDate, to: Date()).year ?? 0
         let details = ActivityDetails(
             exerciseDaysPerWeek: exerciseDaysPerWeek,
             exerciseDuration: exerciseDuration,
@@ -286,7 +288,7 @@ struct ProfileEditView: View {
 
         if var profile = localDataManager.userProfile {
             profile.name = name
-            profile.age = age
+            profile.birthDate = birthDate
             profile.gender = gender
             profile.weight = weight
             profile.height = height

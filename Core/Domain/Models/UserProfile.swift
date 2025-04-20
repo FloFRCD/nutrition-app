@@ -10,7 +10,7 @@ import Foundation
 struct UserProfile: Identifiable, Codable {
     let id: UUID
     var name: String
-    var age: Int
+    var birthDate: Date // ✅ On remplace age par une vraie date
     var gender: Gender
     var height: Double // en cm
     var weight: Double // en kg
@@ -22,10 +22,15 @@ struct UserProfile: Identifiable, Codable {
     var dietaryRestrictions: [String]
     var activityDetails: ActivityDetails?
     
+    // ✅ Calcul automatique de l'âge
+    var age: Int {
+        Calendar.current.dateComponents([.year], from: birthDate, to: Date()).year ?? 0
+    }
+
     init(
         id: UUID = UUID(),
         name: String,
-        age: Int,
+        birthDate: Date,
         gender: Gender,
         height: Double,
         weight: Double,
@@ -39,7 +44,7 @@ struct UserProfile: Identifiable, Codable {
     ) {
         self.id = id
         self.name = name
-        self.age = age
+        self.birthDate = birthDate
         self.gender = gender
         self.height = height
         self.weight = weight
@@ -52,11 +57,11 @@ struct UserProfile: Identifiable, Codable {
         self.activityDetails = activityDetails
     }
     
-    // Calcul de l'IMC
     var bmi: Double {
         return weight / ((height / 100) * (height / 100))
     }
 }
+
 
 // MARK: - Gender
 enum Gender: String, Codable, CaseIterable {

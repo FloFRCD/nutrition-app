@@ -50,7 +50,9 @@ struct SavedRecipesView: View {
                                 recipesSection(recipes: filteredRecipes)
                             }
                         } else {
-                            ForEach(groupedRecipesByMealType.keys.sorted(), id: \.self) { mealType in
+                            let mealOrder = ["Petit-déjeuner", "Déjeuner", "Collation", "Dîner"]
+
+                            ForEach(mealOrder, id: \.self) { mealType in
                                 let displayName = getMealTypeDisplayName(type: mealType)
                                 if let recipes = groupedRecipesByMealType[mealType], !recipes.isEmpty {
                                     VStack(alignment: .leading, spacing: 12) {

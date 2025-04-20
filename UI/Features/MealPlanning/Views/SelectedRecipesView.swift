@@ -29,7 +29,9 @@ struct SelectedRecipesView: View {
             } else {
                 VStack(spacing: 20) {
                     // Afficher les recettes sélectionnées par type
-                    ForEach(groupedRecipesByMealType.keys.sorted(), id: \.self) { mealType in
+                    let mealOrder = ["Petit-déjeuner", "Déjeuner", "Collation", "Dîner"]
+
+                    ForEach(mealOrder, id: \.self) { mealType in
                         if let recipes = groupedRecipesByMealType[mealType], !recipes.isEmpty {
                             VStack(alignment: .leading, spacing: 12) {
                                 // En-tête de section

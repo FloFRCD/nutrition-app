@@ -44,36 +44,62 @@ struct BarcodeScannerView: View {
                     Spacer().frame(height: 100)
                 }
             } else {
-                VStack(spacing: 30) {
-                    Image(systemName: "barcode.viewfinder")
-                        .font(.system(size: 80))
-                        .foregroundColor(.blue)
-                    
-                    Text("Scanner un code-barres")
-                        .font(.title)
-                    
-                    Text("Positionnez le code-barres d'un produit devant la caméra pour obtenir ses informations nutritionnelles")
-                        .multilineTextAlignment(.center)
+                ScrollView {
+                    VStack(spacing: 30) {
+                        Spacer(minLength: 40)
+
+                        Image(systemName: "barcode.viewfinder")
+                            .font(.system(size: 80))
+                            .foregroundColor(AppTheme.primaryBlue)
+
+                        Text("Scanner un code-barres")
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                            .multilineTextAlignment(.center)
+                            .foregroundColor(AppTheme.tertiaryText)
+
+                        Text("Positionnez le code-barres d’un produit devant la caméra pour obtenir ses informations nutritionnelles.")
+                            .multilineTextAlignment(.center)
+                            .foregroundColor(AppTheme.secondaryText)
+                            .font(.body)
+                            .padding(.horizontal)
+
+                        Button(action: {
+                            isScanning = true
+                        }) {
+                            Text("Commencer le scan")
+                                .fontWeight(.semibold)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(AppTheme.actionButtonGradient)
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
+                        }
                         .padding(.horizontal)
-                    
-                    Button("Commencer le scan") {
-                        isScanning = true
+
+                        Button("Annuler") {
+                            dismiss()
+                        }
+                        .font(.body)
+                        .foregroundColor(AppTheme.secondaryText)
+                        .padding(.top, 8)
+
+                        Spacer(minLength: 40)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .padding(.top, 20)
+                    .padding()
                 }
-                .padding()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.white.ignoresSafeArea())
             }
+
         }
         .navigationTitle("Scanner un produit")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Annuler") {
-                    dismiss()
-                }
+        .navigationBarItems(
+            leading: Button("Annuler") {
+                dismiss()
             }
-        }
+        )
         .alert(isPresented: $showingError) {
             Alert(
                 title: Text("Erreur"),

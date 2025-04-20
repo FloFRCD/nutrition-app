@@ -6,12 +6,14 @@
 //
 
 import Foundation
+import SwiftUI
 
-// InitialSetupViewModel.swift
+@MainActor
 class InitialSetupViewModel: ObservableObject {
     // Vos propriétés existantes
     @Published var name = ""
-    @Published var birthDate = Date()
+    @Published var birthDate: Date = Date()
+//    @Published var birthDate: Date = Calendar.current.date(from: DateComponents(year: 1996, month: 7, day: 27))!
     @Published var gender: Gender = .male
     @Published var height: Double = 170
     @Published var currentWeight: Double = 70
@@ -25,6 +27,8 @@ class InitialSetupViewModel: ObservableObject {
     @Published var exerciseIntensity: ExerciseIntensity = .moderate
     @Published var jobActivity: JobActivityLevel = .seated
     @Published var dailyActivity: DailyActivityLevel = .moderate
+    
+    @AppStorage("hasCompletedSetup") var hasCompletedSetup: Bool = false
     
     var isPersonalInfoValid: Bool {
         !name.isEmpty
@@ -62,13 +66,12 @@ class InitialSetupViewModel: ObservableObject {
         }
     }
     
-    // Le reste de vos méthodes existantes
-    
+    // Le reste de vos méthodes existante
     func completeSetup() async {
         let userProfile = UserProfile(
             id: UUID(),
             name: self.name,
-            age: Calendar.current.dateComponents([.year], from: self.birthDate, to: Date()).year ?? 0,
+            birthDate: self.birthDate, // ✅ La date réellement choisie par l’utilisateur
             gender: self.gender,
             height: self.height,
             weight: self.currentWeight,
@@ -84,32 +87,21 @@ class InitialSetupViewModel: ObservableObject {
                 dailyActivity: self.dailyActivity
             )
         )
-        print("Profil à sauvegarder:")
-        print("Nom: \(name)")
-        print("Taille: \(height)")
-        print("Poids: \(currentWeight)")
-        print("Age: \(birthDate)")
-        print("- Niveau d'activité calculé: \(calculatedActivityLevel)")
-        print("- Détails d'activité:")
-        print("  • Jours d'exercice: \(exerciseDaysPerWeek)")
-        print("  • Durée: \(exerciseDuration) minutes")
-        print("  • Intensité: \(exerciseIntensity)")
-        print("  • Activité professionnelle: \(jobActivity)")
-        print("  • Activité quotidienne: \(dailyActivity)")
-        
+
+        print("📤 Sauvegarde du profil avec birthDate :", self.birthDate)
+
         do {
             try await LocalDataManager.shared.save(userProfile, forKey: "userProfile")
-            
-            // Utiliser DispatchQueue.main pour mettre à jour les propriétés publiées
             DispatchQueue.main.async {
                 LocalDataManager.shared.userProfile = userProfile
             }
-            
             print("✅ Profil sauvegardé avec succès")
         } catch {
             print("❌ Erreur lors de la sauvegarde: \(error)")
         }
     }
+
+
     
     func canProceedFromCurrentPage(_ page: Int) -> Bool {
             switch page {

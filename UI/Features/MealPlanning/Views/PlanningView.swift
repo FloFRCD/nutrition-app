@@ -527,7 +527,7 @@ extension UserProfile {
     static var `default`: UserProfile {
         UserProfile(
             name: "Utilisateur",
-            age: 30,
+            birthDate: Calendar.current.date(from: DateComponents(year: 1996, month: 7, day: 27))!,
             gender: .male,
             height: 170,
             weight: 70,

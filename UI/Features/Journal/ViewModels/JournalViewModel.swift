@@ -402,10 +402,10 @@ class JournalViewModel: ObservableObject {
 }
 
 extension JournalViewModel {
-    func processAndAddFoodPhoto(_ image: UIImage, mealType: MealType) async {
+    func processAndAddFoodPhoto(_ image: UIImage, mealType: MealType, userComment: String) async {
         do {
             // Analyse de l'image avec GPT-4 Vision
-            let (foodName, nutritionInfo) = try await AIService.shared.analyzeFoodPhoto(image)
+            let (foodName, nutritionInfo) = try await AIService.shared.analyzeFoodPhoto(image, userComment: userComment)
             
             // Créer un Food à partir des informations
             let food = Food(
