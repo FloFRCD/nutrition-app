@@ -15,7 +15,6 @@ struct AIMealPlanResponse: Codable {
 struct AIMeal: Codable, Identifiable, Hashable {
     // Déclaré avec `var` et valeur par défaut, donc ne sera pas requis dans le JSON
     var id = UUID()
-    
     let name: String
     let description: String
     let type: String
@@ -23,7 +22,6 @@ struct AIMeal: Codable, Identifiable, Hashable {
     // CodingKeys pour indiquer quels champs appartiennent au JSON
     enum CodingKeys: String, CodingKey {
         case name, description, type
-        // Pas d'id ici car il n'est pas dans le JSON
     }
     
     // Implémentation de Hashable

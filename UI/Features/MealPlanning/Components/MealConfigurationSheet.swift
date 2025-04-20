@@ -64,9 +64,17 @@ struct MealConfigurationSheet: View {
                     preferences.cuisineTypes = Array(selectedCuisines)
                     preferences.mealFormats = Array(selectedFormats)
                     preferences.promptOverride = promptOverride.isEmpty ? nil : promptOverride
+
+                    // ➕ ICI : exclure les noms déjà vus
+                    let recentMeals = LocalDataManager.shared.meals.map { $0.name }
+                    let savedRecipes = LocalDataManager.shared.savedRecipes?.map { $0.name } ?? []
+                    let excluded = Array(Set(recentMeals + savedRecipes).prefix(20))
+                    preferences.excludedMealNames = excluded
+
                     onGenerate(preferences)
                     dismiss()
                 }
+
                 .disabled(selectedMealTypes.isEmpty)
             }
             .padding()

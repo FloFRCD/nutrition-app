@@ -39,6 +39,16 @@ class LocalDataManager: ObservableObject {
     private init() {
     }
     
+    var previouslySuggestedMealNames: [String] {
+        get {
+            loadSynchronously(forKey: "previously_suggested_meal_names") ?? []
+        }
+        set {
+            saveSynchronously(newValue, forKey: "previously_suggested_meal_names")
+        }
+    }
+
+    
     @MainActor
     func loadInitialData() async {
         do {
@@ -123,6 +133,23 @@ class LocalDataManager: ObservableObject {
 }
 
 extension LocalDataManager {
+    func loadSynchronously<T: Decodable>(forKey key: String) -> T? {
+        guard let data = UserDefaults.standard.data(forKey: key) else {
+            return nil
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        return try? decoder.decode(T.self, from: data)
+    }
+
+    func saveSynchronously<T: Encodable>(_ value: T, forKey key: String) {
+        let encoder = JSONEncoder()
+        if let data = try? encoder.encode(value) {
+            UserDefaults.standard.set(data, forKey: key)
+        }
+    }
+
     // Charger les recettes sélectionnées
     func loadSelectedRecipes() async throws -> [DetailedRecipe] {
         return try await load(forKey: "selected_recipes") ?? []

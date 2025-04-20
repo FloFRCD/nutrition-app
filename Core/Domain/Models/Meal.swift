@@ -191,6 +191,8 @@ struct MealPreferences: Codable {
     var mealFormats: [MealFormat]?
     var promptOverride: String?
     var isPromptOverrideEnabled: Bool = false
+    var excludedMealNames: [String] = []
+
 
     init(
         bannedIngredients: [String] = [],
@@ -205,7 +207,9 @@ struct MealPreferences: Codable {
         cuisineTypes: [CuisineType]? = nil,
         mealFormats: [MealFormat]? = nil,
         promptOverride: String? = nil,
-        isPromptOverrideEnabled: Bool = false
+        isPromptOverrideEnabled: Bool = false,
+        excludedMealNames: [String] = []
+
     ) {
         self.bannedIngredients = bannedIngredients
         self.preferredIngredients = preferredIngredients
@@ -220,6 +224,7 @@ struct MealPreferences: Codable {
         self.mealFormats = mealFormats
         self.promptOverride = promptOverride
         self.isPromptOverrideEnabled = isPromptOverrideEnabled
+        self.excludedMealNames = excludedMealNames
 
         if !userProfile.dietaryRestrictions.isEmpty {
             var updatedRestrictions = self.dietaryRestrictions
@@ -265,6 +270,7 @@ struct MealPreferences: Codable {
             Vérifie qu'il y a bien \(recipesPerType * mealTypes.count) plats au total.
 
             Les types de repas à générer sont : \(mealTypesList).
+            - IMPORTANT : Ne propose pas de plats trop classiques ou déjà vus comme “omelette aux légumes”, “wrap au poulet”, ou “toast à l’avocat”. Propose des plats originaux, attrayants et visuellement instagrammables.
 
             CONTRAINTES SUPPLÉMENTAIRES :
             """
@@ -294,7 +300,12 @@ struct MealPreferences: Codable {
             }
 
             promptText += "\n\n\(nutritionalText)\n"
-
+        
+        if !excludedMealNames.isEmpty {
+            promptText += "\nIMPORTANT : Exclue impérativement les plats suivants déjà proposés récemment :"
+            promptText += "\n\(excludedMealNames.joined(separator: ", "))"
+        }
+        
             promptText += """
             Format requis pour chaque suggestion :
             1. Nom du repas (max 10 mots)
@@ -312,10 +323,6 @@ struct MealPreferences: Codable {
               ]
             }
             """
-
-            print("===== DÉBUT DU PROMPT ENVOYÉ À L'API =====")
-            print(promptText)
-            print("===== FIN DU PROMPT ENVOYÉ À L'API =====")
 
             return promptText
         }

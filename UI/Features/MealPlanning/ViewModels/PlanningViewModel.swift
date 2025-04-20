@@ -72,11 +72,19 @@ class PlanningViewModel: ObservableObject {
                 print("Correction: Types de repas = \(modifiedPreferences.mealTypes.count), recettes par type = \(correctRecipesPerType)")
             }
             
-            // Appel à l'API avec les préférences modifiées
+            // Appel à l’API avec les préférences modifiées
             let isPremium = StoreKitManager.shared.isPremiumUser
 
             let model = isPremium ? "gpt-4o-mini" : "gpt-3.5-turbo"
 
+            // Exclure les plats précédemment proposés et ceux actuellement affichés
+            let previouslySuggested = LocalDataManager.shared.previouslySuggestedMealNames
+            let currentlyDisplayed = self.mealSuggestions.map { $0.name.lowercased() }
+            let combinedExclusions = Set(previouslySuggested + currentlyDisplayed)
+            modifiedPreferences.excludedMealNames = Array(combinedExclusions)
+
+
+            // Appel API
             let jsonString = try await aiService.generateMealPlan(
                 prompt: modifiedPreferences.aiPromptFormat,
                 model: model
@@ -105,6 +113,11 @@ class PlanningViewModel: ObservableObject {
                    await MainActor.run {
                        self.mealSuggestions = correctedSuggestions
                    }
+                   
+                   // 🧠 Sauvegarde des suggestions récentes pour éviter les doublons futurs
+                   LocalDataManager.shared.previouslySuggestedMealNames = correctedSuggestions.map { $0.name.lowercased() }
+
+
                    
                } catch {
                    print("Erreur décodage: \(error)")
