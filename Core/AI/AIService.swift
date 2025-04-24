@@ -61,50 +61,51 @@ class AIService {
     }
     
     func requestNutritionFromAPI(
-            food: String,
-            unit: ServingUnit
-        ) async throws -> NutritionInfo {
-            // 1️⃣ Construction du prompt
-            let prompt = """
-            Tu es un nutritionniste. Donne-moi les valeurs nutritionnelles exactes d’un aliment.
+        food: String,
+        quantity: Double,
+        unit: ServingUnit
+    ) async throws -> NutritionInfo {
+        
+        // 1️⃣ Construction du prompt avec quantité et unité claires
+        let prompt = """
+        Tu es un nutritionniste. Donne-moi les valeurs nutritionnelles exactes d’un aliment.
 
-            Aliment : \(food)
-            Format demandé : 1 \(unit.rawValue)
+        Aliment : \(food)
+        Format demandé : \(quantity.clean) \(unit.rawValue)
 
-            Réponds uniquement en JSON **strictement** dans ce format :
+        Réponds uniquement en JSON **strictement** dans ce format :
 
-            {
-              "servingSize": nombre (ex : 100 ou 1),
-              "servingUnit": "g" ou "ml" ou "pc",
-              "calories": nombre exact,
-              "proteins": nombre exact,
-              "carbs": nombre exact,
-              "fats": nombre exact,
-              "fiber": nombre exact
-            }
-
-            ⚠️ Aucun arrondi. Utilise les données nutritionnelles précises.
-            """
-
-            // 2️⃣ Appel à l’API ChatGPT
-            let rawResponse = try await callChatGPT(prompt: prompt, model: "gpt-4o")
-
-            // 3️⃣ Nettoyage du JSON
-            let cleanedJSON = rawResponse
-                .replacingOccurrences(of: "```json", with: "")
-                .replacingOccurrences(of: "```",    with: "")
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-
-            // 4️⃣ Conversion en Data pour décodage
-            guard let jsonData = cleanedJSON.data(using: .utf8) else {
-                throw OpenAIError.decodingError(
-                  "Impossible de convertir la réponse en données JSON"
-                )
-            }
-
-            // 5️⃣ Décodage dans NutritionInfo
-            return try JSONDecoder().decode(NutritionInfo.self, from: jsonData)
+        {
+          "servingSize": nombre (ex : 100 ou 1),
+          "servingUnit": "g" ou "ml" ou "pc",
+          "calories": nombre exact,
+          "proteins": nombre exact,
+          "carbs": nombre exact,
+          "fats": nombre exact,
+          "fiber": nombre exact
         }
+
+        ⚠️ Aucun arrondi. Utilise les données nutritionnelles précises.
+        """
+
+        // 2️⃣ Appel à l’API ChatGPT
+        let rawResponse = try await callChatGPT(prompt: prompt, model: "gpt-4o")
+
+        // 3️⃣ Nettoyage du JSON
+        let cleanedJSON = rawResponse
+            .replacingOccurrences(of: "```json", with: "")
+            .replacingOccurrences(of: "```",    with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // 4️⃣ Conversion en Data pour décodage
+        guard let jsonData = cleanedJSON.data(using: .utf8) else {
+            throw OpenAIError.decodingError("Impossible de convertir la réponse en données JSON")
+        }
+
+        // 5️⃣ Décodage dans NutritionInfo
+        return try JSONDecoder().decode(NutritionInfo.self, from: jsonData)
+    }
+
 
 
     func analyzeNutrition(food: String) async throws -> NutritionInfo {
@@ -113,7 +114,7 @@ class AIService {
                 return cached
             }
             
-        let nutrition = try await requestNutritionFromAPI(food: food, unit: .gram)
+        let nutrition = try await requestNutritionFromAPI(food: food, quantity: 100, unit: .gram)
             await cacheNutrition(nutrition, for: food)
             return nutrition
         }
@@ -133,7 +134,8 @@ class AIService {
 }
 
 extension AIService {
-    
+
+
     func requestNutritionRawJSON(
         food: String,
         unit: ServingUnit
@@ -228,6 +230,13 @@ extension AIService {
             model: "gpt-4o",
             systemPrompt: systemPrompt
         )
+    }
+}
+
+extension Double {
+    var clean: String {
+        self.truncatingRemainder(dividingBy: 1) == 0 ?
+        String(format: "%.0f", self) : String(self)
     }
 }
 

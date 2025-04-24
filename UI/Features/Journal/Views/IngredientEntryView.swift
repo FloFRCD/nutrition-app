@@ -289,30 +289,26 @@ struct IngredientEntryView: View {
         guard !ingredients.isEmpty else { return }
         isProcessing = true
 
+        var entriesToSave: [FoodEntry] = []
+
         for entry in ingredients {
-            // 1) Récupérer la quantité et les infos nutritionnelles
             guard let quantity = Double(entry.quantity),
                   let nutrition = entry.nutritionInfo else {
                 continue
             }
 
-            // 2) Calculer le ratio et la quantité à passer au journal
             let ratio: Double
             let qtyForEntry: Double
 
             switch entry.servingUnit {
             case .gram, .milliliter:
-                // si portion 100g ou 100mL → ratio = qty / 100
                 ratio = quantity / entry.servingSize
                 qtyForEntry = ratio
-
             case .piece:
-                // si portion = 1 pièce → ratio = qty / 1 = qty
                 ratio = quantity / entry.servingSize
                 qtyForEntry = quantity
             }
 
-            // 3) Construire l’objet Food avec la portion d’origine
             let food = Food(
                 id: UUID(),
                 name: entry.name,
@@ -321,12 +317,11 @@ struct IngredientEntryView: View {
                 carbs: nutrition.carbohydrates * ratio,
                 fats: nutrition.fats * ratio,
                 fiber: nutrition.fiber * ratio,
-                servingSize: entry.servingSize,   // ex: 100 ou 1
+                servingSize: entry.servingSize,
                 servingUnit: entry.servingUnit,
                 image: nil
             )
 
-            // 4) Créer la FoodEntry en passant l’unité choisie
             let journalEntry = FoodEntry(
                 id: UUID(),
                 food: food,
@@ -334,17 +329,22 @@ struct IngredientEntryView: View {
                 date: journalViewModel.selectedDate,
                 mealType: mealType,
                 source: .manual,
-                unit: entry.servingUnit.displayName  // "g", "mL" ou "pc"
+                unit: entry.servingUnit.displayName
             )
 
-            nutritionService.addFoodEntry(journalEntry)
+            entriesToSave.append(journalEntry)
         }
 
-        // 5) Fermer la vue
+        print("💾 Enregistrement de \(entriesToSave.count) aliments dans le journal.")
+        nutritionService.addMultipleFoodEntries(entriesToSave)
+
         onIngredientsSubmitted([:])
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+
+        DispatchQueue.main.async {
+            isProcessing = false
             presentationMode.wrappedValue.dismiss()
         }
     }
+
 }
 

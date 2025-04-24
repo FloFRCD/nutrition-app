@@ -5,87 +5,48 @@
 //  Created by Florian Fourcade on 22/04/2025.
 //
 
-import Foundation
 import SwiftUI
+import FirebaseFirestore
 
 struct NutriaFoodSearchView: View {
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var nutritionService: NutritionService
 
-    @State private var name: String = ""
-    @State private var brand: String = ""
-    @State private var quantity: String = "100"
-    @State private var isLoading = false
-    @State private var foundFood: NutriaFood? = nil
-    @State private var errorMessage: String? = nil
-    @State private var selectedUnit: ServingUnit = .gram
+    @State private var searchText = ""
+    @State private var isPresentingCreationSheet = false
+    @State private var allFoods: [NutriaFood] = []
+    @State private var isLoading = true
 
     let onFoodSelected: (NutriaFood, Double, ServingUnit) -> Void
 
     var body: some View {
-        NavigationView {
-            Form {
-                Section(header: Text("Nom de l’aliment")) {
-                    TextField("Concombre", text: $name)
-                        .onSubmit { search() }
+        NavigationStack {
+            ZStack(alignment: .bottomTrailing) {
+                VStack {
+                    searchBar
+                    foodListView
                 }
 
-                Section(header: Text("Marque (facultatif)")) {
-                    TextField("Ex: Ferrero", text: $brand)
+                Button(action: {
+                    isPresentingCreationSheet = true
+                }) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 50))
+                        .foregroundColor(AppTheme.vibrantGreen)
+                        .shadow(radius: 5)
                 }
-
-                Section(header: Text("Quantité")) {
-                    TextField("100", text: $quantity)
-                        .keyboardType(.decimalPad)
-                }
-                
-                Section(header: Text("Unité")) {
-                    Picker("Unité", selection: $selectedUnit) {
-                        ForEach(ServingUnit.allCases) { unit in
-                            Text(unit.displayName).tag(unit)
-                        }
+                .padding()
+                .accessibilityLabel("Créer un aliment")
+                .sheet(isPresented: $isPresentingCreationSheet) {
+                    NutriaFoodCreationSheet { newFood, qty, unit in
+                        onFoodSelected(newFood, qty, unit)
+                        isPresentingCreationSheet = false
+                        presentationMode.wrappedValue.dismiss()
                     }
-                    .pickerStyle(SegmentedPickerStyle())
-                }
-
-                if let food = foundFood {
-                    Section(header: Text("Aperçu")) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(food.canonicalName).font(.headline)
-                            Text("Calories : \(Int(food.calories)) kcal")
-                            Text("Protéines : \(food.proteins, specifier: "%.1f")g")
-                            Text("Glucides : \(food.carbs, specifier: "%.1f")g")
-                            Text("Lipides : \(food.fats, specifier: "%.1f")g")
-                            Text("Portion : \(Int(food.servingSize)) \(food.servingUnit)")
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                }
-
-                if let error = errorMessage {
-                    Section {
-                        Text("❌ \(error)")
-                            .foregroundColor(.red)
-                    }
-                }
-
-                Section {
-                    Button("Rechercher") {
-                        search()
-                    }
-                    .disabled(name.trimmingCharacters(in: .whitespaces).count < 2)
-                    
-                    if let food = foundFood {
-                        Button("Ajouter") {
-                            if let food = foundFood, let qty = Double(quantity), qty > 0 {
-                              onFoodSelected(food, qty, selectedUnit)
-                              presentationMode.wrappedValue.dismiss()
-                            }
-                        }
-                    }
+                    .environmentObject(nutritionService)
                 }
             }
-            .navigationTitle("Recherche intelligente")
+            .navigationTitle("Rechercher un aliment")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -94,55 +55,169 @@ struct NutriaFoodSearchView: View {
                     }
                 }
             }
+            .task {
+                allFoods = await nutritionService.loadAllFoods()
+                isLoading = false
+            }
         }
     }
 
-    private func search() {
-      guard name.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2 else {
-        errorMessage = "Veuillez entrer un nom valide"
-        return
-      }
-      errorMessage = nil
-      foundFood = nil
-      isLoading = true
-
-      Task {
-        defer { isLoading = false }
-        do {
-          // 1) Récupère le JSON brut (ou le génère + stocke)
-          let rawJSON = try await nutritionService.fetchOrGenerateRawJSON(
-            for: name,
-            unit: selectedUnit
-          )
-          // 2) Décodage en NutritionInfo
-          let info = try JSONDecoder()
-            .decode(NutritionInfo.self, from: Data(rawJSON.utf8))
-
-          // 3) Convertis en NutriaFood ou garde juste les infos nécessaires
-          let food = NutriaFood(
-            id: UUID().uuidString,
-            canonicalName: name,
-            normalizedName: name.lowercased().folding(options: .diacriticInsensitive, locale: .current),
-            brand:         brand.isEmpty ? nil : brand,
-            normalizedBrand: brand.isEmpty ? nil : brand.lowercased().folding(options: .diacriticInsensitive, locale: .current),
-            isGeneric:     brand.isEmpty,
-            servingSize:   info.servingSize,
-            servingUnit:   info.servingUnit,
-            calories:      info.calories,
-            proteins:      info.proteins,
-            carbs:         info.carbs,
-            fats:          info.fats,
-            fiber:         info.fiber,
-            source:        "gpt-4o",
-            createdAt: Date()
-          )
-          foundFood = food
-
-        } catch {
-          errorMessage = "Erreur : \(error.localizedDescription)"
-        }
-      }
+    var searchBar: some View {
+        TextField("Rechercher un aliment...", text: $searchText)
+            .textFieldStyle(RoundedBorderTextFieldStyle())
+            .padding()
     }
 
+    @ViewBuilder
+    var foodListView: some View {
+        if isLoading {
+            loadingView
+        } else if filteredFoods.isEmpty {
+            emptyStateView
+        } else {
+            resultsListView
+        }
+    }
+
+    var loadingView: some View {
+        ProgressView("Chargement...")
+    }
+
+    var emptyStateView: some View {
+        Text("Aucun aliment trouvé")
+            .foregroundColor(.gray)
+            .italic()
+    }
+
+    var resultsListView: some View {
+        List(filteredFoods.indices, id: \.self) { index in
+            let food = filteredFoods[index]
+            
+            HStack {
+                VStack(alignment: .leading) {
+                    Text(food.canonicalName).bold()
+                    Text("Calories : \(Int(food.calories)) kcal")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                Spacer()
+
+                Text("\(Int(food.servingSize)) \(ServingUnit(rawValue: food.servingUnit)?.displayName ?? "")")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .onTapGesture {
+                if let unit = ServingUnit(rawValue: food.servingUnit) {
+                    onFoodSelected(food, food.servingSize, unit)
+                    presentationMode.wrappedValue.dismiss()
+                }
+            }
+        }
+        .listStyle(.plain)
+    }
+
+
+
+    var filteredFoods: [NutriaFood] {
+        if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return allFoods
+        }
+        return allFoods.filter {
+            $0.canonicalName.lowercased().contains(searchText.lowercased())
+        }
+    }
 }
+
+
+struct NutriaFoodCreationSheet: View {
+    @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var nutritionService: NutritionService
+
+    // Champs utilisateur
+    @State private var foodName: String = ""
+    @State private var brand: String? = nil
+    @State private var quantity: Double = 1
+    @State private var unit: ServingUnit = .gram
+
+    // UI
+    @State private var isLoading = false
+    @State private var errorMessage: String? = nil
+
+    let onFoodCreated: (NutriaFood, Double, ServingUnit) -> Void
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 16) {
+                TextField("Nom de l’aliment", text: $foodName)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+
+                TextField("Marque (facultatif)", text: Binding(
+                    get: { brand ?? "" },
+                    set: { brand = $0.isEmpty ? nil : $0 }
+                ))
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+
+                TextField("Quantité", value: $quantity, format: .number)
+                    .keyboardType(.decimalPad)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+
+                Picker("Unité", selection: $unit) {
+                    Text("g").tag(ServingUnit.gram)
+                    Text("mL").tag(ServingUnit.milliliter)
+                    Text("pièce").tag(ServingUnit.piece)
+                }
+                .pickerStyle(.segmented)
+
+                if let error = errorMessage {
+                    Text(error)
+                        .foregroundColor(.red)
+                        .multilineTextAlignment(.center)
+                }
+
+                Button("Générer l’aliment avec l’IA") {
+                    generateFood()
+                }
+                .disabled(isLoading)
+
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("Créer un aliment")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Annuler") { dismiss() }
+                }
+            }
+        }
+    }
+
+    func generateFood() {
+        Task {
+            isLoading = true
+            errorMessage = nil
+
+            // ✅ Applique la règle de quantité minimale pour g ou mL
+            if unit == .gram || unit == .milliliter {
+                quantity = max(quantity, 100)
+            }
+
+            if let newFood = await nutritionService.generateNutriaFoodIfMissing(
+                name: foodName,
+                brand: brand,
+                unit: unit,
+                size: quantity
+            ) {
+                onFoodCreated(newFood, quantity, unit)
+                dismiss()
+            } else {
+                errorMessage = "❌ Impossible de générer cet aliment."
+            }
+
+            isLoading = false
+        }
+    }
+}
+
+
 

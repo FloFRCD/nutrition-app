@@ -15,6 +15,11 @@ class NutritionService: ObservableObject {
     private weak var journalViewModel: JournalViewModel?
     @Published var foodEntries: [FoodEntry] = []
     @Published var customFoods: [CustomFood] = []
+    let localDataManager: LocalDataManager
+    
+    init(localDataManager: LocalDataManager = LocalDataManager.shared) {
+            self.localDataManager = localDataManager
+        }
     
     // MARK: - Recipe Analysis Methods
     
@@ -208,15 +213,25 @@ extension NutritionService {
 
 extension NutritionService {
     
-    func generateNutriaFoodIfMissing(name: String, brand: String?) async -> NutriaFood? {
+    func generateNutriaFoodIfMissing(name: String, brand: String?, unit: ServingUnit, size: Double) async -> NutriaFood? {
         let fullName = brand != nil ? "\(name) \(brand!)" : name
         
+        // ✅ Vérifie s'il existe déjà un aliment avec le même nom + unité
+            if let existing = await fetchExistingNutriaFood(name: name, unit: unit) {
+                return existing
+            }
+        
         do {
-            let nutrition = try await AIService.shared.requestNutritionFromAPI(food: fullName, unit: .gram)
+            let nutrition = try await AIService.shared.requestNutritionFromAPI(
+                food: fullName,
+                quantity: size,
+                unit: unit
+            )
+
             let now = Date()
             let normalizedName = normalize(name)
             let normalizedBrand = brand?.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-            
+
             let food = NutriaFood(
                 id: UUID().uuidString,
                 canonicalName: fullName,
@@ -224,23 +239,43 @@ extension NutritionService {
                 brand: brand,
                 normalizedBrand: normalizedBrand,
                 isGeneric: brand == nil,
-                servingSize: nutrition.servingSize,
-                servingUnit: nutrition.servingUnit,
+                servingSize: size,
+                servingUnit: unit.rawValue,
                 calories: nutrition.calories,
                 proteins: nutrition.proteins,
                 carbs: nutrition.carbs,
                 fats: nutrition.fats,
                 fiber: nutrition.fiber,
-                source: "gpt-4o-mini",
-                createdAt: now
+                source: "gpt-4o",
+                createdAt: now,
             )
-            
+
             try Firestore.firestore().collection("foods").document(food.id).setData(from: food)
             return food
         } catch {
             print("❌ Erreur GPT ou Firestore : \(error)")
             return nil
         }
+    }
+
+    func fetchExistingNutriaFood(name: String, unit: ServingUnit) async -> NutriaFood? {
+        let db = Firestore.firestore()
+        let normalizedName = normalize(name)
+
+        do {
+            let snapshot = try await db.collection("foods")
+                .whereField("normalizedName", isEqualTo: normalizedName)
+                .whereField("servingUnit", isEqualTo: unit.rawValue)
+                .getDocuments()
+
+            if let document = snapshot.documents.first {
+                return try document.data(as: NutriaFood.self)
+            }
+        } catch {
+            print("❌ Erreur lors de la recherche de doublon : \(error)")
+        }
+
+        return nil
     }
     
     private func normalizeString(_ string: String) -> String {
@@ -276,14 +311,12 @@ extension NutritionService {
         return dist[a.count][b.count]
     }
     
-    func fuzzySearchNutriaFood(name: String, brand: String?) async -> NutriaFood? {
+    func fuzzySearchNutriaFood(name: String, brand: String?, unit: ServingUnit?) async -> NutriaFood? {
         let normalizedName = normalize(name)
         let normalizedBrand = brand?.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
 
         do {
             let db = Firestore.firestore()
-            
-            // On récupère un sous-ensemble intelligent de la base
             var query: Query = db.collection("foods").limit(to: 50)
 
             if let normalizedBrand = normalizedBrand {
@@ -295,9 +328,9 @@ extension NutritionService {
                 try $0.data(as: NutriaFood.self)
             }
 
-            // Appliquer la distance de Levenshtein
             let filtered = candidates.filter {
-                levenshtein($0.normalizedName, normalizedName) <= 2
+                levenshtein($0.normalizedName, normalizedName) <= 2 &&
+                (unit == nil || $0.servingUnit == unit!.rawValue)
             }
 
             return filtered.sorted {
@@ -311,24 +344,28 @@ extension NutritionService {
         }
     }
 
+
     /// Cherche en base, sinon génère via IA ET stocke dans Firestore
      func fetchNutriaFood(name: String, brand: String?, unit: ServingUnit) async -> NutriaFood? {
        // 1️⃣ normalisation
        let normalizedName = normalize(name)
        let normalizedBrand = brand?.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        
 
        // 2️⃣ recherche floue en Firestore
-       if let existing = await fuzzySearchNutriaFood(name: normalizedName, brand: normalizedBrand) {
-         return existing
-       }
+         if let existing = await fuzzySearchNutriaFood(name: normalizedName, brand: normalizedBrand, unit: unit) {
+             return existing
+         }
 
        // 3️⃣ pas trouvé → génération + stockage
        do {
          let fullName = brand != nil ? "\(name) \(brand!)" : name
-         let nutrition = try await AIService.shared.requestNutritionFromAPI(
-           food: fullName,
-           unit: unit  // on passe l’unité choisie à l’API
-         )
+           let quantity: Double = (unit == .gram || unit == .milliliter) ? 100 : 1
+           let nutrition = try await AIService.shared.requestNutritionFromAPI(
+               food: fullName,
+               quantity: quantity,
+               unit: unit
+           )
 
          // création de l’objet complet
          let now = Date()
@@ -393,12 +430,10 @@ extension NutritionService {
         let col = db.collection("rawNutrition")
 
         // 🔍 1) recherche
-        let snapshot = try await col
-          .whereField("normalizedName", isEqualTo: normalized)
-          .whereField("unit",           isEqualTo: unit.rawValue)
-          .order(by: "timestamp", descending: true)
-          .limit(to: 1)
-          .getDocuments()
+          let snapshot = try await col
+            .whereField("normalizedName", isEqualTo: normalized)
+            .whereField("unit", isEqualTo: unit.rawValue)
+            .getDocuments()
 
         if let doc = snapshot.documents.first,
            let existingJSON = doc.data()["json"] as? String {
@@ -419,5 +454,27 @@ extension NutritionService {
 
         return rawJSON
       }
+    
+    func loadAllFoods() async -> [NutriaFood] {
+        do {
+            let snapshot = try await Firestore.firestore()
+                .collection("foods")
+                .order(by: "canonicalName")
+                .limit(to: 100)
+                .getDocuments()
+
+            return try snapshot.documents.compactMap {
+                try $0.data(as: NutriaFood.self)
+            }
+        } catch {
+            print("❌ Erreur Firestore (loadAllFoods): \(error)")
+            return []
+        }
+    }
+    func addMultipleFoodEntries(_ entries: [FoodEntry]) {
+        var all = localDataManager.loadFoodEntries() ?? []
+        all.append(contentsOf: entries)
+        localDataManager.saveFoodEntries(all)
+    }
 }
 
