@@ -8,7 +8,6 @@
 import SwiftUI
 import Combine
 
-
 class JournalViewModel: ObservableObject {
     // Published properties
     @Published var foodEntries: [FoodEntry] = []
@@ -217,7 +216,8 @@ class JournalViewModel: ObservableObject {
                 quantity: 1,
                 date: date,
                 mealType: mealType,
-                source: .recipe  // Assurez-vous que FoodSource.recipe est le cas correct
+                source: .recipe,
+                unit: food.servingUnit.rawValue  // Assurez-vous que FoodSource.recipe est le cas correct
             )
             
             DispatchQueue.main.async {
@@ -250,7 +250,8 @@ class JournalViewModel: ObservableObject {
             quantity: 1,
             date: date,
             mealType: mealType,
-            source: .recipe
+            source: .recipe,
+            unit: food.servingUnit.rawValue
         )
         
         addFoodEntry(entry)
@@ -284,7 +285,8 @@ class JournalViewModel: ObservableObject {
                 quantity: 1,
                 date: date,
                 mealType: mealType,
-                source: .manual
+                source: .manual,
+                unit: food.servingUnit.rawValue
             )
             
             DispatchQueue.main.async {
@@ -318,7 +320,8 @@ class JournalViewModel: ObservableObject {
             quantity: servings, // Utilisez servings ici au lieu de 1 fixe
             date: selectedDate, // Utilisez selectedDate qui est une propriété du ViewModel
             mealType: mealType,
-            source: .recipe
+            source: .recipe,
+            unit: food.servingUnit.rawValue
         )
         
         addFoodEntry(entry)
@@ -428,7 +431,8 @@ extension JournalViewModel {
                 quantity: 1,
                 date: selectedDate,
                 mealType: mealType,
-                source: .foodPhoto
+                source: .foodPhoto,
+                unit: food.servingUnit.rawValue
             )
             
             // Enregistrer le scan dans l'historique

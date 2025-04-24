@@ -174,7 +174,8 @@ struct FoodAnalysisSummaryView: View {
             quantity: 1,
             date: journalViewModel.selectedDate,
             mealType: mealType,
-            source: .foodPhoto
+            source: .foodPhoto,
+            unit: food.servingUnit.rawValue
         )
         
         // Enregistrer le scan dans l'historique

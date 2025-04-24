@@ -41,8 +41,9 @@ struct NutritionValues: Codable {
     }
 }
 
-// Pour la compatibilité avec le code existant qui utilise NutritionInfo
 struct NutritionInfo: Codable {
+    let servingSize: Double       // Ex: 100 ou 1
+    let servingUnit: String       // "g", "ml" ou "pc"
     let calories: Double
     let proteins: Double
     let carbs: Double
@@ -50,11 +51,26 @@ struct NutritionInfo: Codable {
     let fiber: Double
     
     enum CodingKeys: String, CodingKey {
-        case calories, proteins, carbs, fats, fiber
+        case servingSize
+        case servingUnit
+        case calories
+        case proteins
+        case carbs
+        case fats
+        case fiber
     }
     
-    // Ajouter cet initialiser standard
-    init(calories: Double, proteins: Double, carbs: Double, fats: Double, fiber: Double) {
+    init(
+        servingSize: Double = 100,
+        servingUnit: String = "g",
+        calories: Double,
+        proteins: Double,
+        carbs: Double,
+        fats: Double,
+        fiber: Double
+    ) {
+        self.servingSize = servingSize
+        self.servingUnit = servingUnit
         self.calories = calories
         self.proteins = proteins
         self.carbs = carbs
@@ -62,19 +78,20 @@ struct NutritionInfo: Codable {
         self.fiber = fiber
     }
     
-    // Initialiser pour Decodable
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        // Quantité et unité de portion (défaut = 100g)
+        servingSize = try container.decodeIfPresent(Double.self, forKey: .servingSize) ?? 100
+        servingUnit = try container.decodeIfPresent(String.self, forKey: .servingUnit) ?? "g"
         
         calories = try container.decode(Double.self, forKey: .calories)
         proteins = try container.decode(Double.self, forKey: .proteins)
         carbs = try container.decode(Double.self, forKey: .carbs)
         fats = try container.decode(Double.self, forKey: .fats)
         
-        // Utiliser une valeur par défaut (10% des glucides) si fiber est absent
-        fiber = try container.decodeIfPresent(Double.self, forKey: .fiber) ?? {
-            let carbs = try container.decode(Double.self, forKey: .carbs)
-            return carbs * 0.1
-        }()
+        // Fibres : 10% des glucides par défaut
+        fiber = try container.decodeIfPresent(Double.self, forKey: .fiber) ?? (carbs * 0.1)
     }
 }
+

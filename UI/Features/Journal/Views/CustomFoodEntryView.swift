@@ -266,7 +266,8 @@ struct CustomFoodEntryView: View {
             quantity: quantity,
             date: journalViewModel.selectedDate,
             mealType: mealType,
-            source: .favorite
+            source: .favorite,
+            unit: food.servingUnit.rawValue
         )
 
         nutritionService.addFoodEntry(entry)

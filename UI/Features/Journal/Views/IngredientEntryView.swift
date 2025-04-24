@@ -8,7 +8,6 @@
 import SwiftUI
 import Combine
 
-
 struct IngredientEntryView: View {
     let mealType: MealType
     let onIngredientsSubmitted: ([String: Double]) -> Void
@@ -19,102 +18,112 @@ struct IngredientEntryView: View {
     
     @State private var ingredients: [IngredientEntry] = []
     @State private var isProcessing = false
-    @State private var isShowingCIQUALSearch = false
-    @State private var selectedIngredientIndex: Int? = nil
+    @State private var isShowingNutriaSearch = false
     @State private var isShowingCustomFoodsSelector = false
-    
+    @State private var iaSelectedUnit: ServingUnit = .gram
     
     struct IngredientEntry: Identifiable {
         let id = UUID()
         var name: String = ""
         var quantity: String = ""
-        var ciqualId: String? = nil
         var nutritionInfo: NutritionValues? = nil
+        var servingSize: Double = 100
+        var servingUnit: ServingUnit = .gram
     }
     
     var body: some View {
         NavigationView {
-            mainContent
-        }
-    }
-    
-    // MARK: - Sous-vues
-    
-    private var mainContent: some View {
-        Form {
-            ingredientsSection
-            
-            if !ingredients.isEmpty {
-                nutritionSummarySection
+            Form {
+                ingredientsSection
+                if !ingredients.isEmpty {
+                    nutritionSummarySection
+                }
+                submitSection
             }
-            
-            submitSection
-        }
-        .navigationTitle("Ajouter des ingrédients")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Annuler") {
-                    presentationMode.wrappedValue.dismiss()
+            .navigationTitle("Ajouter des ingrédients")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Annuler") {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                }
+            }
+            .sheet(isPresented: $isShowingNutriaSearch) {
+                NavigationView {
+                    NutriaFoodSearchView { food, quantity, unit in
+                        iaSelectedUnit = unit
+                        addNutriaFood(food, quantity: quantity, unit: unit)
+                    }
+                    .environmentObject(nutritionService)
+                }
+            }
+            .sheet(isPresented: $isShowingCustomFoodsSelector) {
+                NavigationView {
+                    CustomFoodSelectorView { customFood, quantity in
+                        addCustomFood(customFood, quantity: quantity)
+                    }
+                    .environmentObject(nutritionService)
                 }
             }
         }
-        .sheet(isPresented: $isShowingCIQUALSearch) {
-            NavigationView {
-                CIQUALFoodSearchView { ciqualFood, quantity in
-                    addCiqualFood(ciqualFood, quantity: quantity)
-                }
-                .environmentObject(nutritionService)
-            }
-        }
-        // Ajoutez ce sheet dans le body, après le sheet existant pour CIQUAL
-        .sheet(isPresented: $isShowingCustomFoodsSelector) {
-            NavigationView {
-                CustomFoodSelectorView { customFood, quantity in
-                    addCustomFood(customFood, quantity: quantity)
-                }
-                .environmentObject(nutritionService)
-            }
-        }
-
     }
     
     private var ingredientsSection: some View {
         Section(header: Text("INGRÉDIENTS")) {
             if ingredients.isEmpty {
-                emptyIngredientsView
+                Text("Aucun ingrédient ajouté")
+                    .foregroundColor(.secondary)
+                    .italic()
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding()
             } else {
-                ingredientsList
+                ForEach(ingredients.indices, id: \.self) { index in
+                    ingredientRow(at: index)
+                }
             }
             
-            addButton
+            VStack(spacing: 10) {
+                Button {
+                    isShowingNutriaSearch = true
+                } label: {
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                        Text("Rechercher un aliment")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                }
+                .buttonStyle(BorderedButtonStyle())
+                
+                Button {
+                    isShowingCustomFoodsSelector = true
+                } label: {
+                    HStack {
+                        Image(systemName: "star.fill")
+                        Text("Mes aliments personnalisés")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                }
+                .buttonStyle(BorderedButtonStyle())
+            }
         }
     }
     
-    private var emptyIngredientsView: some View {
-        Text("Aucun ingrédient ajouté")
-            .foregroundColor(.secondary)
-            .italic()
-            .frame(maxWidth: .infinity, alignment: .center)
-            .padding()
-    }
-    
-    private var ingredientsList: some View {
-        ForEach(ingredients.indices, id: \.self) { index in
-            ingredientRow(at: index)
-        }
-    }
-    
+    // MARK: - Ligne d’ingrédient
     private func ingredientRow(at index: Int) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        let entry = ingredients[index]
+        
+        return VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(ingredients[index].name)
+                Text(entry.name)
                     .font(.headline)
                 
                 Spacer()
                 
                 TextField("Qté", text: Binding(
-                    get: { ingredients[index].quantity },
+                    get: { entry.quantity },
                     set: { ingredients[index].quantity = $0 }
                 ))
                 .keyboardType(.decimalPad)
@@ -124,14 +133,13 @@ struct IngredientEntryView: View {
                 .background(Color(.systemGray6))
                 .cornerRadius(4)
                 
-                Text("g")
+                Text(entry.servingUnit.displayName)
                     .foregroundColor(.secondary)
                 
                 Button {
                     withAnimation {
                         _ = ingredients.remove(at: index)
                     }
-
                 } label: {
                     Image(systemName: "minus.circle.fill")
                         .foregroundColor(.red)
@@ -140,9 +148,14 @@ struct IngredientEntryView: View {
                 .padding(.leading, 6)
             }
             
-            if let nutrition = ingredients[index].nutritionInfo,
-               let quantity = Double(ingredients[index].quantity) {
-                nutritionRow(nutrition: nutrition, quantity: quantity)
+            // Résumé nutritionnel si on a déjà les infos et une quantité valide
+            if let nutrition = entry.nutritionInfo,
+               let qty = Double(entry.quantity) {
+                nutritionRow(
+                    nutrition: nutrition,
+                    quantity: qty,
+                    servingSize: entry.servingSize
+                )
             }
         }
         .padding(.vertical, 8)
@@ -153,19 +166,18 @@ struct IngredientEntryView: View {
         .padding(.vertical, 2)
     }
     
-    private func nutritionRow(nutrition: NutritionValues, quantity: Double) -> some View {
-        let ratio = quantity / 100.0
+    // MARK: - Résumé nutritionnel
+    private func nutritionRow(nutrition: NutritionValues, quantity: Double, servingSize: Double) -> some View {
+        // On calcule le ratio par rapport à la portion retournée par l’API
+        let ratio = quantity / servingSize
         
         return HStack(spacing: 12) {
             Text("\(Int(nutrition.calories * ratio)) kcal")
                 .foregroundColor(.orange)
-            
             Text("P: \(String(format: "%.1fg", nutrition.proteins * ratio))")
                 .foregroundColor(.blue)
-            
             Text("G: \(String(format: "%.1fg", nutrition.carbohydrates * ratio))")
                 .foregroundColor(.green)
-            
             Text("L: \(String(format: "%.1fg", nutrition.fats * ratio))")
                 .foregroundColor(.red)
         }
@@ -175,91 +187,29 @@ struct IngredientEntryView: View {
         .background(Color(.systemGray6).opacity(0.5))
         .cornerRadius(4)
     }
-    
-    private var addButton: some View {
-        VStack(spacing: 10) {
-            // Bouton pour rechercher dans CIQUAL
-            Button {
-                isShowingCIQUALSearch = true
-            } label: {
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(.blue)
-                    Text("Chercher dans CIQUAL")
-                        .foregroundColor(.blue)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-            }
-            .buttonStyle(BorderedButtonStyle())
-            
-            // Bouton pour les aliments personnalisés
-            Button {
-                isShowingCustomFoodsSelector = true
-            } label: {
-                HStack {
-                    Image(systemName: "star.fill")
-                        .foregroundColor(.orange)
-                    Text("Mes aliments personnalisés")
-                        .foregroundColor(.orange)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-            }
-            .buttonStyle(BorderedButtonStyle())
-        }
-    }
+
+
     
     private var nutritionSummarySection: some View {
         Section(header: Text("RÉSUMÉ NUTRITIONNEL")) {
             HStack {
-                nutritionSummaryItem(
-                    title: "Calories",
-                    value: "\(Int(totalNutrition.calories))",
-                    unit: "kcal",
-                    color: .orange
-                )
-                
-                nutritionSummaryItem(
-                    title: "Protéines",
-                    value: String(format: "%.1f", totalNutrition.proteins),
-                    unit: "g",
-                    color: .blue
-                )
-                
-                nutritionSummaryItem(
-                    title: "Glucides",
-                    value: String(format: "%.1f", totalNutrition.carbohydrates),
-                    unit: "g",
-                    color: .green
-                )
-                
-                nutritionSummaryItem(
-                    title: "Lipides",
-                    value: String(format: "%.1f", totalNutrition.fats),
-                    unit: "g",
-                    color: .red
-                )
+                nutritionSummaryItem("Calories", "\(Int(totalNutrition.calories))", "kcal", .orange)
+                nutritionSummaryItem("Protéines", String(format: "%.1f", totalNutrition.proteins), "g", .blue)
+                nutritionSummaryItem("Glucides", String(format: "%.1f", totalNutrition.carbohydrates), "g", .green)
+                nutritionSummaryItem("Lipides", String(format: "%.1f", totalNutrition.fats), "g", .red)
             }
             .padding(.vertical, 8)
         }
     }
     
-    private func nutritionSummaryItem(title: String, value: String, unit: String, color: Color) -> some View {
+    private func nutritionSummaryItem(_ title: String, _ value: String, _ unit: String, _ color: Color) -> some View {
         VStack(alignment: .leading) {
-            Text(title)
-                .font(.caption)
-                .foregroundColor(.secondary)
+            Text(title).font(.caption).foregroundColor(.secondary)
             HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text(value)
-                    .font(.headline)
-                    .foregroundColor(color)
-                Text(unit)
-                    .font(.caption)
-                    .foregroundColor(color)
+                Text(value).font(.headline).foregroundColor(color)
+                Text(unit).font(.caption).foregroundColor(color)
             }
-        }
-        .frame(maxWidth: .infinity)
+        }.frame(maxWidth: .infinity)
     }
     
     private var submitSection: some View {
@@ -271,344 +221,130 @@ struct IngredientEntryView: View {
                     Spacer()
                 }
             } else {
-                Button {
+                Button("Ajouter au journal") {
                     submitIngredients()
-                } label: {
-                    Text("Ajouter au journal")
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .bold()
                 }
                 .disabled(ingredients.isEmpty)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .bold()
                 .buttonStyle(BorderedProminentButtonStyle())
             }
         }
     }
     
-    // MARK: - Méthodes privées
-    
     private var totalNutrition: NutritionValues {
-        var calories: Double = 0
-        var proteins: Double = 0
-        var carbs: Double = 0
-        var fats: Double = 0
-        var fiber: Double = 0
-        
-        for ingredient in ingredients {
-            if let nutrition = ingredient.nutritionInfo,
-               let quantity = Double(ingredient.quantity) {
-                let ratio = quantity / 100.0
-                
-                calories += nutrition.calories * ratio
-                proteins += nutrition.proteins * ratio
-                carbs += nutrition.carbohydrates * ratio
-                fats += nutrition.fats * ratio
-                fiber += nutrition.fiber * ratio
-            }
+        ingredients.reduce(NutritionValues(calories: 0, proteins: 0, carbohydrates: 0, fats: 0, fiber: 0)) { acc, entry in
+            guard let nutrition = entry.nutritionInfo,
+                  let quantity = Double(entry.quantity) else { return acc }
+            let ratio = quantity / 100.0
+            return NutritionValues(
+                calories: acc.calories + nutrition.calories * ratio,
+                proteins: acc.proteins + nutrition.proteins * ratio,
+                carbohydrates: acc.carbohydrates + nutrition.carbohydrates * ratio,
+                fats: acc.fats + nutrition.fats * ratio,
+                fiber: acc.fiber + nutrition.fiber * ratio
+            )
         }
-        
-        return NutritionValues(
-            calories: calories,
-            proteins: proteins,
-            carbohydrates: carbs,
-            fats: fats,
-            fiber: fiber
-        )
     }
     
-    private func addCiqualFood(_ ciqualFood: CIQUALFood, quantity: Double) {
+    private func addNutriaFood(_ nutriaFood: NutriaFood, quantity: Double, unit: ServingUnit) {
+        let food = nutriaFood.toFood()
+        let nutritionValues = NutritionValues(
+            calories: Double(food.calories),
+            proteins: food.proteins,
+            carbohydrates: food.carbs,
+            fats: food.fats,
+            fiber: food.fiber
+        )
+
+        ingredients.append(IngredientEntry(
+            name: food.name,
+            quantity: String(format: "%.1f", quantity),
+            nutritionInfo: nutritionValues,
+            servingSize: food.servingSize,
+            servingUnit: unit
+        ))
+    }
+
+
+    
+    private func addCustomFood(_ customFood: CustomFood, quantity: Double) {
         withAnimation {
-            let food = Food(from: ciqualFood)
-            let nutritionValues = NutritionValues(
-                calories: Double(food.calories),
-                proteins: food.proteins,
-                carbohydrates: food.carbs,
-                fats: food.fats,
-                fiber: food.fiber
-            )
-            
             ingredients.append(IngredientEntry(
-                name: food.name,
+                name: customFood.name,
                 quantity: String(format: "%.1f", quantity),
-                ciqualId: ciqualFood.id,
-                nutritionInfo: nutritionValues
+                nutritionInfo: NutritionValues(
+                    calories: Double(customFood.calories),
+                    proteins: customFood.proteins,
+                    carbohydrates: customFood.carbs,
+                    fats: customFood.fats,
+                    fiber: customFood.fiber
+                )
             ))
         }
     }
     
     private func submitIngredients() {
         guard !ingredients.isEmpty else { return }
-        
         isProcessing = true
-        
-        // Ajouter chaque ingrédient au journal via NutritionService
-        for ingredient in ingredients {
-            if let ciqualId = ingredient.ciqualId,
-               let quantity = Double(ingredient.quantity) {
-                // Cas d'un ingrédient CIQUAL
-                nutritionService.addCIQUALFoodToJournal(
-                    ciqualFoodId: ciqualId,
-                    quantity: quantity,
-                    mealType: mealType
-                )
-            } else if let quantity = Double(ingredient.quantity),
-                      let nutrition = ingredient.nutritionInfo {
-                // Cas d'un ingrédient personnalisé ou autre (sans ciqualId)
-                // Créer un Food à partir des informations nutritionnelles
-                let food = Food(
-                    id: UUID(),
-                    name: ingredient.name,
-                    calories: Int(nutrition.calories),
-                    proteins: nutrition.proteins,
-                    carbs: nutrition.carbohydrates,
-                    fats: nutrition.fats,
-                    fiber: nutrition.fiber,
-                    servingSize: 100, // Base standard pour les valeurs nutritionnelles
-                    servingUnit: .gram,
-                    image: nil
-                )
-                
-                // Créer et ajouter l'entrée au journal
-                let entry = FoodEntry(
-                    id: UUID(),
-                    food: food,
-                    quantity: quantity / 100.0, // Ajuster selon la quantité (car servingSize = 100g)
-                    date: journalViewModel.selectedDate,
-                    mealType: mealType,
-                    source: .manual
-                )
-                
-                nutritionService.addFoodEntry(entry)
+
+        for entry in ingredients {
+            // 1) Récupérer la quantité et les infos nutritionnelles
+            guard let quantity = Double(entry.quantity),
+                  let nutrition = entry.nutritionInfo else {
+                continue
             }
+
+            // 2) Calculer le ratio et la quantité à passer au journal
+            let ratio: Double
+            let qtyForEntry: Double
+
+            switch entry.servingUnit {
+            case .gram, .milliliter:
+                // si portion 100g ou 100mL → ratio = qty / 100
+                ratio = quantity / entry.servingSize
+                qtyForEntry = ratio
+
+            case .piece:
+                // si portion = 1 pièce → ratio = qty / 1 = qty
+                ratio = quantity / entry.servingSize
+                qtyForEntry = quantity
+            }
+
+            // 3) Construire l’objet Food avec la portion d’origine
+            let food = Food(
+                id: UUID(),
+                name: entry.name,
+                calories: Int((nutrition.calories * ratio).rounded()),
+                proteins: nutrition.proteins * ratio,
+                carbs: nutrition.carbohydrates * ratio,
+                fats: nutrition.fats * ratio,
+                fiber: nutrition.fiber * ratio,
+                servingSize: entry.servingSize,   // ex: 100 ou 1
+                servingUnit: entry.servingUnit,
+                image: nil
+            )
+
+            // 4) Créer la FoodEntry en passant l’unité choisie
+            let journalEntry = FoodEntry(
+                id: UUID(),
+                food: food,
+                quantity: qtyForEntry,
+                date: journalViewModel.selectedDate,
+                mealType: mealType,
+                source: .manual,
+                unit: entry.servingUnit.displayName  // "g", "mL" ou "pc"
+            )
+
+            nutritionService.addFoodEntry(journalEntry)
         }
-        
-        // Notifier pour fermer la vue
+
+        // 5) Fermer la vue
         onIngredientsSubmitted([:])
-        
-        // Fermer la vue après un court délai
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
             presentationMode.wrappedValue.dismiss()
         }
     }
-    private func addCustomFood(_ customFood: CustomFood, quantity: Double) {
-        withAnimation {
-            let nutritionValues = NutritionValues(
-                calories: Double(customFood.calories),
-                proteins: customFood.proteins,
-                carbohydrates: customFood.carbs,
-                fats: customFood.fats,
-                fiber: customFood.fiber
-            )
-            
-            ingredients.append(IngredientEntry(
-                name: customFood.name,
-                quantity: String(format: "%.1f", quantity),
-                ciqualId: nil, // Pas d'ID CIQUAL pour les aliments personnalisés
-                nutritionInfo: nutritionValues
-            ))
-        }
-    }
 }
 
-// Vue de recherche CIQUAL
-struct CIQUALFoodSearchView: View {
-    @EnvironmentObject var nutritionService: NutritionService
-    @Environment(\.presentationMode) var presentationMode
-    
-    @State private var searchText = ""
-    @State private var searchResults: [CIQUALFood] = []
-    @State private var quantity: String = "100"
-    @State private var isLoading = false
-    
-    var onFoodSelected: (CIQUALFood, Double) -> Void
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            // Barre de recherche
-            HStack {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(.gray)
-                
-                TextField("Rechercher un aliment", text: $searchText)
-                    .autocapitalization(.none)
-                    .disableAutocorrection(true)
-                    .onChange(of: searchText) { newValue in
-                        if !newValue.isEmpty && newValue.count >= 2 {
-                            isLoading = true
-                            // Délai pour éviter trop de recherches pendant la frappe
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                if searchText == newValue { // Vérifie si le texte n'a pas changé depuis
-                                    searchResults = nutritionService.searchCIQUALFoods(query: newValue)
-                                    isLoading = false
-                                }
-                            }
-                        } else {
-                            searchResults = []
-                            isLoading = false
-                        }
-                    }
-                
-                if !searchText.isEmpty {
-                    Button(action: {
-                        searchText = ""
-                        searchResults = []
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.gray)
-                    }
-                }
-            }
-            .padding(10)
-            .background(Color(.systemGray6))
-            .cornerRadius(10)
-            .padding(.horizontal)
-            .padding(.top, 8)
-            
-            // Résultats de recherche ou messages informatifs
-            ZStack {
-                if isLoading {
-                    VStack {
-                        Spacer()
-                        ProgressView("Recherche en cours...")
-                        Spacer()
-                    }
-                } else if searchResults.isEmpty && !searchText.isEmpty && searchText.count >= 2 {
-                    VStack {
-                        Spacer()
-                        Image(systemName: "magnifyingglass")
-                            .font(.system(size: 40))
-                            .foregroundColor(.gray)
-                            .padding()
-                        Text("Aucun résultat pour \"\(searchText)\"")
-                            .foregroundColor(.secondary)
-                        Spacer()
-                    }
-                } else if searchText.count < 2 && !searchText.isEmpty {
-                    VStack {
-                        Spacer()
-                        Text("Entrez au moins 2 caractères")
-                            .foregroundColor(.secondary)
-                        Spacer()
-                    }
-                } else if searchText.isEmpty {
-                    VStack {
-                        Spacer()
-                        Image(systemName: "text.magnifyingglass")
-                            .font(.system(size: 40))
-                            .foregroundColor(.gray)
-                            .padding()
-                        Text("Recherchez un aliment dans la base CIQUAL")
-                            .foregroundColor(.secondary)
-                        Spacer()
-                    }
-                } else {
-                    // Liste des résultats
-                    List {
-                        ForEach(searchResults) { food in
-                            FoodResultRow(food: food, quantity: $quantity) { qty in
-                                onFoodSelected(food, qty)
-                                presentationMode.wrappedValue.dismiss()
-                            }
-                        }
-                    }
-                    .listStyle(PlainListStyle())
-                }
-            }
-        }
-        .navigationTitle("Base CIQUAL")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Annuler") {
-                    presentationMode.wrappedValue.dismiss()
-                }
-            }
-        }
-        .onAppear {
-            nutritionService.loadCIQUALDatabase()
-        }
-    }
-}
-
-
-struct FoodResultRow: View {
-    let food: CIQUALFood
-    @Binding var quantity: String
-    let onSelect: (Double) -> Void
-    
-    @State private var isEditing = false
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Nom de l'aliment
-            Text(food.nom)
-                .font(.headline)
-                .lineLimit(2)
-            
-            // Valeurs nutritionnelles résumées
-            HStack(spacing: 12) {
-                Text("\(Int(food.energie_kcal ?? 0)) kcal")
-                    .foregroundColor(.orange)
-                
-                Text("P: \(String(format: "%.1f", food.proteines ?? 0))g")
-                    .foregroundColor(.blue)
-                
-                Text("G: \(String(format: "%.1f", food.glucides ?? 0))g")
-                    .foregroundColor(.green)
-                
-                Text("L: \(String(format: "%.1f", food.lipides ?? 0))g")
-                    .foregroundColor(.red)
-            }
-            .font(.caption)
-            .padding(.vertical, 2)
-            
-            // Sélecteur de quantité et bouton d'ajout
-            HStack {
-                Spacer()
-                
-                // Champ de quantité
-                TextField("100", text: $quantity)
-                    .keyboardType(.decimalPad)
-                    .frame(width: 60)
-                    .multilineTextAlignment(.trailing)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 6)
-                    .background(Color(.systemGray6))
-                    .cornerRadius(8)
-                    .onTapGesture {
-                        isEditing = true
-                    }
-                
-                Text("g")
-                    .foregroundColor(.secondary)
-                    .padding(.trailing, 8)
-                
-                // Bouton d'ajout
-                Button(action: {
-                    if let qty = Double(quantity), qty > 0 {
-                        onSelect(qty)
-                    } else {
-                        // Utiliser 100g par défaut si la quantité n'est pas valide
-                        onSelect(100)
-                    }
-                }) {
-                    Image(systemName: "plus.circle.fill")
-                        .foregroundColor(.blue)
-                        .font(.title2)
-                }
-            }
-        }
-        .padding(.vertical, 8)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            // Option: sélectionner cet élément quand on tape dessus
-            if !isEditing {
-                if let qty = Double(quantity), qty > 0 {
-                    onSelect(qty)
-                } else {
-                    onSelect(100)
-                }
-            }
-        }
-    }
-}

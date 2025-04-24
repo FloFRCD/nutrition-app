@@ -239,7 +239,8 @@ struct BarcodeProductView: View {
             quantity: quantityValue / 100.0,
             date: Date(),
             mealType: mealType,
-            source: .barcode
+            source: .barcode,
+            unit: food.servingUnit.rawValue
         )
         
         // Appeler la closure pour ajouter au journal

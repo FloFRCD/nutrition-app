@@ -7,10 +7,19 @@
 
 import Foundation
 
-enum ServingUnit: String, Codable, CaseIterable {
+enum ServingUnit: String, Codable, CaseIterable, Identifiable {
     case gram = "g"
-    case milliliter = "ml"
-    case piece = "pc"
+    case milliliter = "mL"
+    case piece = "pièce"
+    
+    var id: String { rawValue }
+    var displayName: String {
+        switch self {
+        case .gram: return "g"
+        case .milliliter: return "mL"
+        case .piece: return "pièce"
+        }
+    }
 }
 
 struct Food: Identifiable, Codable {
@@ -73,7 +82,6 @@ struct Food: Identifiable, Codable {
     }
 }
 
-// Définition de FoodEntry
 struct FoodEntry: Identifiable, Codable {
     var id: UUID = UUID()
     var food: Food
@@ -81,16 +89,18 @@ struct FoodEntry: Identifiable, Codable {
     var date: Date
     var mealType: MealType
     var source: FoodSource
-    
-    init(id: UUID = UUID(), food: Food, quantity: Double, date: Date, mealType: MealType, source: FoodSource) {
-           self.id = id
-           self.food = food
-           self.quantity = quantity
-           self.date = date
-           self.mealType = mealType
-           self.source = source
-       }
-    
+    let unit: String  // ✅ Unité ("g", "ml", "pc")
+
+    init(id: UUID = UUID(), food: Food, quantity: Double, date: Date, mealType: MealType, source: FoodSource, unit: String) {
+        self.id = id
+        self.food = food
+        self.quantity = quantity
+        self.date = date
+        self.mealType = mealType
+        self.source = source
+        self.unit = unit
+    }
+
     enum FoodSource: String, Codable {
         case manual = "Manuel"
         case foodPhoto = "Photo"
@@ -98,33 +108,23 @@ struct FoodEntry: Identifiable, Codable {
         case recipe = "Recette"
         case favorite = "Favori"
     }
-    
-    // Calcul des valeurs nutritionnelles pour cette entrée
-    var nutritionValues: NutritionValues {
-        return NutritionValues(
-            calories: Double(Int(Double(food.calories) * quantity)),
-            proteins: food.proteins * quantity,
-            carbohydrates: food.carbs * quantity,
-            fats: food.fats * quantity,
-            fiber: food.fiber * quantity
-        )
+
+    // ✅ Ajoute `unit` ici pour l’encodage/décodage automatique
+    enum CodingKeys: String, CodingKey {
+        case id, food, quantity, date, mealType, source, unit
     }
 
-    // Ajoutez ces méthodes pour assurer la compatibilité avec le codage ISO8601 des dates
-    enum CodingKeys: String, CodingKey {
-        case id, food, quantity, date, mealType, source
-    }
-    
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        
+
         id = try container.decode(UUID.self, forKey: .id)
         food = try container.decode(Food.self, forKey: .food)
         quantity = try container.decode(Double.self, forKey: .quantity)
         mealType = try container.decode(MealType.self, forKey: .mealType)
         source = try container.decode(FoodSource.self, forKey: .source)
-        
-        // Essayer différentes méthodes de décodage pour la date
+        unit = try container.decodeIfPresent(String.self, forKey: .unit) ?? "g" // fallback
+
+        // ✅ Gestion intelligente de la date
         if let dateString = try? container.decode(String.self, forKey: .date) {
             let formatter = ISO8601DateFormatter()
             if let parsedDate = formatter.date(from: dateString) {
@@ -138,7 +138,19 @@ struct FoodEntry: Identifiable, Codable {
             throw DecodingError.dataCorruptedError(forKey: .date, in: container, debugDescription: "Date is neither string nor double")
         }
     }
+
+    // Calcul des macros pour cette entrée
+    var nutritionValues: NutritionValues {
+        return NutritionValues(
+            calories: Double(food.calories) * quantity,
+            proteins: food.proteins * quantity,
+            carbohydrates: food.carbs * quantity,
+            fats: food.fats * quantity,
+            fiber: food.fiber * quantity
+        )
+    }
 }
+
 
 struct CIQUALFood: Codable, Identifiable {
     // Les autres propriétés...
@@ -229,18 +241,18 @@ extension Food {
     init(from ciqual: CIQUALFood) {
         let id = UUID()
         let name = ciqual.nom
-
+        
         var calories = ciqual.energie_kcal ?? 0
         var proteins = ciqual.proteines ?? 0
         var carbs = ciqual.glucides ?? 0
         var fats = ciqual.lipides ?? 0
         let fiber = ciqual.fibres ?? 0
-
+        
         let knownCalories = calories > 0
         let knownProteins = proteins > 0
         let knownCarbs = carbs > 0
         let knownFats = fats > 0
-
+        
         // Complétion intelligente + logs
         if !knownCalories && knownProteins && knownCarbs && knownFats {
             calories = (proteins * 4 + carbs * 4 + fats * 9).rounded()
@@ -255,7 +267,7 @@ extension Food {
             proteins = max(0, (calories - (carbs * 4) - (fats * 9)) / 4)
             print("✅ [CIQUAL] Protéines complétées automatiquement pour '\(name)': \(String(format: "%.2f", proteins)) g")
         }
-
+        
         self.init(
             id: id,
             name: name,
@@ -270,3 +282,22 @@ extension Food {
         )
     }
 }
+
+struct NutriaFood: Identifiable, Codable {
+    let id: String                   // ID Firestore ou UUID local
+    let canonicalName: String       // Ex: "Kinder Schoko-Bon"
+    let normalizedName: String      // Ex: "kinder schoko bon"
+    let brand: String?              // Ex: "Ferrero"
+    let normalizedBrand: String?    // Ex: "ferrero"
+    let isGeneric: Bool             // true si pas de marque
+    let servingSize: Double         // Ex: 100 ou 1
+    let servingUnit: String         // Ex: "g", "ml", "pc"
+    let calories: Double
+    let proteins: Double
+    let carbs: Double
+    let fats: Double
+    let fiber: Double
+    let source: String              // Ex: "gpt-4o-mini"
+    let createdAt: Date
+}
+

@@ -7,33 +7,28 @@
 
 import SwiftUI
 import UIKit
+import FirebaseCore
+import FirebaseAuth
+import FirebaseAppCheck
 
 
 class AppDelegate: NSObject, UIApplicationDelegate {
-    
-    func application(_ application: UIApplication,
-                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-        setupAppearance()
-        setupNotifications()
-        return true
-    }
 
-    // méthode pour bloquer l'orientation
-    func application(_ application: UIApplication,
-                     supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
+    func application(
+        _ application: UIApplication,
+        supportedInterfaceOrientationsFor window: UIWindow?
+    ) -> UIInterfaceOrientationMask {
         return .portrait
     }
-    
+
     private func setupAppearance() {
-        // Configuration du style de l'application
+        // Ton style UI ici
     }
 
     private func setupNotifications() {
-        // Configuration des notifications
+        // Notifications ici (optionnel)
     }
 }
-
-
 
 class OrientationLockedViewController: UIViewController {
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
@@ -44,4 +39,3 @@ class OrientationLockedViewController: UIViewController {
         return false
     }
 }
-

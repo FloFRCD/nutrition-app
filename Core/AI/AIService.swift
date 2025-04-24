@@ -60,39 +60,60 @@ class AIService {
         return openAIResponse.choices.first?.message.content ?? ""
     }
     
-    func requestNutritionFromAPI(food: String) async throws -> NutritionInfo {
-        let prompt = """
-        Analyse les informations nutritionnelles pour : \(food)
-        Réponds uniquement en JSON, dans ce format exact :
-        {
-            "calories": nombre,
-            "proteins": nombre en g,
-            "carbs": nombre en g,
-            "fats": nombre en g,
-            "fiber": nombre en g
+    func requestNutritionFromAPI(
+            food: String,
+            unit: ServingUnit
+        ) async throws -> NutritionInfo {
+            // 1️⃣ Construction du prompt
+            let prompt = """
+            Tu es un nutritionniste. Donne-moi les valeurs nutritionnelles exactes d’un aliment.
+
+            Aliment : \(food)
+            Format demandé : 1 \(unit.rawValue)
+
+            Réponds uniquement en JSON **strictement** dans ce format :
+
+            {
+              "servingSize": nombre (ex : 100 ou 1),
+              "servingUnit": "g" ou "ml" ou "pc",
+              "calories": nombre exact,
+              "proteins": nombre exact,
+              "carbs": nombre exact,
+              "fats": nombre exact,
+              "fiber": nombre exact
+            }
+
+            ⚠️ Aucun arrondi. Utilise les données nutritionnelles précises.
+            """
+
+            // 2️⃣ Appel à l’API ChatGPT
+            let rawResponse = try await callChatGPT(prompt: prompt, model: "gpt-4o")
+
+            // 3️⃣ Nettoyage du JSON
+            let cleanedJSON = rawResponse
+                .replacingOccurrences(of: "```json", with: "")
+                .replacingOccurrences(of: "```",    with: "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+
+            // 4️⃣ Conversion en Data pour décodage
+            guard let jsonData = cleanedJSON.data(using: .utf8) else {
+                throw OpenAIError.decodingError(
+                  "Impossible de convertir la réponse en données JSON"
+                )
+            }
+
+            // 5️⃣ Décodage dans NutritionInfo
+            return try JSONDecoder().decode(NutritionInfo.self, from: jsonData)
         }
-        """
-        
-        let jsonString = try await callChatGPT(prompt: prompt)
-        // Nettoyer la réponse pour s'assurer qu'elle ne contient que du JSON
-        let cleanedJSON = jsonString.replacingOccurrences(of: "```json", with: "")
-            .replacingOccurrences(of: "```", with: "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        guard let jsonData = cleanedJSON.data(using: .utf8) else {
-            throw OpenAIError.decodingError("Impossible de convertir la réponse en données JSON")
-        }
-        
-        return try JSONDecoder().decode(NutritionInfo.self, from: jsonData)
-    }
-    
+
+
     func analyzeNutrition(food: String) async throws -> NutritionInfo {
             // Vérifier le cache d'abord
             if let cached = await getCachedNutrition(for: food) {
                 return cached
             }
             
-            let nutrition = try await requestNutritionFromAPI(food: food)
+        let nutrition = try await requestNutritionFromAPI(food: food, unit: .gram)
             await cacheNutrition(nutrition, for: food)
             return nutrition
         }
@@ -112,6 +133,45 @@ class AIService {
 }
 
 extension AIService {
+    
+    func requestNutritionRawJSON(
+        food: String,
+        unit: ServingUnit
+      ) async throws -> String {
+        // 1️⃣ Prompt identique à requestNutritionFromAPI
+        let prompt = """
+        Tu es un nutritionniste. Donne-moi les valeurs nutritionnelles exactes d’un aliment.
+
+        Aliment : \(food)
+        Format demandé : 1 \(unit.rawValue)
+
+        Réponds uniquement en JSON **strictement** dans ce format :
+
+        {
+          "servingSize": nombre (ex : 100 ou 1),
+          "servingUnit": "g" ou "ml" ou "pc",
+          "calories": nombre exact,
+          "proteins": nombre exact,
+          "carbs": nombre exact,
+          "fats": nombre exact,
+          "fiber": nombre exact
+        }
+
+        ⚠️ Aucun arrondi. Utilise les données nutritionnelles précises.
+        """
+
+        // 2️⃣ Appel à GPT-4
+        let raw = try await callChatGPT(prompt: prompt, model: "gpt-4o")
+
+        // 3️⃣ On enlève les balises ```json```/```
+        let cleaned = raw
+          .replacingOccurrences(of: "```json", with: "")
+          .replacingOccurrences(of: "```",     with: "")
+          .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return cleaned
+      }
+    
     func generateMealPlan(prompt: String, model: String = "gpt-3.5-turbo", systemPrompt: String = "") async throws -> String {
         
         print("PROMPT RÉELLEMENT ENVOYÉ À L'API:")

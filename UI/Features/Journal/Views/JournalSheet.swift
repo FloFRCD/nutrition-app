@@ -15,6 +15,7 @@ enum JournalSheet: Identifiable {
     case myFoodsSelector(mealType: MealType)
     case barcodeScanner(mealType: MealType)  // Nouvelle option
     case burnedCaloriesEntry
+    case nutriaFoodSearch(mealType: MealType)
     
     var id: String {
         switch self {
@@ -25,6 +26,7 @@ enum JournalSheet: Identifiable {
         case .myFoodsSelector(let mealType): return "myFoodsSelector_\(mealType.rawValue)"
         case .barcodeScanner(let mealType): return "barcodeScanner_\(mealType.rawValue)"
         case .burnedCaloriesEntry: return "burnedCaloriesEntry"
+        case .nutriaFoodSearch(let mealType): return "nutriaFoodSearch-\(mealType.rawValue)"
         }
     }
 }

@@ -67,7 +67,8 @@ struct RecentFoodScansView: View {
             quantity: 1,
             date: journalViewModel.selectedDate,
             mealType: mealType,
-            source: .foodPhoto
+            source: .foodPhoto,
+            unit: food.servingUnit.rawValue
         )
         
         // Ajouter l'entrée

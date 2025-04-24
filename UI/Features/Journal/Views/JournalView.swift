@@ -115,7 +115,8 @@ struct JournalView: View {
                             quantity: quantity / food.servingSize,
                             date: viewModel.selectedDate,
                             mealType: mealType,
-                            source: .favorite
+                            source: .favorite,
+                            unit: food.servingUnit.rawValue
                         )
                         viewModel.addFoodEntry(entry)
                         viewModel.activeSheet = nil
@@ -129,6 +130,23 @@ struct JournalView: View {
 
             case .burnedCaloriesEntry:
                 BurnedCaloriesEntryView(viewModel: viewModel)
+                
+            case .nutriaFoodSearch(let mealType):
+                NutriaFoodSearchView { food, qty, unit in
+                    let entry = FoodEntry(
+                        id: UUID(),
+                        food: food.toFood(),
+                        quantity: qty / food.servingSize,
+                        date: viewModel.selectedDate,
+                        mealType: mealType,
+                        source: .manual,
+                        unit: unit.rawValue
+                    )
+                    viewModel.addFoodEntry(entry)
+                    viewModel.activeSheet = nil
+                }
+                .environmentObject(nutritionService)
+
             }
         }
         .navigationTitle("Journal Alimentaire")
@@ -189,3 +207,21 @@ struct JournalView: View {
     }
     
 }
+
+extension NutriaFood {
+    func toFood() -> Food {
+        return Food(
+            id: UUID(),
+            name: self.canonicalName,
+            calories: Int(self.calories),
+            proteins: self.proteins,
+            carbs: self.carbs,
+            fats: self.fats,
+            fiber: self.fiber,
+            servingSize: self.servingSize,
+            servingUnit: ServingUnit(rawValue: self.servingUnit) ?? .gram,
+            image: nil
+        )
+    }
+}
+

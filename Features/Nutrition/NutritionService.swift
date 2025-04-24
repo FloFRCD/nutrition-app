@@ -7,13 +7,11 @@
 
 import Foundation
 import Combine
-
+import FirebaseFirestore
 
 class NutritionService: ObservableObject {
     static let shared = NutritionService()
     private let openFoodFactsService = OpenFoodFactsService()
-    private var ciqualFoods: [CIQUALFood] = []
-    private var isCiqualLoaded = false
     private weak var journalViewModel: JournalViewModel?
     @Published var foodEntries: [FoodEntry] = []
     @Published var customFoods: [CustomFood] = []
@@ -113,110 +111,6 @@ class NutritionService: ObservableObject {
         return nil
     }
     
-    func addCIQUALFoodToJournal(ciqualFoodId: String, quantity: Double, mealType: MealType) {
-        guard let ciqualFood = getCIQUALFood(byId: ciqualFoodId) else {
-            return
-        }
-        
-        let foodEntry = createFoodEntryFromCIQUAL(
-            ciqualFood: ciqualFood,
-            quantity: quantity,
-            mealType: mealType
-        )
-        
-        // Utiliser la méthode addFoodEntry mise à jour
-        addFoodEntry(foodEntry)
-        
-        // Logs
-        print("DEBUG: Ajout aliment \(ciqualFood.nom) avec \(quantity)g")
-        print("DEBUG: Valeurs nutritionnelles: Cal: \(ciqualFood.energie_kcal ?? 0), Prot: \(ciqualFood.proteines ?? 0), Gluc: \(ciqualFood.glucides ?? 0), Lip: \(ciqualFood.lipides ?? 0)")
-    }
-    
-    // 1. Fonction pour charger la base CIQUAL
-    func loadCIQUALDatabase() {
-        if isCiqualLoaded { return }
-        
-        // Liste des noms possibles à essayer
-        let possibleNames = ["ciqual_data", "ciqual-data", "ciqual"]
-        let possibleExtensions = ["json", "JSON"]
-        
-        
-        var fileLoaded = false
-        
-        // Essayer toutes les combinaisons
-        for name in possibleNames {
-            for ext in possibleExtensions {
-                if let url = Bundle.main.url(forResource: name, withExtension: ext) {
-                    print("✅ Fichier CIQUAL trouvé: \(name).\(ext)")
-                    do {
-                        let data = try Data(contentsOf: url)
-                        // Essayez de décoder
-                        ciqualFoods = try JSONDecoder().decode([CIQUALFood].self, from: data)
-                        isCiqualLoaded = true
-                        fileLoaded = true
-                        print("✅ Chargement réussi: \(ciqualFoods.count) aliments")
-                        return
-                    } catch {
-                        print("❌ Erreur lors du décodage de \(name).\(ext): \(error)")
-                    }
-                }
-            }
-        }
-        
-        if !fileLoaded {
-            // Lister tous les fichiers dans le bundle pour déboguer
-            let urls = Bundle.main.urls(forResourcesWithExtension: nil, subdirectory: nil) ?? []
-            print("📁 Fichiers dans le bundle:")
-            urls.forEach { print("   - \($0.lastPathComponent)") }
-        }
-    }
-    
-    func searchCIQUALFoods(query: String) -> [CIQUALFood] {
-        if query.isEmpty { return [] }
-        
-        loadCIQUALDatabase()
-        
-        return ciqualFoods.filter {
-            let food = Food(from: $0)
-            return $0.nom.lowercased().contains(query.lowercased()) &&
-                   food.calories > 0 // après complétion
-        }
-
-    }
-    
-    func getCIQUALFood(byId id: String) -> CIQUALFood? {
-        loadCIQUALDatabase()
-        return ciqualFoods.first(where: { $0.id == id })
-    }
-    
-    func createFoodEntryFromCIQUAL(ciqualFood: CIQUALFood, quantity: Double, mealType: MealType) -> FoodEntry {
-        let ratio = quantity / 100.0
-
-        let baseFood = Food(from: ciqualFood)
-        let food = Food(
-            id: UUID(),
-            name: baseFood.name,
-            calories: Int(Double(baseFood.calories) * ratio),
-            proteins: baseFood.proteins * ratio,
-            carbs: baseFood.carbs * ratio,
-            fats: baseFood.fats * ratio,
-            fiber: baseFood.fiber * ratio,
-            servingSize: 100,
-            servingUnit: .gram,
-            image: nil
-        )
-
-        return FoodEntry(
-            id: UUID(),
-            food: food,
-            quantity: 1, // ⚠️ on laisse 1 car les valeurs sont déjà ajustées
-            date: Date(),
-            mealType: mealType,
-            source: .manual
-        )
-    }
-
-    
     func addFoodEntry(_ foodEntry: FoodEntry) {
         // Charger les entrées existantes depuis LocalDataManager
         if var existingEntries = LocalDataManager.shared.loadFoodEntries() {
@@ -246,6 +140,13 @@ class NutritionService: ObservableObject {
 }
 
 extension NutritionService {
+    
+    func normalize(_ string: String) -> String {
+        string
+            .lowercased()
+            .folding(options: .diacriticInsensitive, locale: .current)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
     
     // Charger les aliments personnalisés
     func loadCustomFoods() {
@@ -294,12 +195,229 @@ extension NutritionService {
         let entry = FoodEntry(
             id: UUID(),
             food: food,
-            quantity: quantity / food.servingSize,  // Ajuster la quantité en fonction de la taille de portion
+            quantity: quantity / food.servingSize,
             date: date,
             mealType: mealType,
-            source: .favorite // Utiliser favorite comme source pour les aliments personnalisés
+            source: .favorite,
+            unit: food.servingUnit.rawValue
         )
-        
         addFoodEntry(entry)
     }
 }
+
+
+extension NutritionService {
+    
+    func generateNutriaFoodIfMissing(name: String, brand: String?) async -> NutriaFood? {
+        let fullName = brand != nil ? "\(name) \(brand!)" : name
+        
+        do {
+            let nutrition = try await AIService.shared.requestNutritionFromAPI(food: fullName, unit: .gram)
+            let now = Date()
+            let normalizedName = normalize(name)
+            let normalizedBrand = brand?.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            let food = NutriaFood(
+                id: UUID().uuidString,
+                canonicalName: fullName,
+                normalizedName: normalizedName,
+                brand: brand,
+                normalizedBrand: normalizedBrand,
+                isGeneric: brand == nil,
+                servingSize: nutrition.servingSize,
+                servingUnit: nutrition.servingUnit,
+                calories: nutrition.calories,
+                proteins: nutrition.proteins,
+                carbs: nutrition.carbs,
+                fats: nutrition.fats,
+                fiber: nutrition.fiber,
+                source: "gpt-4o-mini",
+                createdAt: now
+            )
+            
+            try Firestore.firestore().collection("foods").document(food.id).setData(from: food)
+            return food
+        } catch {
+            print("❌ Erreur GPT ou Firestore : \(error)")
+            return nil
+        }
+    }
+    
+    private func normalizeString(_ string: String) -> String {
+        string
+            .lowercased()
+            .folding(options: .diacriticInsensitive, locale: .current)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    
+    /// Calcule la distance de Levenshtein entre deux chaînes
+    func levenshtein(_ aStr: String, _ bStr: String) -> Int {
+        let a = Array(aStr)
+        let b = Array(bStr)
+        var dist = [[Int]](repeating: [Int](repeating: 0, count: b.count + 1), count: a.count + 1)
+
+        for i in 0...a.count { dist[i][0] = i }
+        for j in 0...b.count { dist[0][j] = j }
+
+        for i in 1...a.count {
+            for j in 1...b.count {
+                if a[i - 1] == b[j - 1] {
+                    dist[i][j] = dist[i - 1][j - 1]
+                } else {
+                    dist[i][j] = min(
+                        dist[i - 1][j] + 1,       // suppression
+                        dist[i][j - 1] + 1,       // insertion
+                        dist[i - 1][j - 1] + 1    // substitution
+                    )
+                }
+            }
+        }
+
+        return dist[a.count][b.count]
+    }
+    
+    func fuzzySearchNutriaFood(name: String, brand: String?) async -> NutriaFood? {
+        let normalizedName = normalize(name)
+        let normalizedBrand = brand?.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+
+        do {
+            let db = Firestore.firestore()
+            
+            // On récupère un sous-ensemble intelligent de la base
+            var query: Query = db.collection("foods").limit(to: 50)
+
+            if let normalizedBrand = normalizedBrand {
+                query = query.whereField("normalizedBrand", isEqualTo: normalizedBrand)
+            }
+
+            let snapshot = try await query.getDocuments()
+            let candidates = try snapshot.documents.compactMap {
+                try $0.data(as: NutriaFood.self)
+            }
+
+            // Appliquer la distance de Levenshtein
+            let filtered = candidates.filter {
+                levenshtein($0.normalizedName, normalizedName) <= 2
+            }
+
+            return filtered.sorted {
+                levenshtein($0.normalizedName, normalizedName) <
+                levenshtein($1.normalizedName, normalizedName)
+            }.first
+
+        } catch {
+            print("❌ Erreur recherche floue Firestore : \(error)")
+            return nil
+        }
+    }
+
+    /// Cherche en base, sinon génère via IA ET stocke dans Firestore
+     func fetchNutriaFood(name: String, brand: String?, unit: ServingUnit) async -> NutriaFood? {
+       // 1️⃣ normalisation
+       let normalizedName = normalize(name)
+       let normalizedBrand = brand?.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+
+       // 2️⃣ recherche floue en Firestore
+       if let existing = await fuzzySearchNutriaFood(name: normalizedName, brand: normalizedBrand) {
+         return existing
+       }
+
+       // 3️⃣ pas trouvé → génération + stockage
+       do {
+         let fullName = brand != nil ? "\(name) \(brand!)" : name
+         let nutrition = try await AIService.shared.requestNutritionFromAPI(
+           food: fullName,
+           unit: unit  // on passe l’unité choisie à l’API
+         )
+
+         // création de l’objet complet
+         let now = Date()
+         let food = NutriaFood(
+           id: UUID().uuidString,
+           canonicalName: fullName,
+           normalizedName: normalizedName,
+           brand: brand,
+           normalizedBrand: normalizedBrand,
+           isGeneric: brand == nil,
+           servingSize: nutrition.servingSize,
+           servingUnit: nutrition.servingUnit,
+           calories: nutrition.calories,
+           proteins: nutrition.proteins,
+           carbs: nutrition.carbs,
+           fats: nutrition.fats,
+           fiber: nutrition.fiber,
+           source: "gpt-4o",
+           createdAt: now
+         )
+
+         // write in Firestore
+           let snapshot = try await Firestore.firestore()
+               .collection("rawNutrition")
+               .whereField("foodName", isEqualTo: normalizedName)
+               .order(by: "timestamp", descending: true)
+               .limit(to: 1)
+               .getDocuments()
+
+         return food
+       }
+       catch {
+         print("❌ Erreur IA/Firestore : \(error)")
+         return nil
+       }
+     }
+    
+    /// Stocke la réponse brute JSON de l'API pour un aliment donné
+    func storeRawNutritionJSON(for foodName: String, rawJSON: String) async throws {
+        let db = Firestore.firestore()
+        try await db.collection("rawNutrition").addDocument(data: [
+            "foodName":   foodName,
+            "json":       rawJSON,
+            "timestamp":  Timestamp(date: Date())
+        ])
+    }
+}
+
+extension NutritionService {
+
+  /// Essaie de lire un JSON brut en base, sinon génère via IA (en réutilisant requestNutritionFromAPI),
+  /// le ré-encode en JSON, le stocke et le renvoie.
+    func fetchOrGenerateRawJSON(
+        for foodName: String,
+        unit: ServingUnit
+      ) async throws -> String {
+        let normalized = foodName
+          .lowercased()
+          .folding(options: .diacriticInsensitive, locale: .current)
+
+        let db  = Firestore.firestore()
+        let col = db.collection("rawNutrition")
+
+        // 🔍 1) recherche
+        let snapshot = try await col
+          .whereField("normalizedName", isEqualTo: normalized)
+          .whereField("unit",           isEqualTo: unit.rawValue)
+          .order(by: "timestamp", descending: true)
+          .limit(to: 1)
+          .getDocuments()
+
+        if let doc = snapshot.documents.first,
+           let existingJSON = doc.data()["json"] as? String {
+          return existingJSON
+        }
+
+        // 🤖 2) sinon appel IA
+        let ai = AIService.shared
+        let rawJSON = try await ai.requestNutritionRawJSON(food: foodName, unit: unit)
+
+        // 💾 3) stockage du JSON brut
+        try await col.addDocument(data: [
+          "normalizedName": normalized,
+          "unit":           unit.rawValue,
+          "json":           rawJSON,
+          "timestamp":      Timestamp(date: Date())
+        ])
+
+        return rawJSON
+      }
+}
+
