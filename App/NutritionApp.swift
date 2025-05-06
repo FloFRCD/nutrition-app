@@ -72,8 +72,3 @@ struct NutritionApp: App {
         }
     }
 }
-
-
-
-
-

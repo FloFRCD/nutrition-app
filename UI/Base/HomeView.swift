@@ -18,6 +18,8 @@ struct HomeView: View {
     @State private var showingScanView = false
     @State private var isTabBarVisible = true
     @StateObject private var storeKitManager = StoreKitManager.shared
+    @State private var displayedMessage: String = ""
+
     
     @State private var selectedTab = 0
 
@@ -173,6 +175,16 @@ struct HomeView: View {
                 }
 
             }
+            .overlay(
+                VStack {
+                    Spacer()
+                    if !displayedMessage.isEmpty {
+                        MascotWithSpeechBubble(message: displayedMessage)
+                    }
+                }
+            )
+
+            
             .navigationDestination(isPresented: $showProfile) {
                 ProfileView(isTabBarVisible: $isTabBarVisible)
             }
@@ -201,6 +213,23 @@ struct HomeView: View {
                 }
             }
         }
+        .onAppear {
+            if let saved = UserDefaults.standard.string(forKey: "LastMascotMessage") {
+                displayedMessage = saved
+            } else if let goal = localDataManager.userProfile?.fitnessGoal {
+                // 👇 premier lancement = on génère + on stocke un message
+                let initialMessage = MotivationService.randomMessage(for: goal)
+                displayedMessage = initialMessage
+                UserDefaults.standard.set(initialMessage, forKey: "LastMascotMessage")
+            }
+        }
+        .onDisappear {
+            if let goal = localDataManager.userProfile?.fitnessGoal {
+                let newMessage = MotivationService.randomMessage(for: goal)
+                UserDefaults.standard.set(newMessage, forKey: "LastMascotMessage")
+            }
+        }
+
             .sheet(isPresented: $showingScanView) {
             NavigationView {
                 ScanView()

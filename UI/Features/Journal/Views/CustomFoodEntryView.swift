@@ -49,7 +49,6 @@ struct CustomFoodEntryView: View {
                 .padding()
             }
             .background(Color.white.ignoresSafeArea())
-            .navigationTitle("Aliment personnalisé")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

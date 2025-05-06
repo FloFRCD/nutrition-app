@@ -168,14 +168,14 @@ struct PremiumView: View {
                 Spacer()
             }
             
-            // ✅ Overlay de chargement pendant achat
-            if isPurchasing {
-                Color.black.opacity(0.5).ignoresSafeArea()
-                ProgressView("Préparation de l’achat…")
-                    .foregroundColor(.white)
-                    .padding()
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Color.black.opacity(0.7)))
-            }
+//            // ✅ Overlay de chargement pendant achat
+//            if isPurchasing {
+//                Color.black.opacity(0.5).ignoresSafeArea()
+//                ProgressView("Préparation de l’achat…")
+//                    .foregroundColor(.white)
+//                    .padding()
+//                    .background(RoundedRectangle(cornerRadius: 12).fill(Color.black.opacity(0.7)))
+//            }
         }
         .task {
             await viewModel.loadProducts()

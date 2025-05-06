@@ -97,20 +97,20 @@ func calculateActivityFactor(details: ActivityDetails) -> Double {
 }
 
 enum ExerciseIntensity: String, Codable {
-    case light
-    case moderate
-    case intense
+    case light = "Faible"
+    case moderate = "Modérée"
+    case intense = "Intense"
 }
 
 enum JobActivityLevel: String, Codable {
-    case seated
-    case standing
-    case physical
-    case heavyPhysical
+    case seated = "Assis"
+    case standing = "Debout"
+    case physical = "Actif"
+    case heavyPhysical = "Très Physique"
 }
 
 enum DailyActivityLevel: String, Codable {
-    case minimal
-    case moderate
-    case active
+    case minimal = "Pas d'activité physique"
+    case moderate = "Modérée"
+    case active = "Actif"
 }

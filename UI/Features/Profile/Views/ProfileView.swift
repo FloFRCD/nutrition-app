@@ -150,9 +150,10 @@ struct ProfileView: View {
                             }
                         )
                         .overlay(
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 40))
-                                .foregroundColor(AppTheme.secondaryText)
+                            Image("nutria_mascot_PP")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 120, height: 120) // ajuste selon le rendu souhaité
                         )
                 }
                 

@@ -114,7 +114,6 @@ struct ActivitySectionView: View {
             
             IntensityPickerView(exerciseIntensity: $exerciseIntensity)
             JobActivityPickerView(jobActivity: $jobActivity)
-            DailyActivityPickerView(dailyActivity: $dailyActivity)
         }
     }
 }
@@ -156,27 +155,7 @@ struct JobActivityPickerView: View {
     // Cette fonction retourne les valeurs possibles de l'énumération
     private func jobActivityValues() -> [JobActivityLevel] {
         // Remplacez ces valeurs par les véritables options de votre énumération
-        return [.seated, .standing, .physical, .heavyPhysical] // À adapter selon vos valeurs réelles
-    }
-}
-
-// Sous-vue pour l'activité quotidienne
-struct DailyActivityPickerView: View {
-    @Binding var dailyActivity: DailyActivityLevel
-    
-    var body: some View {
-        Picker("Activité quotidienne", selection: $dailyActivity) {
-            // Au lieu d'utiliser allCases, on liste manuellement les valeurs possibles
-            ForEach(dailyActivityValues(), id: \.self) { level in
-                Text(level.rawValue.capitalized).tag(level)
-            }
-        }
-    }
-    
-    // Cette fonction retourne les valeurs possibles de l'énumération
-    private func dailyActivityValues() -> [DailyActivityLevel] {
-        // Remplacez ces valeurs par les véritables options de votre énumération
-        return [.minimal, .active, .moderate] // À adapter selon vos valeurs réelles
+        return [.seated, .standing, .physical, .heavyPhysical]
     }
 }
 

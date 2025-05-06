@@ -29,7 +29,6 @@ struct AnimatedSplashView: View {
                     .foregroundColor(.white)
                     .opacity(animate ? 1 : 0)
 
-                // ✅ Slogan ajouté
                 Text("Votre nutrition. Vos objectifs. Votre app.")
                     .font(.callout)
                     .foregroundColor(.black.opacity(0.8))
@@ -49,6 +48,16 @@ struct AnimatedSplashView: View {
                     }
                 }
             }
+//
+//            // ✅ Mascotte en bas au centre
+//            VStack {
+//                Spacer()
+//                Image("nutria_mascot_BC")
+//                    .resizable()
+//                    .scaledToFit()
+//                    .frame(width: 240, height: 240)
+//                    .padding(.bottom, 30)
+//            }
         }
         .ignoresSafeArea()
     }
