@@ -161,7 +161,6 @@ enum CuisineType: String, Codable, CaseIterable, Identifiable {
     case mexican = "Mexicaine"
     case indian = "Indienne"
     case french = "Française"
-    case other = "Autre"
 
     var id: String { rawValue }
 }

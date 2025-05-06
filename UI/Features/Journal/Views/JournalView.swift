@@ -12,11 +12,12 @@ struct JournalView: View {
     @StateObject var viewModel = JournalViewModel()
     @EnvironmentObject var localDataManager: LocalDataManager
     @EnvironmentObject var nutritionService: NutritionService
+    @EnvironmentObject var storeKitManager: StoreKitManager
     @State private var hasAppeared = false
     @State private var showCaloriesAlert = false
     @State private var caloriesInput: String = ""
-    @StateObject private var storeKitManager = StoreKitManager.shared
     @State private var showPremiumSheet = false
+    
     
     var body: some View {
         journalContent
@@ -26,39 +27,28 @@ struct JournalView: View {
         ZStack {
             AnimatedBackground()
 
-            VStack(spacing: 0) {
+            VStack(spacing: 12) {
                 NutritionSummaryHeader(viewModel: viewModel)
                     .background(Color.white)
                     .cornerRadius(20)
                     .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
                     .padding(.horizontal)
-                    .padding(.top, 16)
+                    .padding(.top, 4)
 
                 DateSelectorView(selectedDate: $viewModel.selectedDate)
-                    .padding(.vertical, 16)
+                    .padding(.vertical, 4)
                     .background(Color.white)
                     .cornerRadius(20)
                     .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
                     .padding(.horizontal)
-                    .padding(.top, 12)
-
-                Button(action: {
-                    viewModel.showBurnedCaloriesEntry()
-                }) {
-                    Label("Ajouter calories brûlées", systemImage: "flame.fill")
-                        .font(.callout)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 16)
-                        .background(Color.orange.opacity(0.1))
-                        .foregroundColor(.orange)
-                        .cornerRadius(12)
-                }
-                .padding(.top, 10)
                 
                 mealList
             }
         }
         .onAppear {
+            
+            print("👀 Vue chargée – isPremiumUser = \(storeKitManager.isPremiumUser)")
+            
             if !hasAppeared {
                 hasAppeared = true
             }
@@ -149,8 +139,6 @@ struct JournalView: View {
 
             }
         }
-        .navigationTitle("Journal Alimentaire")
-        .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showPremiumSheet) {
             PremiumView()
         }

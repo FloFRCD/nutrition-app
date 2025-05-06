@@ -138,41 +138,70 @@ extension AIService {
 
     func requestNutritionRawJSON(
         food: String,
-        unit: ServingUnit
-      ) async throws -> String {
-        // 1️⃣ Prompt identique à requestNutritionFromAPI
+        unit: ServingUnit,
+        quantity: Double,
+        additionalDetails: String? = nil,
+        brand: String? = nil
+    ) async throws -> String {
+        
+        // Construction des détails additionnels
+        var contextParts: [String] = []
+        
+        if let brand = brand, !brand.isEmpty {
+            contextParts.append("Marque précisée par l’utilisateur : \(brand)")
+        }
+        
+        if let additionalDetails = additionalDetails, !additionalDetails.isEmpty {
+            contextParts.append("Détails additionnels : \(additionalDetails)")
+        }
+        
+        let extraContext = contextParts.isEmpty ? "" : "\n\n" + contextParts.joined(separator: "\n")
+        
+        // Construction du prompt complet
         let prompt = """
-        Tu es un nutritionniste. Donne-moi les valeurs nutritionnelles exactes d’un aliment.
+        Tu es un nutritionniste. Fournis une estimation des valeurs nutritionnelles exactes d’un aliment, même s’il est composé ou ambigu.
 
         Aliment : \(food)
-        Format demandé : 1 \(unit.rawValue)
+        Format demandé : \(quantity.clean) \(unit.rawValue)
+        \(extraContext)
 
-        Réponds uniquement en JSON **strictement** dans ce format :
+        ⚠️ Utilise les informations données (y compris la marque et les précisions) pour être aussi précis que possible.
+        ⚠️ Propose un nom générique et descriptif sans référence à la marque (ex : “Fajitas Bœuf”).
+        ⚠️ Fournis également une courte description générique de l’aliment (ex : “Fajitas au bœuf avec poivrons et guacamole”).
+        ⚠️ Réponds uniquement sous forme de JSON strictement dans ce format :
 
         {
-          "servingSize": nombre (ex : 100 ou 1),
-          "servingUnit": "g" ou "ml" ou "pc",
-          "calories": nombre exact,
-          "proteins": nombre exact,
-          "carbs": nombre exact,
-          "fats": nombre exact,
-          "fiber": nombre exact
+          "canonicalName": "string",
+          "description": "string",
+          "servingSize": nombre,
+          "servingUnit": "g" | "ml" | "pc",
+          "calories": nombre,
+          "proteins": nombre,
+          "carbs": nombre,
+          "fats": nombre,
+          "fiber": nombre
         }
-
-        ⚠️ Aucun arrondi. Utilise les données nutritionnelles précises.
         """
 
-        // 2️⃣ Appel à GPT-4
+        // Print utile pour debug
+        print("📤 Prompt envoyé à l'IA :\n\(prompt)")
+        
+        // Appel à GPT
         let raw = try await callChatGPT(prompt: prompt, model: "gpt-4o")
-
-        // 3️⃣ On enlève les balises ```json```/```
+        
+        // Nettoyage de la réponse pour enlever ```json ou autres artefacts
         let cleaned = raw
-          .replacingOccurrences(of: "```json", with: "")
-          .replacingOccurrences(of: "```",     with: "")
-          .trimmingCharacters(in: .whitespacesAndNewlines)
-
+            .replacingOccurrences(of: "```json", with: "")
+            .replacingOccurrences(of: "```",     with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Print la réponse pour debug
+        print("📥 Réponse brute de l'IA :\n\(cleaned)")
+        
         return cleaned
-      }
+    }
+
+
     
     func generateMealPlan(prompt: String, model: String = "gpt-3.5-turbo", systemPrompt: String = "") async throws -> String {
         

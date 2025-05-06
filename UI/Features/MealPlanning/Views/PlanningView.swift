@@ -11,7 +11,7 @@ import SwiftUI
 struct PlanningView: View {
     @EnvironmentObject private var localDataManager: LocalDataManager
     @StateObject private var viewModel = PlanningViewModel()
-    @StateObject private var storeKitManager = StoreKitManager.shared
+    @EnvironmentObject var storeKitManager: StoreKitManager
     @State private var showPremiumSheet = false
 
     @State private var showingConfigSheet = false
@@ -25,8 +25,8 @@ struct PlanningView: View {
 
     var body: some View {
         premiumView
-            .frame(maxWidth: isIpad ? 600 : .infinity) // centrer sur iPad
-            .frame(maxWidth: .infinity) // pour centrer dans l'écran
+            .frame(maxWidth: isIpad ? 600 : .infinity)
+            .frame(maxWidth: .infinity)
     }
 
     private var premiumView: some View {
@@ -97,7 +97,12 @@ struct PlanningView: View {
                         }
                         showingConfigSheet = true
                     } label: {
-                        Label("Générer", systemImage: "plus.circle.fill")
+                        HStack(spacing: 4) {
+                            Image(systemName: "sparkles")
+                            Text("Générer")
+                        }
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(AppTheme.vibrantGreen)
                     }
                 }
             }
@@ -189,7 +194,7 @@ struct PlanningView: View {
                 ContentUnavailableView(
                     "Aucune suggestion de repas",
                     systemImage: "fork.knife",
-                    description: Text("Appuyez sur + pour générer des suggestions de repas")
+                    description: Text("Appuyez sur le bouton en haut à droite pour générer des suggestions de repas")
                 )
             } else {
                 VStack(spacing: 20) {

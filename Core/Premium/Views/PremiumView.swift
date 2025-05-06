@@ -13,6 +13,7 @@ struct PremiumView: View {
     @StateObject private var viewModel = PremiumViewModel()
     @State private var showFeaturesSheet = false
     @EnvironmentObject private var storeKitManager: StoreKitManager
+    @State private var isPurchasing = false
     
     var body: some View {
         ZStack {
@@ -21,7 +22,6 @@ struct PremiumView: View {
             VStack(spacing: 20) {
                 Spacer().frame(height: 20)
                 
-                // Image encadrée
                 RoundedRectangle(cornerRadius: 20)
                     .stroke(AppTheme.primaryButtonGradient, lineWidth: 3)
                     .frame(width: 180, height: 180)
@@ -55,56 +55,78 @@ struct PremiumView: View {
                         .padding(.top, 4)
                 }
                 
-                VStack(spacing: 16) {
-                    PremiumGradientButton(
-                        title: "1,49€ / semaine",
-                        subtitle: "Abonnement flexible, sans engagement",
-                        gradient: LinearGradient(
-                            gradient: Gradient(colors: [AppTheme.logoPurple, AppTheme.primaryBlue]),
-                            startPoint: .leading, endPoint: .trailing
-                        ),
-                        action: {
-                            Task {
-                                if let package = viewModel.offerings?.current?.weekly {
-                                    await viewModel.purchase(package: package)
+                // ✅ Sécurité si offerings pas chargées
+                if let current = viewModel.offerings?.current {
+                    VStack(spacing: 16) {
+                        PremiumGradientButton(
+                            title: "1,49€ / semaine",
+                            subtitle: "Abonnement flexible, sans engagement",
+                            gradient: LinearGradient(
+                                gradient: Gradient(colors: [AppTheme.logoPurple, AppTheme.primaryBlue]),
+                                startPoint: .leading, endPoint: .trailing
+                            ),
+                            action: {
+                                Task {
+                                    isPurchasing = true
+                                    defer { isPurchasing = false }
+                                    
+                                    if let package = current.availablePackages.first(where: { $0.identifier == "$rc_weekly" }) {
+                                        await viewModel.purchase(package: package)
+                                    } else {
+                                        print("⚠️ Aucun package 'weekly' trouvé.")
+                                    }
                                 }
                             }
-                        }
-                    )
-                    
-                    PremiumGradientButton(
-                        title: "4,99€ / mois",
-                        subtitle: "Moins de 0,17€ par jour pour atteindre tes objectifs",
-                        gradient: LinearGradient(
-                            gradient: Gradient(colors: [AppTheme.primaryBlue, AppTheme.vibrantGreen]),
-                            startPoint: .leading, endPoint: .trailing
-                        ),
-                        action: {
-                            Task {
-                                if let package = viewModel.offerings?.current?.monthly {
-                                    await viewModel.purchase(package: package)
+                        )
+
+                        PremiumGradientButton(
+                            title: "4,99€ / mois",
+                            subtitle: "Moins de 0,17€ par jour pour atteindre tes objectifs",
+                            gradient: LinearGradient(
+                                gradient: Gradient(colors: [AppTheme.primaryBlue, AppTheme.vibrantGreen]),
+                                startPoint: .leading, endPoint: .trailing
+                            ),
+                            action: {
+                                Task {
+                                    isPurchasing = true
+                                    defer { isPurchasing = false }
+
+                                    if let package = current.availablePackages.first(where: { $0.identifier == "$rc_monthly" }) {
+                                        await viewModel.purchase(package: package)
+                                    } else {
+                                        print("⚠️ Aucun package 'monthly' trouvé.")
+                                    }
                                 }
                             }
-                        }
-                    )
-                    
-                    PremiumGradientButton(
-                        title: "44,99€ / an",
-                        subtitle: "Économisez 25% (au lieu de 59,88€)",
-                        gradient: LinearGradient(
-                            gradient: Gradient(colors: [AppTheme.vibrantGreen, AppTheme.lightYellow]),
-                            startPoint: .leading, endPoint: .trailing
-                        ),
-                        action: {
-                            Task {
-                                if let package = viewModel.offerings?.current?.annual {
-                                    await viewModel.purchase(package: package)
+                        )
+
+                        PremiumGradientButton(
+                            title: "44,99€ / an",
+                            subtitle: "Économisez 25% (au lieu de 59,88€)",
+                            gradient: LinearGradient(
+                                gradient: Gradient(colors: [AppTheme.vibrantGreen, AppTheme.lightYellow]),
+                                startPoint: .leading, endPoint: .trailing
+                            ),
+                            action: {
+                                Task {
+                                    isPurchasing = true
+                                    defer { isPurchasing = false }
+
+                                    if let package = current.availablePackages.first(where: { $0.identifier == "$rc_annual" }) {
+                                        await viewModel.purchase(package: package)
+                                    } else {
+                                        print("⚠️ Aucun package 'annual' trouvé.")
+                                    }
                                 }
                             }
-                        }
-                    )
+                        )
+                    }
+                    .padding(.horizontal)
+                } else {
+                    ProgressView("Chargement des abonnements...")
+                        .foregroundColor(.white)
+                        .padding()
                 }
-                .padding(.horizontal)
                 
                 Spacer()
                 
@@ -131,7 +153,6 @@ struct PremiumView: View {
                 .padding(.bottom, 20)
             }
             
-            // Bouton de fermeture
             VStack {
                 HStack {
                     Spacer()
@@ -146,18 +167,35 @@ struct PremiumView: View {
                 }
                 Spacer()
             }
+            
+            // ✅ Overlay de chargement pendant achat
+            if isPurchasing {
+                Color.black.opacity(0.5).ignoresSafeArea()
+                ProgressView("Préparation de l’achat…")
+                    .foregroundColor(.white)
+                    .padding()
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Color.black.opacity(0.7)))
+            }
         }
         .task {
             await viewModel.loadProducts()
         }
+        .onAppear {
+            Task {
+                if viewModel.offerings == nil {
+                    await viewModel.loadProducts()
+                }
+            }
+        }
         .sheet(isPresented: $showFeaturesSheet) {
             PremiumFeaturesSheet()
         }
-        .onChange(of: storeKitManager.currentSubscription) { newValue in
+        .onChange(of: storeKitManager.currentSubscription) { oldValue, newValue in
             if newValue != .free {
                 dismiss()
             }
         }
     }
 }
+
 

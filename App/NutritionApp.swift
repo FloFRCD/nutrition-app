@@ -24,21 +24,8 @@ struct NutritionApp: App {
     let persistenceController = PersistenceController.shared
 
     init() {
-        // MARK: – Firebase init & Auth
         FirebaseApp.configure()
-
         AppCheck.setAppCheckProviderFactory(AppCheckDebugProviderFactory())
-        
-        print("📦 Bundle ID détecté: \(Bundle.main.bundleIdentifier ?? "nil")")
-
-        Auth.auth().signInAnonymously { result, error in
-            if let err = error as NSError? {
-                print("❌ Firebase Auth error:", err)
-                print("📋 Code: \(err.code), Domain: \(err.domain), Description: \(err.localizedDescription)")
-            } else {
-                print("✅ Firebase Auth succeeded, uid:", result?.user.uid ?? "–")
-            }
-        }
 
         Auth.auth().signInAnonymously { result, error in
             if let err = error {
@@ -48,43 +35,44 @@ struct NutritionApp: App {
             }
         }
 
-        // MARK: – UINavigationBar
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithTransparentBackground()
-        appearance.titleTextAttributes      = [.foregroundColor: UIColor.clear]
-        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.clear]
-        UINavigationBar.appearance().standardAppearance   = appearance
-        UINavigationBar.appearance().scrollEdgeAppearance = appearance
-        UINavigationBar.appearance().tintColor            = .black
-
-        // MARK: – RevenueCat
         Purchases.logLevel = .debug
         Purchases.configure(withAPIKey: "appl_eUkrIamUmldMUFfhqIGDCEQOGvk")
+
+        print("📦 Bundle ID détecté: \(Bundle.main.bundleIdentifier ?? "nil")")
     }
+
 
     var body: some Scene {
         WindowGroup {
             NavigationStack {
                 if showSplash {
                     AnimatedSplashView(isActive: $showSplash)
+                        .onAppear {
+                            Task {
+                                await storeKitManager.loadProducts() // Préchargement ici
+                                await storeKitManager.checkActiveSubscription()
+                            }
+                        }
                 } else {
                     ContentView()
                         .environmentObject(localDataManager)
                         .environmentObject(storeKitManager)
                         .environmentObject(nutritionService)
                         .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                        .onAppear {
+                            // Double sécurité au cas où le splash aurait échoué
+                            Task {
+                                await storeKitManager.loadProducts()
+                                await storeKitManager.checkActiveSubscription()
+                            }
+                        }
                 }
             }
             .tint(.black)
-            .onAppear {
-                Task {
-                    await storeKitManager.checkActiveSubscription()
-                    await storeKitManager.loadProducts()
-                }
-            }
         }
     }
 }
+
 
 
 

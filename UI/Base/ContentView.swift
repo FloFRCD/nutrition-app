@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    @EnvironmentObject private var storeKitManager: StoreKitManager
     @ObservedObject private var localDataManager = LocalDataManager.shared
     @StateObject private var journalViewModel = JournalViewModel()
     
@@ -16,14 +17,15 @@ struct ContentView: View {
             if localDataManager.userProfile == nil {
                 InitialSetupView()
                     .environmentObject(localDataManager)
+                    .environmentObject(storeKitManager) // 👈 ajouter ceci
             } else {
                 MainTabView()
                     .environmentObject(journalViewModel)
                     .environmentObject(localDataManager)
+                    .environmentObject(storeKitManager) // 👈 et ici aussi
             }
         }
         .task {
-//            UserDefaults.standard.removeObject(forKey: "userProfile")
             await localDataManager.loadInitialData()
         }
     }

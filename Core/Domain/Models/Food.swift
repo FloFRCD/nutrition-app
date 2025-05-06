@@ -283,21 +283,25 @@ extension Food {
     }
 }
 
-struct NutriaFood: Identifiable, Codable {
-    let id: String                   // ID Firestore ou UUID local
-    let canonicalName: String       // Ex: "Kinder Schoko-Bon"
-    let normalizedName: String      // Ex: "kinder schoko bon"
-    let brand: String?              // Ex: "Ferrero"
-    let normalizedBrand: String?    // Ex: "ferrero"
-    let isGeneric: Bool             // true si pas de marque
-    let servingSize: Double         // Ex: 100 ou 1
-    let servingUnit: String         // Ex: "g", "ml", "pc"
-    let calories: Double
-    let proteins: Double
-    let carbs: Double
-    let fats: Double
-    let fiber: Double
-    let source: String              // Ex: "gpt-4o-mini"
-    let createdAt: Date
+struct NutriaFood: Codable, Identifiable {
+    var id: String
+    var canonicalName: String
+    var description: String?
+    var normalizedName: String
+    var brand: String?
+    var normalizedBrand: String?
+    var isGeneric: Bool
+    var servingSize: Double
+    var servingUnit: String
+    var calories: Double
+    var proteins: Double
+    var carbs: Double
+    var fats: Double
+    var fiber: Double
+    var source: String
+    var createdAt: Date
 }
+
+
+
 

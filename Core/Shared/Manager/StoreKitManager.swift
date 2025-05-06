@@ -10,23 +10,35 @@ import StoreKit
 import RevenueCat
 
 @MainActor
-class StoreKitManager: ObservableObject {
+class StoreKitManager: NSObject, ObservableObject {
     static let shared = StoreKitManager()
-    
+
     @Published var currentSubscription: SubscriptionTier = .free
+    @Published var isPremiumUser: Bool = false
     @Published var products: [Product] = []
 
     enum SubscriptionTier {
         case free, weekly, monthly, yearly
     }
 
-    private init() {}
+    override init() {
+        super.init()
+        
+        Purchases.logLevel = .debug
+        Purchases.configure(withAPIKey: "appl_eUkrIamUmldMUFfhqIGDCEQOGvk")
+        Purchases.shared.delegate = self
 
-    var isPremiumUser: Bool {
-        if isReviewOrSandbox {
-            return true
+        // Vérifie immédiatement le cache local
+        if let cachedInfo = Purchases.shared.cachedCustomerInfo, cachedInfo.entitlements["PREMIUM"]?.isActive == true {
+            updatePremiumStatus(with: cachedInfo)
         }
-        return currentSubscription != .free
+
+        // Puis recharge tranquillement en arrière-plan
+        Purchases.shared.getCustomerInfo { info, error in
+            if let info = info {
+                self.updatePremiumStatus(with: info)
+            }
+        }
     }
     
     var isReviewOrSandbox: Bool {
@@ -37,7 +49,6 @@ class StoreKitManager: ObservableObject {
         #endif
     }
 
-
     func loadProducts() async {
         do {
             let ids = [
@@ -47,16 +58,9 @@ class StoreKitManager: ObservableObject {
             ]
             products = try await Product.products(for: ids)
         } catch {
-            print("❌ Erreur chargement produits : \(error)")
+            print("❌ Erreur chargement produits StoreKit 2 : \(error)")
         }
     }
-    
-    @MainActor
-    func handleSuccessfulPurchase(for productID: String) {
-        updateSubscriptionTier(for: productID)
-        objectWillChange.send()
-    }
-
 
     func checkActiveSubscription() async {
         for await result in Transaction.currentEntitlements {
@@ -71,6 +75,11 @@ class StoreKitManager: ObservableObject {
         }
         print("❌ Aucun abonnement actif")
         currentSubscription = .free
+        isPremiumUser = false
+    }
+
+    func handleSuccessfulPurchase(for productID: String) {
+        updateSubscriptionTier(for: productID)
     }
 
     private func updateSubscriptionTier(for productID: String) {
@@ -84,15 +93,22 @@ class StoreKitManager: ObservableObject {
         default:
             currentSubscription = .free
         }
+        isPremiumUser = currentSubscription != .free
     }
-    @MainActor
+
     func updatePremiumStatus(with info: CustomerInfo) {
-        guard let entitlement = info.entitlements.all["premium"], entitlement.isActive else {
+        print("📦 CustomerInfo reçu de RevenueCat :")
+        print("Entitlements actifs : \(info.entitlements.active.keys)")
+
+        guard let entitlement = info.entitlements.all["PREMIUM"], entitlement.isActive else {
             currentSubscription = .free
+            isPremiumUser = false
+            print("❌ Entitlement 'premium' inactif ou absent")
             return
         }
 
         let productId = entitlement.productIdentifier.lowercased()
+        print("✅ Entitlement 'premium' actif via produit : \(productId)")
 
         if productId.contains("weekly") {
             currentSubscription = .weekly
@@ -103,23 +119,31 @@ class StoreKitManager: ObservableObject {
         } else {
             currentSubscription = .free
         }
+
+        isPremiumUser = true
     }
 
+    #if DEBUG
+    var overridePremium: Bool {
+        UserDefaults.standard.bool(forKey: "debug_premium_override")
+    }
 
-    
-#if DEBUG
-var overridePremium: Bool {
-    UserDefaults.standard.bool(forKey: "debug_premium_override")
+    var effectiveSubscription: SubscriptionTier {
+        overridePremium ? .monthly : .free
+    }
+    #else
+    var effectiveSubscription: SubscriptionTier {
+        currentSubscription
+    }
+    #endif
 }
 
-var effectiveSubscription: SubscriptionTier {
-    overridePremium ? .monthly : .free
+extension StoreKitManager: @preconcurrency PurchasesDelegate {
+    func purchases(_ purchases: Purchases, receivedUpdated customerInfo: CustomerInfo) {
+        print("🔄 Received updated CustomerInfo from RevenueCat")
+        updatePremiumStatus(with: customerInfo)
+    }
 }
-#else
-var effectiveSubscription: SubscriptionTier {
-    currentSubscription
-}
-#endif
-}
+
 
 

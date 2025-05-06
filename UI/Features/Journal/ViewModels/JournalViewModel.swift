@@ -211,7 +211,7 @@ class JournalViewModel: ObservableObject {
             )
             
             let entry = FoodEntry(
-                id: UUID(),  // Explicitement fournir l'ID, même s'il y a une valeur par défaut
+                id: UUID(),
                 food: food,
                 quantity: 1,
                 date: date,

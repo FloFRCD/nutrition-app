@@ -22,24 +22,50 @@ class PremiumViewModel: ObservableObject {
     
     func loadProducts() async {
         do {
-            offerings = try await Purchases.shared.offerings()
+            print("🌀 Tentative de chargement des offerings...")
+            let fetchedOfferings = try await Purchases.shared.offerings()
+            print("✅ Offerings récupérés : \(fetchedOfferings.all.keys)")
+
+            offerings = fetchedOfferings
+
+            if let current = fetchedOfferings.current {
+                print("📦 Offering 'current' trouvé : \(current.identifier)")
+                print("🔍 Packages disponibles dans current :")
+
+                for package in current.availablePackages {
+                    print("• RevenueCat ID : \(package.identifier) | Store ID : \(package.storeProduct.productIdentifier)")
+                }
+
+                if current.availablePackages.isEmpty {
+                    print("⚠️ Aucun package dans current.offering")
+                }
+
+            } else {
+                print("❌ Aucun offering 'current' trouvé")
+            }
+
         } catch {
-            print("❌ Erreur chargement offerings RevenueCat : \(error)")
+            print("❌ Erreur lors du chargement des offerings : \(error.localizedDescription)")
         }
     }
 
     func purchase(package: Package) async {
         do {
-            let result = try await Purchases.shared.purchase(package: package)
-            if result.customerInfo.entitlements.all["PREMIUM"]?.isActive == true {
-                print("✅ Abonnement actif via RevenueCat")
-                StoreKitManager.shared.updatePremiumStatus(with: result.customerInfo)
+            let (transaction, customerInfo, userCancelled) = try await Purchases.shared.purchase(package: package)
+            
+            // ✅ Utilise immédiatement customerInfo fourni par le résultat de l'achat
+            if customerInfo.entitlements.all["PREMIUM"]?.isActive == true {
+                print("✅ Abonnement immédiatement actif (via résultat direct de purchase)")
+                StoreKitManager.shared.updatePremiumStatus(with: customerInfo)
             } else {
-                print("❌ Abonnement non actif")
+                print("❌ Abonnement non actif immédiatement après achat")
             }
-        } catch {
+        } catch let error as NSError {
+            if error.domain == "RevenueCat.ErrorCode", RevenueCat.ErrorCode(_bridgedNSError: error) == .purchaseCancelledError {
+                print("❌ Achat annulé par l'utilisateur")
+                return
+            }
             print("❌ Erreur d’achat RevenueCat : \(error)")
         }
     }
-
 }

@@ -132,6 +132,18 @@ struct NutritionSummaryHeader: View {
                     .padding(.horizontal)
                     .transition(.opacity)
             }
+            
+            Button(action: {
+                viewModel.showBurnedCaloriesEntry()
+            }) {
+                Label("Ajouter calories brûlées", systemImage: "flame.fill")
+                    .font(.callout)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .background(Color.orange.opacity(0.1))
+                    .foregroundColor(.orange)
+                    .cornerRadius(12)
+            }
         }
         .padding(.vertical, 12)
         .background(Color.white)

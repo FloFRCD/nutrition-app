@@ -11,17 +11,17 @@ import Combine
 struct IngredientEntryView: View {
     let mealType: MealType
     let onIngredientsSubmitted: ([String: Double]) -> Void
-    
+
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var nutritionService: NutritionService
     @EnvironmentObject var journalViewModel: JournalViewModel
-    
+
     @State private var ingredients: [IngredientEntry] = []
     @State private var isProcessing = false
     @State private var isShowingNutriaSearch = false
     @State private var isShowingCustomFoodsSelector = false
     @State private var iaSelectedUnit: ServingUnit = .gram
-    
+
     struct IngredientEntry: Identifiable {
         let id = UUID()
         var name: String = ""
@@ -30,15 +30,29 @@ struct IngredientEntryView: View {
         var servingSize: Double = 100
         var servingUnit: ServingUnit = .gram
     }
-    
+
     var body: some View {
         NavigationView {
-            Form {
-                ingredientsSection
-                if !ingredients.isEmpty {
-                    nutritionSummarySection
+            ZStack {
+                Color.white.ignoresSafeArea()
+
+                ScrollView {
+                    VStack(spacing: 24) {
+                        ingredientsCard
+                        if !ingredients.isEmpty {
+                            nutritionSummaryCard
+                        }
+                        addButtons
+                        if !isProcessing {
+                            submitButton
+                        } else {
+                            ProgressView("Ajout en cours...")
+                                .progressViewStyle(CircularProgressViewStyle(tint: AppTheme.vibrantGreen))
+                                .padding()
+                        }
+                    }
+                    .padding()
                 }
-                submitSection
             }
             .navigationTitle("Ajouter des ingrédients")
             .navigationBarTitleDisplayMode(.inline)
@@ -47,6 +61,7 @@ struct IngredientEntryView: View {
                     Button("Annuler") {
                         presentationMode.wrappedValue.dismiss()
                     }
+                    .foregroundColor(AppTheme.vibrantGreen)
                 }
             }
             .sheet(isPresented: $isShowingNutriaSearch) {
@@ -68,74 +83,64 @@ struct IngredientEntryView: View {
             }
         }
     }
-    
-    private var ingredientsSection: some View {
-        Section(header: Text("INGRÉDIENTS")) {
+
+    private var ingredientsCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Ingrédients")
+                .font(.headline)
+                .foregroundColor(AppTheme.vibrantGreen)
+
             if ingredients.isEmpty {
                 Text("Aucun ingrédient ajouté")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppTheme.secondaryText)
                     .italic()
                     .frame(maxWidth: .infinity, alignment: .center)
-                    .padding()
+                    .padding(.vertical, 40)
+                    .background(Color.white.opacity(0.4))
+                    .cornerRadius(16)
             } else {
                 ForEach(ingredients.indices, id: \.self) { index in
                     ingredientRow(at: index)
                 }
             }
-            
-            VStack(spacing: 10) {
-                Button {
-                    isShowingNutriaSearch = true
-                } label: {
-                    HStack {
-                        Image(systemName: "magnifyingglass")
-                        Text("Rechercher un aliment")
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                }
-                .buttonStyle(BorderedButtonStyle())
-                
-                Button {
-                    isShowingCustomFoodsSelector = true
-                } label: {
-                    HStack {
-                        Image(systemName: "star.fill")
-                        Text("Mes aliments personnalisés")
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                }
-                .buttonStyle(BorderedButtonStyle())
-            }
         }
+        .padding()
+        .background(AppTheme.vibrantGreen.opacity(0.1))
+        .cornerRadius(AppTheme.cardBorderRadius)
+        .shadow(color: .black.opacity(0.1), radius: 3, x: 0, y: 1)
     }
-    
-    // MARK: - Ligne d’ingrédient
+
     private func ingredientRow(at index: Int) -> some View {
         let entry = ingredients[index]
-        
-        return VStack(alignment: .leading, spacing: 8) {
+        return VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(entry.name)
-                    .font(.headline)
-                
+                    .font(.body)
+                    .foregroundColor(AppTheme.vibrantGreen)
+
                 Spacer()
-                
+
                 TextField("Qté", text: Binding(
                     get: { entry.quantity },
                     set: { ingredients[index].quantity = $0 }
                 ))
                 .keyboardType(.decimalPad)
-                .frame(width: 60)
+                .submitLabel(.done)
                 .multilineTextAlignment(.trailing)
-                .padding(.horizontal, 4)
-                .background(Color(.systemGray6))
-                .cornerRadius(4)
-                
+                .frame(width: 60)
+                .padding(6)
+                .background(Color.white.opacity(0.8))
+                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(AppTheme.vibrantGreen.opacity(0.5), lineWidth: 1)
+                )
+                .foregroundColor(AppTheme.vibrantGreen)
+
                 Text(entry.servingUnit.displayName)
-                    .foregroundColor(.secondary)
-                
+                    .foregroundColor(AppTheme.vibrantGreen)
+                    .font(.caption)
+
                 Button {
                     withAnimation {
                         _ = ingredients.remove(at: index)
@@ -143,35 +148,23 @@ struct IngredientEntryView: View {
                 } label: {
                     Image(systemName: "minus.circle.fill")
                         .foregroundColor(.red)
-                        .font(.system(size: 22))
+                        .font(.title3)
                 }
-                .padding(.leading, 6)
             }
-            
-            // Résumé nutritionnel si on a déjà les infos et une quantité valide
+
             if let nutrition = entry.nutritionInfo,
                let qty = Double(entry.quantity) {
-                nutritionRow(
-                    nutrition: nutrition,
-                    quantity: qty,
-                    servingSize: entry.servingSize
-                )
+                nutritionRow(nutrition: nutrition, quantity: qty, servingSize: entry.servingSize)
             }
         }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 4)
-        .background(Color(.systemBackground))
-        .cornerRadius(8)
-        .shadow(color: Color(.systemGray4).opacity(0.3), radius: 2, x: 0, y: 1)
-        .padding(.vertical, 2)
+        .padding()
+        .background(Color.white.opacity(0.4))
+        .cornerRadius(12)
     }
-    
-    // MARK: - Résumé nutritionnel
+
     private func nutritionRow(nutrition: NutritionValues, quantity: Double, servingSize: Double) -> some View {
-        // On calcule le ratio par rapport à la portion retournée par l’API
         let ratio = quantity / servingSize
-        
-        return HStack(spacing: 12) {
+        return HStack(spacing: 10) {
             Text("\(Int(nutrition.calories * ratio)) kcal")
                 .foregroundColor(.orange)
             Text("P: \(String(format: "%.1fg", nutrition.proteins * ratio))")
@@ -182,57 +175,86 @@ struct IngredientEntryView: View {
                 .foregroundColor(.red)
         }
         .font(.caption)
-        .padding(.vertical, 2)
-        .padding(.horizontal, 8)
-        .background(Color(.systemGray6).opacity(0.5))
-        .cornerRadius(4)
+        .padding(6)
+        .background(AppTheme.backgroundBlob3)
+        .cornerRadius(8)
     }
 
+    private var addButtons: some View {
+        VStack(spacing: 12) {
+            Button {
+                isShowingNutriaSearch = true
+            } label: {
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                    Text("Rechercher un aliment")
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(Color.white)
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppTheme.vibrantGreen, lineWidth: 1.5))
+                .cornerRadius(12)
+            }
 
-    
-    private var nutritionSummarySection: some View {
-        Section(header: Text("RÉSUMÉ NUTRITIONNEL")) {
+            Button {
+                isShowingCustomFoodsSelector = true
+            } label: {
+                HStack {
+                    Image(systemName: "star.fill")
+                    Text("Mes aliments personnalisés")
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(Color.white)
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppTheme.primaryBlue, lineWidth: 1.5))
+                .cornerRadius(12)
+            }
+        }
+    }
+
+    private var nutritionSummaryCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Valeurs nutritionnelles")
+                .font(.headline)
+                .foregroundColor(AppTheme.vibrantGreen)
+
             HStack {
                 nutritionSummaryItem("Calories", "\(Int(totalNutrition.calories))", "kcal", .orange)
                 nutritionSummaryItem("Protéines", String(format: "%.1f", totalNutrition.proteins), "g", .blue)
                 nutritionSummaryItem("Glucides", String(format: "%.1f", totalNutrition.carbohydrates), "g", .green)
                 nutritionSummaryItem("Lipides", String(format: "%.1f", totalNutrition.fats), "g", .red)
             }
-            .padding(.vertical, 8)
         }
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(AppTheme.cardBorderRadius)
     }
-    
+
     private func nutritionSummaryItem(_ title: String, _ value: String, _ unit: String, _ color: Color) -> some View {
-        VStack(alignment: .leading) {
-            Text(title).font(.caption).foregroundColor(.secondary)
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title).font(.caption).foregroundColor(AppTheme.secondaryText)
+            HStack(spacing: 2) {
                 Text(value).font(.headline).foregroundColor(color)
                 Text(unit).font(.caption).foregroundColor(color)
             }
-        }.frame(maxWidth: .infinity)
-    }
-    
-    private var submitSection: some View {
-        Section {
-            if isProcessing {
-                HStack {
-                    Spacer()
-                    ProgressView("Ajout en cours...")
-                    Spacer()
-                }
-            } else {
-                Button("Ajouter au journal") {
-                    submitIngredients()
-                }
-                .disabled(ingredients.isEmpty)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .bold()
-                .buttonStyle(BorderedProminentButtonStyle())
-            }
         }
+        .frame(maxWidth: .infinity)
     }
-    
+
+    private var submitButton: some View {
+        Button(action: submitIngredients) {
+            Text("Ajouter au journal")
+                .fontWeight(.semibold)
+                .foregroundColor(.white)
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(AppTheme.actionButtonGradient)
+                .cornerRadius(AppTheme.cardBorderRadius)
+        }
+        .disabled(ingredients.isEmpty)
+        .opacity(ingredients.isEmpty ? 0.5 : 1)
+    }
+
     private var totalNutrition: NutritionValues {
         ingredients.reduce(NutritionValues(calories: 0, proteins: 0, carbohydrates: 0, fats: 0, fiber: 0)) { acc, entry in
             guard let nutrition = entry.nutritionInfo,
@@ -247,7 +269,7 @@ struct IngredientEntryView: View {
             )
         }
     }
-    
+
     private func addNutriaFood(_ nutriaFood: NutriaFood, quantity: Double, unit: ServingUnit) {
         let food = nutriaFood.toFood()
         let nutritionValues = NutritionValues(
@@ -267,8 +289,6 @@ struct IngredientEntryView: View {
         ))
     }
 
-
-    
     private func addCustomFood(_ customFood: CustomFood, quantity: Double) {
         withAnimation {
             ingredients.append(IngredientEntry(
@@ -284,7 +304,7 @@ struct IngredientEntryView: View {
             ))
         }
     }
-    
+
     private func submitIngredients() {
         guard !ingredients.isEmpty else { return }
         isProcessing = true
@@ -312,26 +332,26 @@ struct IngredientEntryView: View {
             let food = Food(
                 id: UUID(),
                 name: entry.name,
-                calories: Int((nutrition.calories * ratio).rounded()),
-                proteins: nutrition.proteins * ratio,
-                carbs: nutrition.carbohydrates * ratio,
-                fats: nutrition.fats * ratio,
-                fiber: nutrition.fiber * ratio,
+                calories: Int(nutrition.calories), // 👈 pas multiplié
+                proteins: nutrition.proteins,
+                carbs: nutrition.carbohydrates,
+                fats: nutrition.fats,
+                fiber: nutrition.fiber,
                 servingSize: entry.servingSize,
                 servingUnit: entry.servingUnit,
                 image: nil
             )
 
+            let relativeQuantity = quantity / entry.servingSize
             let journalEntry = FoodEntry(
                 id: UUID(),
                 food: food,
-                quantity: qtyForEntry,
+                quantity: relativeQuantity,
                 date: journalViewModel.selectedDate,
                 mealType: mealType,
                 source: .manual,
                 unit: entry.servingUnit.displayName
             )
-
             entriesToSave.append(journalEntry)
         }
 
@@ -345,6 +365,5 @@ struct IngredientEntryView: View {
             presentationMode.wrappedValue.dismiss()
         }
     }
-
 }
 

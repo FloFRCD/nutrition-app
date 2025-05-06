@@ -213,50 +213,81 @@ extension NutritionService {
 
 extension NutritionService {
     
-    func generateNutriaFoodIfMissing(name: String, brand: String?, unit: ServingUnit, size: Double) async -> NutriaFood? {
+    func generateNutriaFoodIfMissing(
+        name: String,
+        brand: String?,
+        unit: ServingUnit,
+        size: Double,
+        additionalDetails: String? = nil
+    ) async -> NutriaFood? {
         let fullName = brand != nil ? "\(name) \(brand!)" : name
-        
+
         // ✅ Vérifie s'il existe déjà un aliment avec le même nom + unité
-            if let existing = await fetchExistingNutriaFood(name: name, unit: unit) {
-                return existing
-            }
-        
+        if let existing = await fetchExistingNutriaFood(name: name, unit: unit) {
+            return existing
+        }
+
         do {
-            let nutrition = try await AIService.shared.requestNutritionFromAPI(
+            // ✅ Appel IA : version enrichie (canonicalName + description)
+            let rawJSON = try await AIService.shared.requestNutritionRawJSON(
                 food: fullName,
+                unit: unit,
                 quantity: size,
-                unit: unit
+                additionalDetails: additionalDetails,
+                brand: brand
             )
 
+            // ✅ Decode le JSON
+            struct NutriaFoodFromGPT: Codable {
+                let canonicalName: String
+                let description: String?
+                let servingSize: Double
+                let servingUnit: String
+                let calories: Double
+                let proteins: Double
+                let carbs: Double
+                let fats: Double
+                let fiber: Double
+            }
+
+            let data = Data(rawJSON.utf8)
+            let decoded = try JSONDecoder().decode(NutriaFoodFromGPT.self, from: data)
+
             let now = Date()
-            let normalizedName = normalize(name)
+            let normalizedName = normalize(decoded.canonicalName)
             let normalizedBrand = brand?.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
 
+            // ✅ Création de NutriaFood complet
             let food = NutriaFood(
                 id: UUID().uuidString,
-                canonicalName: fullName,
+                canonicalName: decoded.canonicalName,
+                description: decoded.description,
                 normalizedName: normalizedName,
                 brand: brand,
                 normalizedBrand: normalizedBrand,
                 isGeneric: brand == nil,
-                servingSize: size,
-                servingUnit: unit.rawValue,
-                calories: nutrition.calories,
-                proteins: nutrition.proteins,
-                carbs: nutrition.carbs,
-                fats: nutrition.fats,
-                fiber: nutrition.fiber,
+                servingSize: decoded.servingSize,
+                servingUnit: decoded.servingUnit,
+                calories: decoded.calories,
+                proteins: decoded.proteins,
+                carbs: decoded.carbs,
+                fats: decoded.fats,
+                fiber: decoded.fiber,
                 source: "gpt-4o",
-                createdAt: now,
+                createdAt: now
             )
 
+            // ✅ Sauvegarde en Firestore
             try Firestore.firestore().collection("foods").document(food.id).setData(from: food)
+
             return food
         } catch {
             print("❌ Erreur GPT ou Firestore : \(error)")
             return nil
         }
     }
+
+
 
     func fetchExistingNutriaFood(name: String, unit: ServingUnit) async -> NutriaFood? {
         let db = Firestore.firestore()
@@ -442,7 +473,11 @@ extension NutritionService {
 
         // 🤖 2) sinon appel IA
         let ai = AIService.shared
-        let rawJSON = try await ai.requestNutritionRawJSON(food: foodName, unit: unit)
+          let rawJSON = try await ai.requestNutritionRawJSON(
+              food: foodName,
+              unit: unit,
+              quantity: unit == .piece ? 1 : 100
+          )
 
         // 💾 3) stockage du JSON brut
         try await col.addDocument(data: [
@@ -460,7 +495,6 @@ extension NutritionService {
             let snapshot = try await Firestore.firestore()
                 .collection("foods")
                 .order(by: "canonicalName")
-                .limit(to: 100)
                 .getDocuments()
 
             return try snapshot.documents.compactMap {

@@ -32,8 +32,6 @@ struct MealConfigurationSheet: View {
     @State private var expandBanned = false
     @State private var expandPrompt = false
 
-    var isPremiumUser: Bool { storeKit.isPremiumUser }
-
     let totalSuggestions = 12
     let onGenerate: (MealPreferences) -> Void
 
@@ -90,7 +88,7 @@ struct MealConfigurationSheet: View {
                     restrictionSection()
                     preferredIngredientsSection()
                     bannedIngredientsSection()
-                    if isPremiumUser { promptOverrideSection() }
+                    if storeKit.isPremiumUser { promptOverrideSection() }
                 }
                 .padding()
             }
@@ -121,7 +119,7 @@ struct MealConfigurationSheet: View {
     }
 
     private func goalSection() -> some View {
-        collapsibleSection(title: "Objectif du repas", isExpanded: $expandGoal) {
+        collapsibleSection(title: "Objectif", isExpanded: $expandGoal) {
             Picker("Objectif", selection: $selectedGoal) {
                 Text("Aucun").tag(MealGoal?.none)
                 ForEach(MealGoal.allCases) { goal in
@@ -177,7 +175,7 @@ struct MealConfigurationSheet: View {
                 ))
                 .toggleStyle(.gradient)
             }
-            if isPremiumUser {
+            if storeKit.isPremiumUser {
                 TextField("Autres (ex: allergie aux arachides)", text: Binding(
                     get: { preferences.otherRestriction ?? "" },
                     set: { preferences.otherRestriction = $0 }
@@ -241,7 +239,7 @@ struct MealConfigurationSheet: View {
             PromptOverrideSection(
                 promptText: $promptOverride,
                 isEnabled: $preferences.isPromptOverrideEnabled,
-                isPremiumUser: isPremiumUser,
+                isPremiumUser: storeKit.isPremiumUser,
                 onUseExample: {
                     promptOverride = "Génère-moi des plats très rapides à préparer, pauvres en glucides et sans cuisson."
                 }
@@ -361,6 +359,7 @@ struct IngredientItemList: View {
 }
 
 struct PromptOverrideSection: View {
+    @EnvironmentObject var storeKit: StoreKitManager
     @Binding var promptText: String
     @Binding var isEnabled: Bool
     let isPremiumUser: Bool
@@ -378,7 +377,7 @@ struct PromptOverrideSection: View {
                     .disabled(!isPremiumUser)
             }
 
-            if isPremiumUser {
+            if storeKit.isPremiumUser {
                 if isEnabled {
                     Text("Rédige ton propre prompt pour générer des repas personnalisés. Laisse vide pour utiliser les paramètres ci-dessus. La section 'Type de repas' reste prise en compte.")
                         .font(.footnote)

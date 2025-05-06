@@ -17,6 +17,7 @@ struct NextMealView: View {
     @State private var currentIndex = 0
     @State private var showingRecipeDetail = false
     @Binding var isTabBarVisible: Bool
+    @State private var showPlanning = false
 
     
     var body: some View {
@@ -196,24 +197,25 @@ struct NextMealView: View {
     
     // Vue vide quand aucune recette n'est sauvegardée
     private var emptyView: some View {
-        NavigationLink(destination: PlanningView(isTabBarVisible: $isTabBarVisible)) {
-            HStack {
-                Spacer()
-                VStack(spacing: 8) {
-                    Image(systemName: "plus.circle")
-                        .font(.system(size: 24))
-                        .foregroundColor(.blue)
-                    
-                    Text("Planifiez votre premier repas")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                }
-                Spacer()
+        HStack {
+            Spacer()
+            VStack(spacing: 16) {
+
+                Text("Aucune recette générée")
+                    .font(.headline)
+                    .foregroundColor(.gray)
+
+                Text("Pour créer ton premier repas, rends-toi dans l’onglet Recettes et appuie sur le bouton \"Générer\".")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
             }
             .padding()
+            Spacer()
         }
-        .buttonStyle(PlainButtonStyle())
     }
+
     
     // Charger les recettes sauvegardées
     private func loadSavedRecipes() async {
