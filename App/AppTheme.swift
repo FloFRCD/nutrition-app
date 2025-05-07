@@ -14,7 +14,7 @@ struct AppTheme {
     // Couleurs inspirées du logo NutrIA
     static let logoYellow = Color(hex: "FFD54F")
     static let logoPurple = Color(hex: "B39DDB")
-    static let logoBlue = Color(hex: "81D4FA")
+    static let logoBlue = Color(hex: "3A5BA0")
     static let logoGreen = Color(hex: "66BB6A")
 
     // Couleurs primaires
@@ -26,7 +26,7 @@ struct AppTheme {
     static let primaryPurple = logoPurple
     static let primaryBlue = logoBlue
     static let lightYellow = logoYellow
-    static let vibrantGreen = logoGreen
+    static let vibrantGreen = logoBlue
 
     // Couleurs d'accent mises à jour
     static let accent = vibrantGreen
